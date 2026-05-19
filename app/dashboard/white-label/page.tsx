@@ -6,7 +6,6 @@ import {
   Globe, 
   Database, 
   Palette, 
-  CreditCard, 
   Settings, 
   Check, 
   X, 
@@ -38,7 +37,6 @@ import {
   Sparkles,
   Wallet,
   Users,
-  AlertCircle,
   HelpCircle,
   Info
 } from "lucide-react"
