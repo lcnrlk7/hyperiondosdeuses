@@ -423,6 +423,8 @@ export default function WhiteLabelPage() {
   const [activeTab, setActiveTab] = useState("assinatura")
   const [acceptContract, setAcceptContract] = useState(false)
   const [processingPayment, setProcessingPayment] = useState(false)
+  const [pixCode, setPixCode] = useState<string | null>(null)
+  const [pixAmount, setPixAmount] = useState<number>(350)
   
   // Form states
   const [name, setName] = useState("")
@@ -634,11 +636,14 @@ export default function WhiteLabelPage() {
       const data = await response.json()
       
       if (data.success) {
-        toast.success("Contrato aceito! Redirecionando para pagamento...")
+        toast.success("Contrato aceito!")
         if (data.pix_code) {
-          toast.info("Copie o codigo PIX para pagar")
+          setPixCode(data.pix_code)
+          setPixAmount(data.amount || 350)
+          toast.info("Codigo PIX gerado! Copie e pague para ativar sua plataforma.")
+        } else {
+          loadTenant()
         }
-        loadTenant()
       } else {
         toast.error(data.error || "Erro ao processar")
       }
@@ -998,7 +1003,83 @@ export default function WhiteLabelPage() {
           </div>
         </div>
 
-        {showSubscription ? (
+        {pixCode ? (
+          // Tela de pagamento PIX
+          <Card>
+            <CardHeader className="text-center">
+              <CardTitle className="text-2xl">Pagamento via PIX</CardTitle>
+              <CardDescription>Pague o valor abaixo para ativar sua plataforma</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="text-center">
+                <p className="text-4xl font-bold text-primary mb-2">R$ {pixAmount.toFixed(2)}</p>
+                <p className="text-sm text-muted-foreground">Taxa de Setup - Pagamento Unico</p>
+              </div>
+
+              <div className="bg-muted/30 rounded-xl p-6 space-y-4">
+                <div className="flex items-center justify-center">
+                  <div className="p-4 bg-white rounded-lg">
+                    <img 
+                      src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(pixCode)}`}
+                      alt="QR Code PIX"
+                      className="w-48 h-48"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-center block">Codigo PIX Copia e Cola</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      value={pixCode}
+                      readOnly
+                      className="font-mono text-xs"
+                    />
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        navigator.clipboard.writeText(pixCode)
+                        toast.success("Codigo PIX copiado!")
+                      }}
+                    >
+                      <Copy className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4">
+                <div className="flex gap-2">
+                  <AlertCircle className="w-5 h-5 text-yellow-500 flex-shrink-0" />
+                  <div className="text-sm">
+                    <p className="font-medium text-yellow-500">Aguardando pagamento</p>
+                    <p className="text-muted-foreground">Apos o pagamento, sua plataforma sera ativada automaticamente em ate 5 minutos.</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-4">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => setPixCode(null)}
+                >
+                  Voltar
+                </Button>
+                <Button
+                  className="flex-1"
+                  onClick={() => {
+                    loadTenant()
+                    setPixCode(null)
+                  }}
+                >
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  Verificar Pagamento
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        ) : showSubscription ? (
           // Tela de assinatura
           <Card>
             <CardHeader className="text-center">

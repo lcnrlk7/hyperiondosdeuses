@@ -133,6 +133,28 @@ export default function WhiteLabelAdminPage() {
     setActionLoading(null)
   }
 
+  const approveSetup = async (tenantId: string) => {
+    setActionLoading(tenantId)
+    try {
+      const response = await fetch("/api/admin/white-label", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tenantId, action: "approve_setup" }),
+      })
+      
+      const data = await response.json()
+      if (data.success) {
+        toast.success("Setup aprovado! Plataforma ativada.")
+        loadData()
+      } else {
+        toast.error(data.error || "Erro ao aprovar")
+      }
+    } catch (error) {
+      toast.error("Erro ao processar")
+    }
+    setActionLoading(null)
+  }
+
   const deleteTenant = async (tenantId: string) => {
     if (!confirm("Tem certeza que deseja excluir esta plataforma? Esta acao e irreversivel.")) {
       return
@@ -413,6 +435,22 @@ export default function WhiteLabelAdminPage() {
                       </td>
                       <td className="p-4">
                         <div className="flex items-center justify-end gap-2">
+                          {!tenant.setup_paid && (
+                            <Button
+                              variant="default"
+                              size="sm"
+                              onClick={() => approveSetup(tenant.id)}
+                              disabled={actionLoading === tenant.id}
+                              className="bg-green-600 hover:bg-green-700"
+                              title="Aprovar Setup (confirmar pagamento)"
+                            >
+                              {actionLoading === tenant.id ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                              ) : (
+                                <CheckCircle2 className="w-4 h-4" />
+                              )}
+                            </Button>
+                          )}
                           {tenant.is_active ? (
                             <Button
                               variant="outline"
