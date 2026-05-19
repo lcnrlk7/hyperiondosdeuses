@@ -1385,19 +1385,21 @@ export default function WhiteLabelPage() {
         ) : (
           // Painel de configuracoes
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid grid-cols-4 md:grid-cols-11 mb-6">
-              <TabsTrigger value="geral"><Settings className="w-4 h-4 mr-1" /> Geral</TabsTrigger>
-              <TabsTrigger value="visual"><Palette className="w-4 h-4 mr-1" /> Visual</TabsTrigger>
-              <TabsTrigger value="textos"><Type className="w-4 h-4 mr-1" /> Textos</TabsTrigger>
-              <TabsTrigger value="modulos"><LayoutDashboard className="w-4 h-4 mr-1" /> Modulos</TabsTrigger>
-              <TabsTrigger value="sistema"><Shield className="w-4 h-4 mr-1" /> Sistema</TabsTrigger>
-              <TabsTrigger value="features"><Sparkles className="w-4 h-4 mr-1" /> Recursos</TabsTrigger>
-              <TabsTrigger value="telegram"><MessageSquare className="w-4 h-4 mr-1" /> Telegram</TabsTrigger>
-              <TabsTrigger value="dominio"><Globe className="w-4 h-4 mr-1" /> Dominio</TabsTrigger>
-              <TabsTrigger value="database"><Database className="w-4 h-4 mr-1" /> Banco</TabsTrigger>
-              <TabsTrigger value="seo"><Eye className="w-4 h-4 mr-1" /> SEO</TabsTrigger>
-              <TabsTrigger value="links"><ExternalLink className="w-4 h-4 mr-1" /> Links</TabsTrigger>
-            </TabsList>
+            <div className="overflow-x-auto pb-2 mb-4">
+              <TabsList className="inline-flex w-max md:grid md:grid-cols-11 gap-1">
+                <TabsTrigger value="geral" className="whitespace-nowrap"><Settings className="w-4 h-4 mr-1" /> Geral</TabsTrigger>
+                <TabsTrigger value="visual" className="whitespace-nowrap"><Palette className="w-4 h-4 mr-1" /> Visual</TabsTrigger>
+                <TabsTrigger value="textos" className="whitespace-nowrap"><Type className="w-4 h-4 mr-1" /> Textos</TabsTrigger>
+                <TabsTrigger value="modulos" className="whitespace-nowrap"><LayoutDashboard className="w-4 h-4 mr-1" /> Modulos</TabsTrigger>
+                <TabsTrigger value="sistema" className="whitespace-nowrap"><Shield className="w-4 h-4 mr-1" /> Sistema</TabsTrigger>
+                <TabsTrigger value="features" className="whitespace-nowrap"><Sparkles className="w-4 h-4 mr-1" /> Recursos</TabsTrigger>
+                <TabsTrigger value="telegram" className="whitespace-nowrap"><MessageSquare className="w-4 h-4 mr-1" /> Telegram</TabsTrigger>
+                <TabsTrigger value="dominio" className="whitespace-nowrap"><Globe className="w-4 h-4 mr-1" /> Dominio</TabsTrigger>
+                <TabsTrigger value="database" className="whitespace-nowrap"><Database className="w-4 h-4 mr-1" /> Banco</TabsTrigger>
+                <TabsTrigger value="seo" className="whitespace-nowrap"><Eye className="w-4 h-4 mr-1" /> SEO</TabsTrigger>
+                <TabsTrigger value="links" className="whitespace-nowrap"><ExternalLink className="w-4 h-4 mr-1" /> Links</TabsTrigger>
+              </TabsList>
+            </div>
 
             {/* Aba Geral */}
             <TabsContent value="geral">
