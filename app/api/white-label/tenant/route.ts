@@ -147,6 +147,7 @@ export async function PUT(request: NextRequest) {
         seo_config = COALESCE(${body.seo_config ? JSON.stringify(body.seo_config) : null}::jsonb, seo_config),
         email_config = COALESCE(${body.email_config ? JSON.stringify(body.email_config) : null}::jsonb, email_config),
         system_config = COALESCE(${body.system_config ? JSON.stringify(body.system_config) : null}::jsonb, system_config),
+        telegram_config = COALESCE(${body.telegram_config ? JSON.stringify(body.telegram_config) : null}::jsonb, telegram_config),
         updated_at = NOW()
       WHERE id = ${tenantId}
     `

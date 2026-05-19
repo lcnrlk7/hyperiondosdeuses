@@ -458,6 +458,24 @@ export default function WhiteLabelPage() {
   const [emailConfig, setEmailConfig] = useState(DEFAULT_EMAIL)
   const [systemConfig, setSystemConfig] = useState(DEFAULT_SYSTEM_CONFIG)
   
+  // Telegram states
+  const [telegramConfig, setTelegramConfig] = useState({
+    bot_token: "",
+    chat_id: "",
+    bot_info: null as any,
+    enabled: false,
+    notifications: {
+      new_user: true,
+      new_transaction: true,
+      withdraw_request: true,
+      kyc_pending: true,
+      large_transaction: true,
+      large_transaction_threshold: 1000,
+    }
+  })
+  const [testingTelegram, setTestingTelegram] = useState(false)
+  const [savingTelegram, setSavingTelegram] = useState(false)
+  
   // Action states
   const [testingDb, setTestingDb] = useState(false)
   const [settingUpDb, setSettingUpDb] = useState(false)
@@ -577,6 +595,14 @@ export default function WhiteLabelPage() {
             ? JSON.parse(data.tenant.system_config)
             : data.tenant.system_config
           setSystemConfig({ ...DEFAULT_SYSTEM_CONFIG, ...dbSystem })
+        }
+        
+        // Carregar config do Telegram
+        if (data.tenant.telegram_config) {
+          const dbTelegram = typeof data.tenant.telegram_config === 'string'
+            ? JSON.parse(data.tenant.telegram_config)
+            : data.tenant.telegram_config
+          setTelegramConfig(prev => ({ ...prev, ...dbTelegram }))
         }
         
         // Mudar aba se setup pago
@@ -841,6 +867,112 @@ export default function WhiteLabelPage() {
     setSystemConfig(prev => ({ ...prev, [key]: value }))
   }
 
+  // Funcoes do Telegram
+  const updateTelegramConfig = (key: string, value: any) => {
+    setTelegramConfig(prev => ({ ...prev, [key]: value }))
+  }
+
+  const updateTelegramNotification = (key: string, value: any) => {
+    setTelegramConfig(prev => ({
+      ...prev,
+      notifications: { ...prev.notifications, [key]: value }
+    }))
+  }
+
+  const testTelegramConnection = async () => {
+    if (!telegramConfig.bot_token) {
+      toast.error("Insira o token do bot primeiro")
+      return
+    }
+
+    setTestingTelegram(true)
+    try {
+      const response = await fetch("/api/white-label/telegram", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          bot_token: telegramConfig.bot_token,
+          chat_id: telegramConfig.chat_id
+        })
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        setTelegramConfig(prev => ({
+          ...prev,
+          bot_info: data.bot_info,
+          enabled: !!prev.chat_id
+        }))
+        toast.success(data.message)
+      } else {
+        toast.error(data.error || "Erro ao testar conexao")
+      }
+    } catch (error) {
+      toast.error("Erro ao conectar com o Telegram")
+    } finally {
+      setTestingTelegram(false)
+    }
+  }
+
+  const saveTelegramConfig = async () => {
+    if (!tenant?.id) return
+
+    setSavingTelegram(true)
+    try {
+      const response = await fetch("/api/white-label/telegram", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          tenant_id: tenant.id,
+          telegram_config: telegramConfig
+        })
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        toast.success("Configuracoes do Telegram salvas!")
+      } else {
+        toast.error(data.error || "Erro ao salvar")
+      }
+    } catch (error) {
+      toast.error("Erro ao salvar configuracoes")
+    } finally {
+      setSavingTelegram(false)
+    }
+  }
+
+  const disconnectTelegram = async () => {
+    if (!tenant?.id) return
+
+    try {
+      const response = await fetch(`/api/white-label/telegram?tenant_id=${tenant.id}`, {
+        method: "DELETE"
+      })
+
+      if (response.ok) {
+        setTelegramConfig({
+          bot_token: "",
+          chat_id: "",
+          bot_info: null,
+          enabled: false,
+          notifications: {
+            new_user: true,
+            new_transaction: true,
+            withdraw_request: true,
+            kyc_pending: true,
+            large_transaction: true,
+            large_transaction_threshold: 1000,
+          }
+        })
+        toast.success("Bot desconectado")
+      }
+    } catch (error) {
+      toast.error("Erro ao desconectar")
+    }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -960,16 +1092,18 @@ export default function WhiteLabelPage() {
         ) : (
           // Painel de configuracoes
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid grid-cols-3 md:grid-cols-9 mb-6">
+            <TabsList className="grid grid-cols-4 md:grid-cols-11 mb-6">
               <TabsTrigger value="geral"><Settings className="w-4 h-4 mr-1" /> Geral</TabsTrigger>
               <TabsTrigger value="visual"><Palette className="w-4 h-4 mr-1" /> Visual</TabsTrigger>
               <TabsTrigger value="textos"><Type className="w-4 h-4 mr-1" /> Textos</TabsTrigger>
               <TabsTrigger value="modulos"><LayoutDashboard className="w-4 h-4 mr-1" /> Modulos</TabsTrigger>
               <TabsTrigger value="sistema"><Shield className="w-4 h-4 mr-1" /> Sistema</TabsTrigger>
               <TabsTrigger value="features"><Sparkles className="w-4 h-4 mr-1" /> Recursos</TabsTrigger>
+              <TabsTrigger value="telegram"><MessageSquare className="w-4 h-4 mr-1" /> Telegram</TabsTrigger>
               <TabsTrigger value="dominio"><Globe className="w-4 h-4 mr-1" /> Dominio</TabsTrigger>
               <TabsTrigger value="database"><Database className="w-4 h-4 mr-1" /> Banco</TabsTrigger>
               <TabsTrigger value="seo"><Eye className="w-4 h-4 mr-1" /> SEO</TabsTrigger>
+              <TabsTrigger value="links"><ExternalLink className="w-4 h-4 mr-1" /> Links</TabsTrigger>
             </TabsList>
 
             {/* Aba Geral */}
@@ -2985,6 +3119,614 @@ export default function WhiteLabelPage() {
                 </CardContent>
               </Card>
             </TabsContent>
+
+            {/* Aba Telegram */}
+            <TabsContent value="telegram">
+              <div className="space-y-6">
+                {/* Tutorial de como criar o bot */}
+                <Card className="border-blue-500/30 bg-blue-500/5">
+                  <CardContent className="pt-6">
+                    <div className="flex gap-4">
+                      <div className="w-12 h-12 rounded-full bg-blue-500/20 flex items-center justify-center flex-shrink-0">
+                        <MessageSquare className="w-6 h-6 text-blue-500" />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-foreground mb-3 text-lg">Como criar seu Bot do Telegram</h3>
+                        <div className="text-sm text-muted-foreground space-y-3">
+                          <div className="p-3 rounded-lg bg-background border">
+                            <p className="font-medium text-foreground mb-1">Passo 1: Criar o Bot</p>
+                            <p>1. Abra o Telegram e procure por <code className="bg-muted px-2 py-0.5 rounded">@BotFather</code></p>
+                            <p>2. Envie o comando <code className="bg-muted px-2 py-0.5 rounded">/newbot</code></p>
+                            <p>3. Escolha um nome para o bot (ex: Notificacoes MinhaMarca)</p>
+                            <p>4. Escolha um username (deve terminar com &quot;bot&quot;, ex: minhamarca_notif_bot)</p>
+                            <p>5. Copie o token que o BotFather enviar</p>
+                          </div>
+                          <div className="p-3 rounded-lg bg-background border">
+                            <p className="font-medium text-foreground mb-1">Passo 2: Obter o Chat ID</p>
+                            <p><strong>Para receber em privado:</strong></p>
+                            <p>1. Inicie uma conversa com seu bot</p>
+                            <p>2. Envie qualquer mensagem</p>
+                            <p>3. Acesse: <code className="bg-muted px-2 py-0.5 rounded text-xs">https://api.telegram.org/botSEU_TOKEN/getUpdates</code></p>
+                            <p>4. Procure por &quot;chat&quot;:{`{`}&quot;id&quot;: NUMERO - esse numero e seu Chat ID</p>
+                            <p className="mt-2"><strong>Para receber em grupo:</strong></p>
+                            <p>1. Crie um grupo e adicione o bot</p>
+                            <p>2. Envie uma mensagem no grupo</p>
+                            <p>3. O Chat ID de grupos comeca com - (negativo)</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Configuracao do Bot */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <MessageSquare className="w-5 h-5 text-primary" />
+                      Configuracao do Bot
+                    </CardTitle>
+                    <CardDescription>Configure o token e chat ID do seu bot para receber notificacoes</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div className="grid md:grid-cols-2 gap-6">
+                      <div className="space-y-4">
+                        <div>
+                          <Label className="flex items-center gap-2">
+                            Token do Bot
+                            <span className="text-xs text-muted-foreground">(obtido do @BotFather)</span>
+                          </Label>
+                          <Input
+                            type="password"
+                            value={telegramConfig.bot_token}
+                            onChange={(e) => updateTelegramConfig("bot_token", e.target.value)}
+                            placeholder="123456789:ABCdefGHIjklMNOpqrsTUVwxyz"
+                            className="mt-1 font-mono"
+                          />
+                          <p className="text-xs text-muted-foreground mt-1">
+                            O token e como uma senha. Nunca compartilhe com ninguem.
+                          </p>
+                        </div>
+                        
+                        <div>
+                          <Label className="flex items-center gap-2">
+                            Chat ID
+                            <span className="text-xs text-muted-foreground">(ID do chat/grupo para notificacoes)</span>
+                          </Label>
+                          <Input
+                            value={telegramConfig.chat_id}
+                            onChange={(e) => updateTelegramConfig("chat_id", e.target.value)}
+                            placeholder="-1001234567890 ou 123456789"
+                            className="mt-1 font-mono"
+                          />
+                          <p className="text-xs text-muted-foreground mt-1">
+                            IDs de grupo comecam com - (negativo). IDs privados sao apenas numeros.
+                          </p>
+                        </div>
+
+                        <div className="flex gap-2">
+                          <Button 
+                            onClick={testTelegramConnection} 
+                            disabled={testingTelegram || !telegramConfig.bot_token}
+                            variant="outline"
+                            className="flex-1"
+                          >
+                            {testingTelegram && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+                            Testar Conexao
+                          </Button>
+                          <Button 
+                            onClick={saveTelegramConfig} 
+                            disabled={savingTelegram}
+                            className="flex-1"
+                          >
+                            {savingTelegram && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+                            Salvar
+                          </Button>
+                        </div>
+                      </div>
+
+                      {/* Status do Bot */}
+                      <div className="space-y-4">
+                        <div className={`p-4 rounded-lg border ${telegramConfig.bot_info ? 'border-green-500/50 bg-green-500/10' : 'border-muted'}`}>
+                          <h4 className="font-semibold mb-2 flex items-center gap-2">
+                            {telegramConfig.bot_info ? (
+                              <CheckCircle2 className="w-5 h-5 text-green-500" />
+                            ) : (
+                              <AlertCircle className="w-5 h-5 text-muted-foreground" />
+                            )}
+                            Status do Bot
+                          </h4>
+                          {telegramConfig.bot_info ? (
+                            <div className="space-y-2 text-sm">
+                              <p><strong>Nome:</strong> {telegramConfig.bot_info.first_name}</p>
+                              <p><strong>Username:</strong> @{telegramConfig.bot_info.username}</p>
+                              <p className="flex items-center gap-2">
+                                <strong>Link:</strong> 
+                                <a 
+                                  href={`https://t.me/${telegramConfig.bot_info.username}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-blue-500 hover:underline flex items-center gap-1"
+                                >
+                                  t.me/{telegramConfig.bot_info.username}
+                                  <ExternalLink className="w-3 h-3" />
+                                </a>
+                              </p>
+                              <Button 
+                                variant="destructive" 
+                                size="sm" 
+                                onClick={disconnectTelegram}
+                                className="mt-2"
+                              >
+                                <Trash2 className="w-4 h-4 mr-1" />
+                                Desconectar Bot
+                              </Button>
+                            </div>
+                          ) : (
+                            <p className="text-sm text-muted-foreground">
+                              Nenhum bot conectado. Configure o token acima e clique em &quot;Testar Conexao&quot;.
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Notificacoes */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Bell className="w-5 h-5 text-primary" />
+                      Notificacoes
+                    </CardTitle>
+                    <CardDescription>Escolha quais eventos devem enviar notificacoes para o Telegram</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div className="flex items-center justify-between p-4 rounded-lg border">
+                        <div>
+                          <p className="font-medium">Novo Usuario</p>
+                          <p className="text-sm text-muted-foreground">Notificar quando alguem se cadastrar</p>
+                        </div>
+                        <Switch
+                          checked={telegramConfig.notifications.new_user}
+                          onCheckedChange={(v) => updateTelegramNotification("new_user", v)}
+                        />
+                      </div>
+                      <div className="flex items-center justify-between p-4 rounded-lg border">
+                        <div>
+                          <p className="font-medium">Nova Transacao</p>
+                          <p className="text-sm text-muted-foreground">Notificar a cada pagamento recebido</p>
+                        </div>
+                        <Switch
+                          checked={telegramConfig.notifications.new_transaction}
+                          onCheckedChange={(v) => updateTelegramNotification("new_transaction", v)}
+                        />
+                      </div>
+                      <div className="flex items-center justify-between p-4 rounded-lg border">
+                        <div>
+                          <p className="font-medium">Solicitacao de Saque</p>
+                          <p className="text-sm text-muted-foreground">Notificar pedidos de saque</p>
+                        </div>
+                        <Switch
+                          checked={telegramConfig.notifications.withdraw_request}
+                          onCheckedChange={(v) => updateTelegramNotification("withdraw_request", v)}
+                        />
+                      </div>
+                      <div className="flex items-center justify-between p-4 rounded-lg border">
+                        <div>
+                          <p className="font-medium">KYC Pendente</p>
+                          <p className="text-sm text-muted-foreground">Notificar verificacoes para analisar</p>
+                        </div>
+                        <Switch
+                          checked={telegramConfig.notifications.kyc_pending}
+                          onCheckedChange={(v) => updateTelegramNotification("kyc_pending", v)}
+                        />
+                      </div>
+                      <div className="flex items-center justify-between p-4 rounded-lg border">
+                        <div>
+                          <p className="font-medium">Transacao Grande</p>
+                          <p className="text-sm text-muted-foreground">Notificar transacoes acima do limite</p>
+                        </div>
+                        <Switch
+                          checked={telegramConfig.notifications.large_transaction}
+                          onCheckedChange={(v) => updateTelegramNotification("large_transaction", v)}
+                        />
+                      </div>
+                      <div>
+                        <Label>Limite para Transacao Grande (R$)</Label>
+                        <Input
+                          type="number"
+                          value={telegramConfig.notifications.large_transaction_threshold}
+                          onChange={(e) => updateTelegramNotification("large_transaction_threshold", Number(e.target.value))}
+                          disabled={!telegramConfig.notifications.large_transaction}
+                          className="mt-1"
+                        />
+                      </div>
+                    </div>
+
+                    <Button onClick={saveTelegramConfig} disabled={savingTelegram} className="mt-6 w-full">
+                      {savingTelegram && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+                      Salvar Configuracoes de Notificacao
+                    </Button>
+                  </CardContent>
+                </Card>
+
+                {/* Links Uteis */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <ExternalLink className="w-5 h-5 text-primary" />
+                      Links Uteis do Telegram
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid md:grid-cols-3 gap-4">
+                      <a 
+                        href="https://t.me/BotFather" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="p-4 rounded-lg border hover:border-blue-500 hover:bg-blue-500/5 transition-colors"
+                      >
+                        <div className="flex items-center gap-2 mb-2">
+                          <MessageSquare className="w-5 h-5 text-blue-500" />
+                          <span className="font-medium">@BotFather</span>
+                        </div>
+                        <p className="text-sm text-muted-foreground">Criar e gerenciar bots</p>
+                      </a>
+                      <a 
+                        href="https://core.telegram.org/bots/api" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="p-4 rounded-lg border hover:border-blue-500 hover:bg-blue-500/5 transition-colors"
+                      >
+                        <div className="flex items-center gap-2 mb-2">
+                          <FileText className="w-5 h-5 text-blue-500" />
+                          <span className="font-medium">Documentacao API</span>
+                        </div>
+                        <p className="text-sm text-muted-foreground">Documentacao oficial dos bots</p>
+                      </a>
+                      <a 
+                        href="https://t.me/getidsbot" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="p-4 rounded-lg border hover:border-blue-500 hover:bg-blue-500/5 transition-colors"
+                      >
+                        <div className="flex items-center gap-2 mb-2">
+                          <HelpCircle className="w-5 h-5 text-blue-500" />
+                          <span className="font-medium">@getidsbot</span>
+                        </div>
+                        <p className="text-sm text-muted-foreground">Bot para descobrir seu Chat ID</p>
+                      </a>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+
+            {/* Aba Links e Painel */}
+            <TabsContent value="links">
+              <div className="space-y-6">
+                {/* Painel de Informacoes */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Info className="w-5 h-5 text-primary" />
+                      Painel de Informacoes e Links
+                    </CardTitle>
+                    <CardDescription>Todos os links importantes da sua plataforma White Label</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid md:grid-cols-2 gap-6">
+                      {/* Links da Plataforma */}
+                      <div className="space-y-4">
+                        <h3 className="font-semibold text-lg border-b pb-2">Links da Plataforma</h3>
+                        
+                        <div className="p-4 rounded-lg border bg-muted/20">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="font-medium">Painel do Usuario (App)</span>
+                            <Button variant="ghost" size="sm" onClick={() => {
+                              navigator.clipboard.writeText(tenant?.domain_app || `${tenant?.slug}.hyperionbank.com.br`)
+                              toast.success("Link copiado!")
+                            }}>
+                              <Copy className="w-4 h-4" />
+                            </Button>
+                          </div>
+                          <p className="text-sm text-muted-foreground font-mono">
+                            {tenant?.domain_app || `${tenant?.slug || 'sua-marca'}.hyperionbank.com.br`}
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Onde seus clientes acessam para fazer pagamentos
+                          </p>
+                        </div>
+
+                        <div className="p-4 rounded-lg border bg-muted/20">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="font-medium">Painel Admin (CEO)</span>
+                            <Button variant="ghost" size="sm" onClick={() => {
+                              navigator.clipboard.writeText(tenant?.domain_admin || `admin.${tenant?.slug}.hyperionbank.com.br`)
+                              toast.success("Link copiado!")
+                            }}>
+                              <Copy className="w-4 h-4" />
+                            </Button>
+                          </div>
+                          <p className="text-sm text-muted-foreground font-mono">
+                            {tenant?.domain_admin || `admin.${tenant?.slug || 'sua-marca'}.hyperionbank.com.br`}
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Seu painel de gestao e controle da plataforma
+                          </p>
+                        </div>
+
+                        <div className="p-4 rounded-lg border bg-muted/20">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="font-medium">Checkout (Pagamentos)</span>
+                            <Button variant="ghost" size="sm" onClick={() => {
+                              navigator.clipboard.writeText(`checkout.${tenant?.slug || 'sua-marca'}.hyperionbank.com.br`)
+                              toast.success("Link copiado!")
+                            }}>
+                              <Copy className="w-4 h-4" />
+                            </Button>
+                          </div>
+                          <p className="text-sm text-muted-foreground font-mono">
+                            checkout.{tenant?.slug || 'sua-marca'}.hyperionbank.com.br
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Pagina de checkout para seus clientes
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Links de Integracao */}
+                      <div className="space-y-4">
+                        <h3 className="font-semibold text-lg border-b pb-2">Integracao e API</h3>
+                        
+                        <div className="p-4 rounded-lg border bg-muted/20">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="font-medium">URL Base da API</span>
+                            <Button variant="ghost" size="sm" onClick={() => {
+                              navigator.clipboard.writeText(`https://api.${tenant?.slug || 'sua-marca'}.hyperionbank.com.br`)
+                              toast.success("Link copiado!")
+                            }}>
+                              <Copy className="w-4 h-4" />
+                            </Button>
+                          </div>
+                          <p className="text-sm text-muted-foreground font-mono">
+                            https://api.{tenant?.slug || 'sua-marca'}.hyperionbank.com.br
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Endpoint base para integracoes via API
+                          </p>
+                        </div>
+
+                        <div className="p-4 rounded-lg border bg-muted/20">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="font-medium">Webhook URL</span>
+                            <Button variant="ghost" size="sm" onClick={() => {
+                              navigator.clipboard.writeText(`https://api.${tenant?.slug || 'sua-marca'}.hyperionbank.com.br/webhook`)
+                              toast.success("Link copiado!")
+                            }}>
+                              <Copy className="w-4 h-4" />
+                            </Button>
+                          </div>
+                          <p className="text-sm text-muted-foreground font-mono">
+                            https://api.{tenant?.slug || 'sua-marca'}.hyperionbank.com.br/webhook
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            URL para receber notificacoes de eventos
+                          </p>
+                        </div>
+
+                        <div className="p-4 rounded-lg border bg-muted/20">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="font-medium">Documentacao da API</span>
+                            <Button variant="ghost" size="sm" onClick={() => {
+                              navigator.clipboard.writeText(`https://docs.${tenant?.slug || 'sua-marca'}.hyperionbank.com.br`)
+                              toast.success("Link copiado!")
+                            }}>
+                              <Copy className="w-4 h-4" />
+                            </Button>
+                          </div>
+                          <p className="text-sm text-muted-foreground font-mono">
+                            https://docs.{tenant?.slug || 'sua-marca'}.hyperionbank.com.br
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Documentacao completa da API
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Bot do Telegram */}
+                {telegramConfig.bot_info && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <MessageSquare className="w-5 h-5 text-blue-500" />
+                        Bot do Telegram
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid md:grid-cols-3 gap-4">
+                        <div className="p-4 rounded-lg border bg-blue-500/5 border-blue-500/30">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="font-medium">Link do Bot</span>
+                            <Button variant="ghost" size="sm" onClick={() => {
+                              navigator.clipboard.writeText(`https://t.me/${telegramConfig.bot_info.username}`)
+                              toast.success("Link copiado!")
+                            }}>
+                              <Copy className="w-4 h-4" />
+                            </Button>
+                          </div>
+                          <a 
+                            href={`https://t.me/${telegramConfig.bot_info.username}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sm text-blue-500 hover:underline font-mono flex items-center gap-1"
+                          >
+                            t.me/{telegramConfig.bot_info.username}
+                            <ExternalLink className="w-3 h-3" />
+                          </a>
+                        </div>
+                        <div className="p-4 rounded-lg border">
+                          <span className="font-medium block mb-2">Nome do Bot</span>
+                          <p className="text-sm text-muted-foreground">{telegramConfig.bot_info.first_name}</p>
+                        </div>
+                        <div className="p-4 rounded-lg border">
+                          <span className="font-medium block mb-2">Chat ID</span>
+                          <p className="text-sm text-muted-foreground font-mono">{telegramConfig.chat_id || 'Nao configurado'}</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Tutoriais e Ajuda */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <HelpCircle className="w-5 h-5 text-primary" />
+                      Tutoriais e Ajuda
+                    </CardTitle>
+                    <CardDescription>Recursos para ajudar voce a configurar e usar sua plataforma</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid md:grid-cols-3 gap-4">
+                      <div className="p-4 rounded-lg border hover:border-primary transition-colors">
+                        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center mb-3">
+                          <Globe className="w-5 h-5 text-primary" />
+                        </div>
+                        <h4 className="font-medium mb-1">Configurar Dominio</h4>
+                        <p className="text-sm text-muted-foreground mb-2">
+                          Aprenda a configurar seu dominio personalizado
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Va para aba &quot;Dominio&quot; para ver o tutorial completo de DNS
+                        </p>
+                      </div>
+                      <div className="p-4 rounded-lg border hover:border-primary transition-colors">
+                        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center mb-3">
+                          <MessageSquare className="w-5 h-5 text-primary" />
+                        </div>
+                        <h4 className="font-medium mb-1">Configurar Telegram</h4>
+                        <p className="text-sm text-muted-foreground mb-2">
+                          Configure notificacoes via Telegram
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Va para aba &quot;Telegram&quot; para o tutorial passo a passo
+                        </p>
+                      </div>
+                      <div className="p-4 rounded-lg border hover:border-primary transition-colors">
+                        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center mb-3">
+                          <Database className="w-5 h-5 text-primary" />
+                        </div>
+                        <h4 className="font-medium mb-1">Banco de Dados</h4>
+                        <p className="text-sm text-muted-foreground mb-2">
+                          Configure seu banco de dados isolado
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Va para aba &quot;Banco&quot; para configurar e testar conexao
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="mt-6 p-4 rounded-lg bg-muted/20 border">
+                      <h4 className="font-medium mb-2 flex items-center gap-2">
+                        <AlertCircle className="w-5 h-5 text-yellow-500" />
+                        Precisa de Ajuda?
+                      </h4>
+                      <p className="text-sm text-muted-foreground">
+                        Entre em contato com nosso suporte para tirar duvidas ou solicitar assistencia na configuracao.
+                      </p>
+                      <div className="flex gap-2 mt-3">
+                        <Button variant="outline" size="sm" asChild>
+                          <a href="mailto:suporte@hyperionbank.com.br">
+                            <Mail className="w-4 h-4 mr-1" />
+                            Email
+                          </a>
+                        </Button>
+                        <Button variant="outline" size="sm" asChild>
+                          <a href="https://wa.me/5511999999999" target="_blank" rel="noopener noreferrer">
+                            <Phone className="w-4 h-4 mr-1" />
+                            WhatsApp
+                          </a>
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Resumo de Configuracoes */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Settings className="w-5 h-5 text-primary" />
+                      Resumo das Configuracoes
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid md:grid-cols-4 gap-4">
+                      <div className="p-4 rounded-lg border text-center">
+                        <div className={`w-10 h-10 rounded-full mx-auto mb-2 flex items-center justify-center ${tenant?.domain_app ? 'bg-green-500/20' : 'bg-yellow-500/20'}`}>
+                          {tenant?.domain_app ? (
+                            <CheckCircle2 className="w-5 h-5 text-green-500" />
+                          ) : (
+                            <AlertCircle className="w-5 h-5 text-yellow-500" />
+                          )}
+                        </div>
+                        <p className="font-medium">Dominio App</p>
+                        <p className="text-sm text-muted-foreground">
+                          {tenant?.domain_app ? 'Configurado' : 'Pendente'}
+                        </p>
+                      </div>
+                      <div className="p-4 rounded-lg border text-center">
+                        <div className={`w-10 h-10 rounded-full mx-auto mb-2 flex items-center justify-center ${tenant?.domain_admin ? 'bg-green-500/20' : 'bg-yellow-500/20'}`}>
+                          {tenant?.domain_admin ? (
+                            <CheckCircle2 className="w-5 h-5 text-green-500" />
+                          ) : (
+                            <AlertCircle className="w-5 h-5 text-yellow-500" />
+                          )}
+                        </div>
+                        <p className="font-medium">Dominio Admin</p>
+                        <p className="text-sm text-muted-foreground">
+                          {tenant?.domain_admin ? 'Configurado' : 'Pendente'}
+                        </p>
+                      </div>
+                      <div className="p-4 rounded-lg border text-center">
+                        <div className={`w-10 h-10 rounded-full mx-auto mb-2 flex items-center justify-center ${telegramConfig.bot_info ? 'bg-green-500/20' : 'bg-muted'}`}>
+                          {telegramConfig.bot_info ? (
+                            <CheckCircle2 className="w-5 h-5 text-green-500" />
+                          ) : (
+                            <MessageSquare className="w-5 h-5 text-muted-foreground" />
+                          )}
+                        </div>
+                        <p className="font-medium">Bot Telegram</p>
+                        <p className="text-sm text-muted-foreground">
+                          {telegramConfig.bot_info ? 'Conectado' : 'Nao configurado'}
+                        </p>
+                      </div>
+                      <div className="p-4 rounded-lg border text-center">
+                        <div className={`w-10 h-10 rounded-full mx-auto mb-2 flex items-center justify-center ${tenant?.database_url ? 'bg-green-500/20' : 'bg-muted'}`}>
+                          {tenant?.database_url ? (
+                            <CheckCircle2 className="w-5 h-5 text-green-500" />
+                          ) : (
+                            <Database className="w-5 h-5 text-muted-foreground" />
+                          )}
+                        </div>
+                        <p className="font-medium">Banco de Dados</p>
+                        <p className="text-sm text-muted-foreground">
+                          {tenant?.database_url ? 'Configurado' : 'Usando padrao'}
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+
           </Tabs>
         )}
       </div>
