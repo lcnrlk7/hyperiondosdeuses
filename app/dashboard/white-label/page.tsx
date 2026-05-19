@@ -2810,22 +2810,26 @@ export default function WhiteLabelPage() {
                               onChange={(e) => setDomainAdmin(e.target.value)}
                               placeholder="admin.seudominio.com"
                             />
-                          <Button
-                            onClick={() => addDomain("admin")}
-                            disabled={addingDomain === "admin"}
-                          >
-                            {addingDomain === "admin" ? <Loader2 className="w-4 h-4 animate-spin" /> : "Adicionar"}
-                          </Button>
-                        </div>
-                        {tenant?.domain_admin && (
-                          <div className="mt-2 flex items-center gap-2">
-                            <CheckCircle2 className="w-4 h-4 text-green-500" />
-                            <span className="text-sm text-green-500">Dominio configurado</span>
-                            <Button variant="ghost" size="sm" onClick={() => removeDomain("admin")}>
-                              <Trash2 className="w-4 h-4 text-red-500" />
+                            <Button
+                              onClick={() => addDomain("admin")}
+                              disabled={addingDomain === "admin"}
+                            >
+                              {addingDomain === "admin" ? <Loader2 className="w-4 h-4 animate-spin" /> : "Adicionar"}
                             </Button>
                           </div>
-                        )}
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Este e o endereco que voce usara para gerenciar a plataforma.
+                          </p>
+                          {tenant?.domain_admin && (
+                            <div className="mt-2 flex items-center gap-2">
+                              <CheckCircle2 className="w-4 h-4 text-green-500" />
+                              <span className="text-sm text-green-500">Dominio configurado</span>
+                              <Button variant="ghost" size="sm" onClick={() => removeDomain("admin")}>
+                                <Trash2 className="w-4 h-4 text-red-500" />
+                              </Button>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
 
