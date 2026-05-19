@@ -2831,28 +2831,31 @@ export default function WhiteLabelPage() {
                           )}
                         </div>
                       </div>
-                    </div>
 
-                    <div className="p-4 rounded-lg bg-muted/20 border">
-                      <h4 className="font-semibold mb-2 flex items-center gap-2">
-                        <AlertCircle className="w-5 h-5 text-yellow-500" />
-                        Como configurar o DNS
-                      </h4>
-                      <ol className="text-sm text-muted-foreground space-y-2">
-                        <li>1. Acesse o painel do seu provedor de dominio</li>
-                        <li>2. Adicione um registro CNAME:</li>
-                        <li className="ml-4 font-mono bg-background p-2 rounded">
-                          Tipo: CNAME<br />
-                          Nome: app (ou admin)<br />
-                          Valor: cname.vercel-dns.com
-                        </li>
-                        <li>3. Aguarde a propagacao (ate 48h)</li>
-                        <li>4. O SSL sera gerado automaticamente</li>
-                      </ol>
+                      {/* Segunda coluna - Informacoes */}
+                      <div className="space-y-4">
+                        <div className="p-4 rounded-lg bg-muted/20 border">
+                          <h4 className="font-semibold mb-2 flex items-center gap-2">
+                            <AlertCircle className="w-5 h-5 text-yellow-500" />
+                            Como configurar o DNS
+                          </h4>
+                          <ol className="text-sm text-muted-foreground space-y-2">
+                            <li>1. Acesse o painel do seu provedor de dominio</li>
+                            <li>2. Adicione um registro CNAME:</li>
+                            <li className="ml-4 font-mono bg-background p-2 rounded">
+                              Tipo: CNAME<br />
+                              Nome: app (ou admin)<br />
+                              Valor: cname.vercel-dns.com
+                            </li>
+                            <li>3. Aguarde a propagacao (ate 48h)</li>
+                            <li>4. O SSL sera gerado automaticamente</li>
+                          </ol>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              </div>
             </TabsContent>
 
             {/* Aba Banco de Dados */}
