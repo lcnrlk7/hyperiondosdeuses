@@ -1,11 +1,17 @@
 import { NextRequest, NextResponse } from "next/server"
 import { neon } from "@neondatabase/serverless"
 
-const sql = neon(process.env.DATABASE_URL!)
+function getDb() {
+  if (!process.env.DATABASE_URL) {
+    throw new Error("DATABASE_URL not configured")
+  }
+  return neon(process.env.DATABASE_URL)
+}
 
 // POST - Criar tabela de tenants White Label
 export async function POST() {
   try {
+    const sql = getDb()
     // Criar tabela principal de tenants
     await sql`
       CREATE TABLE IF NOT EXISTS white_label_tenants (
@@ -129,6 +135,7 @@ export async function POST() {
 // GET - Verificar se tabelas existem
 export async function GET() {
   try {
+    const sql = getDb()
     const result = await sql`
       SELECT EXISTS (
         SELECT FROM information_schema.tables 

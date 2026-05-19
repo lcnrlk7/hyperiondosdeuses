@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from "next/server"
 import { neon } from "@neondatabase/serverless"
 
-const sql = neon(process.env.DATABASE_URL!)
+function getDb() {
+  if (!process.env.DATABASE_URL) {
+    throw new Error("DATABASE_URL not configured")
+  }
+  return neon(process.env.DATABASE_URL)
+}
 
 // Tipos de notificacao
 type NotificationType = 
@@ -113,6 +118,7 @@ function formatMessage(notification: NotificationData): string {
 // POST - Enviar notificacao
 export async function POST(request: NextRequest) {
   try {
+    const sql = getDb()
     const body = await request.json()
     const { tenant_id, notification } = body as { tenant_id: string; notification: NotificationData }
 

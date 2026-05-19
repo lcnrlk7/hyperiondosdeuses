@@ -4,7 +4,12 @@
 import { neon } from "@neondatabase/serverless"
 import { WhiteLabelTenant } from "./white-label"
 
-const sql = neon(process.env.DATABASE_URL!)
+function getDb() {
+  if (!process.env.DATABASE_URL) {
+    throw new Error("DATABASE_URL not configured")
+  }
+  return neon(process.env.DATABASE_URL)
+}
 
 // Cache simples em memoria para evitar consultas repetidas
 const tenantCache = new Map<string, { tenant: WhiteLabelTenant | null; timestamp: number }>()
@@ -18,6 +23,7 @@ export async function getTenantFromDomain(domain: string): Promise<WhiteLabelTen
   }
   
   try {
+    const sql = getDb()
     const result = await sql`
       SELECT * FROM white_label_tenants 
       WHERE (domain_app = ${domain} OR domain_admin = ${domain})

@@ -3,7 +3,13 @@ import { neon } from "@neondatabase/serverless"
 import { cookies } from "next/headers"
 import { jwtVerify } from "jose"
 
-const sql = neon(process.env.DATABASE_URL!)
+function getDb() {
+  if (!process.env.DATABASE_URL) {
+    throw new Error("DATABASE_URL not configured")
+  }
+  return neon(process.env.DATABASE_URL)
+}
+
 const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET || "fallback-secret-change-in-production"
 )
@@ -29,6 +35,7 @@ export async function GET() {
   }
   
   try {
+    const sql = getDb()
     const result = await sql`
       SELECT * FROM white_label_tenants WHERE user_id = ${userId} LIMIT 1
     `
@@ -53,6 +60,7 @@ export async function POST(request: NextRequest) {
   }
   
   try {
+    const sql = getDb()
     const body = await request.json()
     const { name, slug } = body
     
@@ -98,6 +106,7 @@ export async function PUT(request: NextRequest) {
   }
   
   try {
+    const sql = getDb()
     const body = await request.json()
     
     // Verificar se usuario tem tenant
@@ -167,6 +176,7 @@ export async function DELETE() {
   }
   
   try {
+    const sql = getDb()
     const result = await sql`
       SELECT id FROM white_label_tenants WHERE user_id = ${userId} LIMIT 1
     `

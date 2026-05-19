@@ -4,7 +4,13 @@ import { cookies } from "next/headers"
 import { jwtVerify } from "jose"
 import { addDomainToVercel, removeDomainFromVercel, checkDomainStatus } from "@/lib/white-label"
 
-const sql = neon(process.env.DATABASE_URL!)
+function getDb() {
+  if (!process.env.DATABASE_URL) {
+    throw new Error("DATABASE_URL not configured")
+  }
+  return neon(process.env.DATABASE_URL)
+}
+
 const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET || "fallback-secret-change-in-production"
 )
@@ -29,6 +35,7 @@ export async function POST(request: NextRequest) {
   }
   
   try {
+    const sql = getDb()
     const { domain, type } = await request.json()
     
     if (!domain || !type) {
@@ -104,6 +111,7 @@ export async function DELETE(request: NextRequest) {
   }
   
   try {
+    const sql = getDb()
     const { domain, type } = await request.json()
     
     if (!domain || !type) {

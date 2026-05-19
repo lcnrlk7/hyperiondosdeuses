@@ -3,7 +3,13 @@ import { neon } from "@neondatabase/serverless"
 import { cookies } from "next/headers"
 import { jwtVerify } from "jose"
 
-const sql = neon(process.env.DATABASE_URL!)
+function getDb() {
+  if (!process.env.DATABASE_URL) {
+    throw new Error("DATABASE_URL not configured")
+  }
+  return neon(process.env.DATABASE_URL)
+}
+
 const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET || "fallback-secret-change-in-production"
 )
@@ -28,6 +34,7 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    const sql = getDb()
     const { type } = await request.json() // "setup" ou "monthly"
     
     const tenants = await sql`
@@ -69,6 +76,7 @@ export async function GET() {
   }
 
   try {
+    const sql = getDb()
     const payments = await sql`
       SELECT * FROM white_label_payments 
       WHERE user_id = ${userId} 

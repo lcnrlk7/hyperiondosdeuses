@@ -2,7 +2,12 @@ import { NextRequest, NextResponse } from "next/server"
 import { cookies } from "next/headers"
 import { neon } from "@neondatabase/serverless"
 
-const sql = neon(process.env.DATABASE_URL!)
+function getDb() {
+  if (!process.env.DATABASE_URL) {
+    throw new Error("DATABASE_URL not configured")
+  }
+  return neon(process.env.DATABASE_URL)
+}
 
 // Verificar se e admin
 async function verifyAdmin(): Promise<boolean> {
@@ -26,6 +31,8 @@ export async function GET() {
   }
 
   try {
+    const sql = getDb()
+    
     // Buscar tenants com info do usuario
     const tenants = await sql`
       SELECT 
@@ -82,6 +89,7 @@ export async function PUT(request: NextRequest) {
   }
 
   try {
+    const sql = getDb()
     const { tenantId, action } = await request.json()
 
     if (!tenantId || !action) {
@@ -141,6 +149,7 @@ export async function DELETE(request: NextRequest) {
   }
 
   try {
+    const sql = getDb()
     const { tenantId } = await request.json()
 
     if (!tenantId) {

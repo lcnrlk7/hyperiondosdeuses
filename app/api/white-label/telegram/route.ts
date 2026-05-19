@@ -1,11 +1,17 @@
 import { NextRequest, NextResponse } from "next/server"
 import { neon } from "@neondatabase/serverless"
 
-const sql = neon(process.env.DATABASE_URL!)
+function getDb() {
+  if (!process.env.DATABASE_URL) {
+    throw new Error("DATABASE_URL not configured")
+  }
+  return neon(process.env.DATABASE_URL)
+}
 
 // GET - Buscar configuracao do Telegram
 export async function GET(request: NextRequest) {
   try {
+    const sql = getDb()
     const { searchParams } = new URL(request.url)
     const tenantId = searchParams.get("tenant_id")
 
@@ -34,6 +40,7 @@ export async function GET(request: NextRequest) {
 // POST - Salvar configuracao do Telegram
 export async function POST(request: NextRequest) {
   try {
+    const sql = getDb()
     const body = await request.json()
     const { tenant_id, telegram_config } = body
 
