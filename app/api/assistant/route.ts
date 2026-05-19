@@ -45,7 +45,6 @@ export async function POST(request: NextRequest) {
       model: xai('grok-3-fast'),
       system: SYSTEM_PROMPT,
       messages: messages,
-      maxTokens: 1000,
     })
 
     return result.toTextStreamResponse()

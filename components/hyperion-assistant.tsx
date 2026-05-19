@@ -3,7 +3,6 @@
 import { useState, useRef, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { ScrollArea } from "@/components/ui/scroll-area"
 import { X, Send, Loader2, Minimize2, Maximize2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import Image from "next/image"
@@ -192,7 +191,7 @@ export function HyperionAssistant() {
           {!isMinimized && (
             <>
               {/* Messages */}
-              <ScrollArea className="flex-1 p-4" ref={scrollRef}>
+              <div className="flex-1 overflow-y-auto p-4" ref={scrollRef}>
                 <div className="space-y-4">
                   {messages.map((message, index) => (
                     <div
@@ -231,7 +230,7 @@ export function HyperionAssistant() {
                     </div>
                   ))}
                 </div>
-              </ScrollArea>
+              </div>
 
               {/* Quick Questions (only show if few messages) */}
               {messages.length <= 2 && (
