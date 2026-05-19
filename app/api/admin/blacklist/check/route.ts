@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from "next/server"
 import { neon } from "@neondatabase/serverless"
 
+function getDb() {
+  if (!process.env.DATABASE_URL) {
+    throw new Error("DATABASE_URL not configured")
+  }
+  return neon(process.env.DATABASE_URL)
+}
+
 // Verifica se um valor esta na blacklist
 export async function POST(request: NextRequest) {
   try {
@@ -11,7 +18,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ blocked: false })
     }
 
-    const sql = neon(process.env.DATABASE_URL!)
+    const sql = getDb()
 
     // Verifica cada tipo separadamente para usar tagged template literals
     let blocked = false

@@ -1,10 +1,17 @@
 import { NextResponse } from "next/server"
 import { neon } from "@neondatabase/serverless"
 
+function getDb() {
+  if (!process.env.DATABASE_URL) {
+    throw new Error("DATABASE_URL not configured")
+  }
+  return neon(process.env.DATABASE_URL)
+}
+
 // Rota para criar as tabelas de blacklist (execute uma vez)
 export async function POST() {
   try {
-    const sql = neon(process.env.DATABASE_URL!)
+    const sql = getDb()
 
     // Tabela principal de blacklist
     await sql`
@@ -64,7 +71,7 @@ export async function POST() {
 // GET para verificar status
 export async function GET() {
   try {
-    const sql = neon(process.env.DATABASE_URL!)
+    const sql = getDb()
     
     const tables = await sql`
       SELECT table_name 

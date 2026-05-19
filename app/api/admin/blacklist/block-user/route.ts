@@ -2,6 +2,13 @@ import { NextRequest, NextResponse } from "next/server"
 import { neon } from "@neondatabase/serverless"
 import { verifyAdmin, accessDeniedResponse } from "@/lib/admin-auth"
 
+function getDb() {
+  if (!process.env.DATABASE_URL) {
+    throw new Error("DATABASE_URL not configured")
+  }
+  return neon(process.env.DATABASE_URL)
+}
+
 // GET - Busca usuarios para selecionar
 export async function GET(request: NextRequest) {
   const admin = await verifyAdmin()
@@ -15,7 +22,7 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const sql = neon(process.env.DATABASE_URL!)
+    const sql = getDb()
     
     const searchPattern = `%${search}%`
     
@@ -61,7 +68,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "user_id e reason sao obrigatorios" }, { status: 400 })
     }
 
-    const sql = neon(process.env.DATABASE_URL!)
+    const sql = getDb()
     
     // Buscar dados do usuario (tabela profiles)
     const userResult = await sql`

@@ -1,9 +1,16 @@
 import { NextResponse } from "next/server";
 import { neon } from "@neondatabase/serverless";
 
+function getDb() {
+  if (!process.env.DATABASE_URL) {
+    throw new Error("DATABASE_URL not configured")
+  }
+  return neon(process.env.DATABASE_URL)
+}
+
 export async function GET() {
   try {
-    const sql = neon(process.env.DATABASE_URL!);
+    const sql = getDb();
     const results: string[] = [];
 
     // Atualizar todas as rotas BLACK para 5% deposito + 5% saque
@@ -34,11 +41,6 @@ export async function GET() {
     `;
     results.push(`Rotas WHITE atualizadas: ${white.length}`);
 
-    // Limpar taxas personalizadas dos usuarios para usar as taxas da rota
-    // (apenas usuarios sem taxa custom definida pelo admin)
-    // Nao atualizamos diretamente pois as taxas vem da adquirente/rota
-    // O sistema ja busca automaticamente da rota quando custom_ esta NULL
-    
     // Verificar usuarios por rota
     const usersBlack = await sql`
       SELECT email FROM profiles WHERE LOWER(route_type) = 'black'

@@ -3,6 +3,13 @@ import { neon } from "@neondatabase/serverless"
 import { cookies } from "next/headers"
 import { jwtVerify } from "jose"
 
+function getDb() {
+  if (!process.env.DATABASE_URL) {
+    throw new Error("DATABASE_URL not configured")
+  }
+  return neon(process.env.DATABASE_URL)
+}
+
 const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET || "fallback-secret-change-in-production"
 )
@@ -15,7 +22,7 @@ async function ensureTablesExist() {
   if (tablesCreated) return
   
   try {
-    const sql = neon(process.env.DATABASE_URL!)
+    const sql = getDb()
     
     // Criar tabela blacklist
     await sql`
@@ -104,7 +111,7 @@ export async function GET(request: NextRequest) {
   const offset = parseInt(searchParams.get("offset") || "0")
 
   try {
-    const sql = neon(process.env.DATABASE_URL!)
+    const sql = getDb()
 
     // Query baseada nos filtros usando template literals
     let blocks
@@ -379,7 +386,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const sql = neon(process.env.DATABASE_URL!)
+    const sql = getDb()
 
     // Verifica se ja existe bloqueio ativo para este valor
     const existing = await sql`
@@ -450,7 +457,7 @@ export async function DELETE(request: NextRequest) {
       )
     }
 
-    const sql = neon(process.env.DATABASE_URL!)
+    const sql = getDb()
 
     // Busca o bloqueio antes de desativar
     const block = await sql`SELECT * FROM blacklist WHERE id = ${id}`
