@@ -90,7 +90,7 @@ export function Footer() {
                 </svg>
               </a>
               <Link
-                href="https://www.instagram.com/hyperion_pay/"
+                href="https://www.instagram.com/hyperionpay/"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-11 h-11 rounded-xl bg-gradient-to-br from-purple-600 via-pink-500 to-orange-400 flex items-center justify-center text-white hover:scale-110 hover:shadow-lg hover:shadow-pink-500/30 transition-all duration-300"
@@ -162,7 +162,7 @@ export function Footer() {
               </div>
             </a>
             <Link
-              href="https://www.instagram.com/hyperion_pay/"
+              href="https://www.instagram.com/hyperionpay/"
               target="_blank"
               rel="noopener noreferrer"
               className="group flex items-center gap-3 px-6 py-3 rounded-xl bg-gradient-to-r from-purple-600/20 via-pink-500/20 to-orange-400/20 border border-pink-500/30 hover:border-pink-500/60 hover:shadow-lg hover:shadow-pink-500/20 transition-all duration-300"
@@ -173,7 +173,7 @@ export function Footer() {
                 </svg>
               </div>
               <div className="text-left">
-                <span className="text-white font-medium">@hyperion_pay</span>
+                <span className="text-white font-medium">@hyperionpay</span>
                 <p className="text-xs text-muted-foreground">Instagram</p>
               </div>
             </Link>
