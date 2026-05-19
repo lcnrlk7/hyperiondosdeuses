@@ -1,8 +1,13 @@
 // Lib White Label - Gerenciamento de plataformas personalizadas
 import { neon } from "@neondatabase/serverless"
 
-// Conexao com banco central (seu banco)
-const centralSql = neon(process.env.DATABASE_URL!)
+// Conexao com banco central (seu banco) - lazy initialization
+function getCentralDb() {
+  if (!process.env.DATABASE_URL) {
+    throw new Error("DATABASE_URL not configured")
+  }
+  return neon(process.env.DATABASE_URL)
+}
 
 // Interface do Tenant White Label
 export interface WhiteLabelTenant {
@@ -35,6 +40,7 @@ export interface WhiteLabelTenant {
 // Buscar tenant pelo dominio
 export async function getTenantByDomain(domain: string): Promise<WhiteLabelTenant | null> {
   try {
+    const centralSql = getCentralDb()
     const result = await centralSql`
       SELECT * FROM white_label_tenants 
       WHERE (domain_app = ${domain} OR domain_admin = ${domain})
@@ -51,6 +57,7 @@ export async function getTenantByDomain(domain: string): Promise<WhiteLabelTenan
 // Buscar tenant pelo user_id
 export async function getTenantByUserId(userId: string): Promise<WhiteLabelTenant | null> {
   try {
+    const centralSql = getCentralDb()
     const result = await centralSql`
       SELECT * FROM white_label_tenants 
       WHERE user_id = ${userId}

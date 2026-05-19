@@ -4,7 +4,10 @@ let _sql: NeonQueryFunction<false, false> | null = null;
 
 function getSql() {
   if (!_sql) {
-    _sql = neon(process.env.DATABASE_URL!);
+    if (!process.env.DATABASE_URL) {
+      throw new Error("DATABASE_URL not configured")
+    }
+    _sql = neon(process.env.DATABASE_URL);
   }
   return _sql;
 }
