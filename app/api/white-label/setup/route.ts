@@ -77,10 +77,47 @@ export async function POST() {
         contract_accepted_at TIMESTAMP,
         contract_ip TEXT,
         
+        -- Configuracoes extras (JSONB)
+        features_config JSONB DEFAULT '{}',
+        seo_config JSONB DEFAULT '{}',
+        email_config JSONB DEFAULT '{}',
+        system_config JSONB DEFAULT '{}',
+        telegram_config JSONB DEFAULT '{}',
+        
+        -- Cores extras
+        accent_color TEXT DEFAULT '#FF5500',
+        success_color TEXT DEFAULT '#22C55E',
+        warning_color TEXT DEFAULT '#F59E0B',
+        error_color TEXT DEFAULT '#EF4444',
+        
         created_at TIMESTAMP DEFAULT NOW(),
         updated_at TIMESTAMP DEFAULT NOW()
       )
     `
+    
+    // Adicionar colunas que podem estar faltando em tabelas existentes
+    const alterColumns = [
+      { name: 'features_config', type: 'JSONB', default: "'{}'" },
+      { name: 'seo_config', type: 'JSONB', default: "'{}'" },
+      { name: 'email_config', type: 'JSONB', default: "'{}'" },
+      { name: 'system_config', type: 'JSONB', default: "'{}'" },
+      { name: 'telegram_config', type: 'JSONB', default: "'{}'" },
+      { name: 'accent_color', type: 'TEXT', default: "'#FF5500'" },
+      { name: 'success_color', type: 'TEXT', default: "'#22C55E'" },
+      { name: 'warning_color', type: 'TEXT', default: "'#F59E0B'" },
+      { name: 'error_color', type: 'TEXT', default: "'#EF4444'" },
+    ]
+    
+    for (const col of alterColumns) {
+      try {
+        await sql`
+          ALTER TABLE white_label_tenants 
+          ADD COLUMN IF NOT EXISTS ${sql.unsafe(col.name)} ${sql.unsafe(col.type)} DEFAULT ${sql.unsafe(col.default)}
+        `
+      } catch (e) {
+        // Coluna ja existe, ignorar
+      }
+    }
     
     // Indices
     await sql`CREATE INDEX IF NOT EXISTS idx_wl_tenants_user ON white_label_tenants(user_id)`
