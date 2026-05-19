@@ -37,7 +37,10 @@ import {
   Eye,
   Sparkles,
   Wallet,
-  Users
+  Users,
+  AlertCircle,
+  HelpCircle,
+  Info
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -312,17 +315,84 @@ const DEFAULT_TEXTS = {
 }
 
 const DEFAULT_FEATURES = {
-  enable_kyc: { label: "KYC Obrigatorio", enabled: true, description: "Exigir verificacao de identidade" },
-  enable_2fa: { label: "Autenticacao 2FA", enabled: false, description: "Permitir 2FA para usuarios" },
-  enable_api: { label: "Acesso a API", enabled: true, description: "Permitir integracao via API" },
-  enable_webhooks: { label: "Webhooks", enabled: true, description: "Notificacoes em tempo real" },
-  enable_affiliates: { label: "Sistema de Afiliados", enabled: false, description: "Programa de indicacao" },
-  enable_telegram_bot: { label: "Bot Telegram", enabled: false, description: "Notificacoes via Telegram" },
-  enable_pix_in: { label: "PIX Entrada", enabled: true, description: "Receber pagamentos via PIX" },
-  enable_pix_out: { label: "PIX Saida", enabled: true, description: "Saques via PIX" },
-  enable_boleto: { label: "Boleto", enabled: false, description: "Receber via boleto bancario" },
-  enable_credit_card: { label: "Cartao de Credito", enabled: false, description: "Receber via cartao" },
-  maintenance_mode: { label: "Modo Manutencao", enabled: false, description: "Desativar acesso temporariamente" },
+  enable_api: { 
+    label: "API de Integracao", 
+    enabled: true, 
+    description: "Permite integrar sua plataforma com outros sistemas via API REST",
+    tutorial: "A API permite que desenvolvedores conectem lojas virtuais, apps e sistemas externos. Com ela, voce pode criar cobrancas, consultar transacoes e automatizar processos."
+  },
+  enable_webhooks: { 
+    label: "Webhooks", 
+    enabled: true, 
+    description: "Notificacoes em tempo real para seu sistema",
+    tutorial: "Webhooks enviam notificacoes automaticas quando eventos acontecem (pagamento confirmado, saque aprovado, etc). Ideal para atualizar estoques, liberar acessos ou enviar emails automaticos."
+  },
+  enable_affiliates: { 
+    label: "Sistema de Afiliados", 
+    enabled: false, 
+    description: "Programa de indicacao com comissoes",
+    tutorial: "Permite que seus usuarios indiquem novos clientes e ganhem comissoes. Cada afiliado recebe um link unico para rastrear suas indicacoes e ganhos."
+  },
+  enable_telegram_bot: { 
+    label: "Bot Telegram", 
+    enabled: false, 
+    description: "Notificacoes e comandos via Telegram",
+    tutorial: "Integra com Telegram para enviar alertas de transacoes, saques e novos usuarios. O bot pode ser configurado para enviar para grupos ou usuarios especificos."
+  },
+  enable_pix_in: { 
+    label: "PIX Entrada", 
+    enabled: true, 
+    description: "Receber pagamentos via PIX",
+    tutorial: "Permite receber pagamentos instantaneos via PIX. O cliente escaneia o QR Code ou copia o codigo, e o pagamento e confirmado em segundos."
+  },
+  enable_pix_out: { 
+    label: "PIX Saida", 
+    enabled: true, 
+    description: "Transferencias e saques via PIX",
+    tutorial: "Permite que seus usuarios saquem seus saldos via PIX. As transferencias podem ser instantaneas ou programadas conforme suas configuracoes."
+  },
+  enable_boleto: { 
+    label: "Boleto Bancario", 
+    enabled: false, 
+    description: "Receber pagamentos via boleto",
+    tutorial: "Oferece boleto como opcao de pagamento. Ideal para clientes que preferem pagar em lotéricas ou bancos. O prazo de compensacao e de 1-3 dias uteis."
+  },
+  enable_split_payment: { 
+    label: "Split de Pagamento", 
+    enabled: false, 
+    description: "Dividir pagamentos automaticamente",
+    tutorial: "Divide automaticamente o valor de cada transacao entre multiplos recebedores. Ideal para marketplaces, franquias ou parcerias comerciais."
+  },
+  enable_recurring: { 
+    label: "Cobrancas Recorrentes", 
+    enabled: false, 
+    description: "Assinaturas e pagamentos mensais",
+    tutorial: "Crie planos de assinatura com cobranca automatica. Perfeito para SaaS, academias, clubes de assinatura e servicos mensais."
+  },
+  enable_refund: { 
+    label: "Estornos", 
+    enabled: true, 
+    description: "Permitir devolucao de pagamentos",
+    tutorial: "Permite devolver pagamentos total ou parcialmente. O estorno e processado automaticamente e o valor retorna para o pagador."
+  },
+  enable_checkout_transparent: { 
+    label: "Checkout Transparente", 
+    enabled: true, 
+    description: "Pagamento sem redirecionar cliente",
+    tutorial: "O cliente faz o pagamento sem sair do seu site. A experiencia e mais fluida e aumenta a taxa de conversao."
+  },
+  enable_multi_currency: { 
+    label: "Multi-Moeda", 
+    enabled: false, 
+    description: "Aceitar diferentes moedas",
+    tutorial: "Aceite pagamentos em diferentes moedas (USD, EUR, etc). A conversao e feita automaticamente com base nas cotacoes atuais."
+  },
+  maintenance_mode: { 
+    label: "Modo Manutencao", 
+    enabled: false, 
+    description: "Bloquear acesso temporariamente",
+    tutorial: "Ativa uma pagina de manutencao para todos os usuarios. Use quando precisar fazer atualizacoes ou correcoes na plataforma."
+  },
 }
 
 const DEFAULT_SEO = {
@@ -2615,81 +2685,131 @@ export default function WhiteLabelPage() {
 
             {/* Aba Recursos/Features */}
             <TabsContent value="features">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Recursos da Plataforma</CardTitle>
-                  <CardDescription>Ative ou desative funcionalidades especificas</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid md:grid-cols-2 gap-4">
-                    {Object.entries(features).map(([key, value]) => (
-                      <div key={key} className="flex items-center justify-between p-4 rounded-lg border">
-                        <div>
-                          <p className="font-medium text-foreground">{value.label}</p>
-                          <p className="text-sm text-muted-foreground">{value.description}</p>
+              <div className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Sparkles className="w-5 h-5 text-primary" />
+                      Recursos da Plataforma
+                    </CardTitle>
+                    <CardDescription>
+                      Ative ou desative funcionalidades especificas. Clique no icone de informacao para entender melhor cada recurso.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid md:grid-cols-2 gap-4">
+                      {Object.entries(features).map(([key, value]) => (
+                        <div key={key} className="p-4 rounded-lg border hover:border-primary/50 transition-colors">
+                          <div className="flex items-start justify-between mb-2">
+                            <div className="flex-1">
+                              <p className="font-semibold text-foreground">{value.label}</p>
+                              <p className="text-sm text-muted-foreground">{value.description}</p>
+                            </div>
+                            <Switch
+                              checked={value.enabled}
+                              onCheckedChange={() => toggleFeature(key)}
+                            />
+                          </div>
+                          {value.tutorial && (
+                            <div className="mt-3 p-3 rounded-lg bg-muted/50 border-l-4 border-primary/50">
+                              <p className="text-xs text-muted-foreground flex items-start gap-2">
+                                <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0 text-primary" />
+                                <span>{value.tutorial}</span>
+                              </p>
+                            </div>
+                          )}
                         </div>
-                        <Switch
-                          checked={value.enabled}
-                          onCheckedChange={() => toggleFeature(key)}
-                        />
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
 
-                  <div className="mt-6">
-                    <Button onClick={saveTenant} disabled={saving}>
-                      {saving && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
-                      Salvar Configuracoes
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+                    <div className="mt-6">
+                      <Button onClick={saveTenant} disabled={saving} className="w-full">
+                        {saving && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+                        Salvar Configuracoes de Recursos
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
             </TabsContent>
 
             {/* Aba Dominios */}
             <TabsContent value="dominio">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Dominios Personalizados</CardTitle>
-                  <CardDescription>Configure os dominios da sua plataforma</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="grid md:grid-cols-2 gap-6">
-                    <div className="space-y-4">
+              <div className="space-y-6">
+                {/* Tutorial de Dominios */}
+                <Card className="border-primary/30 bg-primary/5">
+                  <CardContent className="pt-6">
+                    <div className="flex gap-4">
+                      <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
+                        <HelpCircle className="w-5 h-5 text-primary" />
+                      </div>
                       <div>
-                        <Label>Dominio do App (usuarios)</Label>
-                        <div className="flex gap-2">
-                          <Input
-                            value={domainApp}
-                            onChange={(e) => setDomainApp(e.target.value)}
-                            placeholder="app.seudominio.com"
-                          />
-                          <Button
-                            onClick={() => addDomain("app")}
-                            disabled={addingDomain === "app"}
-                          >
-                            {addingDomain === "app" ? <Loader2 className="w-4 h-4 animate-spin" /> : "Adicionar"}
-                          </Button>
+                        <h3 className="font-semibold text-foreground mb-2">Como configurar seu dominio personalizado?</h3>
+                        <div className="text-sm text-muted-foreground space-y-2">
+                          <p><strong>1.</strong> Acesse o painel do seu provedor de dominio (Registro.br, GoDaddy, Cloudflare, etc)</p>
+                          <p><strong>2.</strong> Crie um registro CNAME apontando seu subdominio para: <code className="bg-muted px-2 py-0.5 rounded">cname.vercel-dns.com</code></p>
+                          <p><strong>3.</strong> Volte aqui e adicione o dominio. A verificacao pode levar ate 48h para propagar.</p>
+                          <p className="text-xs mt-2 text-yellow-600">Dica: Use subdominios como app.seudominio.com em vez do dominio raiz para facilitar a configuracao.</p>
                         </div>
-                        {tenant?.domain_app && (
-                          <div className="mt-2 flex items-center gap-2">
-                            <CheckCircle2 className="w-4 h-4 text-green-500" />
-                            <span className="text-sm text-green-500">Dominio configurado</span>
-                            <Button variant="ghost" size="sm" onClick={() => removeDomain("app")}>
-                              <Trash2 className="w-4 h-4 text-red-500" />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Globe className="w-5 h-5 text-primary" />
+                      Dominios Personalizados
+                    </CardTitle>
+                    <CardDescription>Configure os dominios da sua plataforma para ter sua propria marca</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div className="grid md:grid-cols-2 gap-6">
+                      <div className="space-y-4">
+                        <div>
+                          <Label className="flex items-center gap-2">
+                            Dominio do App (usuarios)
+                            <span className="text-xs text-muted-foreground">(onde seus clientes acessam)</span>
+                          </Label>
+                          <div className="flex gap-2 mt-1">
+                            <Input
+                              value={domainApp}
+                              onChange={(e) => setDomainApp(e.target.value)}
+                              placeholder="app.seudominio.com"
+                            />
+                            <Button
+                              onClick={() => addDomain("app")}
+                              disabled={addingDomain === "app"}
+                            >
+                              {addingDomain === "app" ? <Loader2 className="w-4 h-4 animate-spin" /> : "Adicionar"}
                             </Button>
                           </div>
-                        )}
-                      </div>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Este e o endereco que seus clientes usarao para acessar a plataforma.
+                          </p>
+                          {tenant?.domain_app && (
+                            <div className="mt-2 flex items-center gap-2">
+                              <CheckCircle2 className="w-4 h-4 text-green-500" />
+                              <span className="text-sm text-green-500">Dominio configurado</span>
+                              <Button variant="ghost" size="sm" onClick={() => removeDomain("app")}>
+                                <Trash2 className="w-4 h-4 text-red-500" />
+                              </Button>
+                            </div>
+                          )}
+                        </div>
 
-                      <div>
-                        <Label>Dominio do Admin (CEO)</Label>
-                        <div className="flex gap-2">
-                          <Input
-                            value={domainAdmin}
-                            onChange={(e) => setDomainAdmin(e.target.value)}
-                            placeholder="admin.seudominio.com"
-                          />
+                        <div>
+                          <Label className="flex items-center gap-2">
+                            Dominio do Admin (CEO)
+                            <span className="text-xs text-muted-foreground">(seu painel de gestao)</span>
+                          </Label>
+                          <div className="flex gap-2 mt-1">
+                            <Input
+                              value={domainAdmin}
+                              onChange={(e) => setDomainAdmin(e.target.value)}
+                              placeholder="admin.seudominio.com"
+                            />
                           <Button
                             onClick={() => addDomain("admin")}
                             disabled={addingDomain === "admin"}
