@@ -38,7 +38,12 @@ import {
   Wallet,
   Users,
   HelpCircle,
-  Info
+  Info,
+  Rocket,
+  Headphones as HeadphonesIcon,
+  TrendingUp,
+  Code,
+  Webhook
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -1082,95 +1087,301 @@ export default function WhiteLabelPage() {
           </Card>
         ) : showSubscription ? (
           // Tela de assinatura
-          <Card>
-            <CardHeader className="text-center">
-              <CardTitle className="text-3xl">Plataforma White Label</CardTitle>
-              <CardDescription className="text-lg">Sistema completo identico ao Hyperion Pay com sua marca</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-8">
-              {/* Precos */}
-              <div className="grid md:grid-cols-2 gap-4">
-                <div className="border rounded-xl p-6 text-center">
-                  <p className="text-muted-foreground mb-2">Taxa de Setup</p>
-                  <p className="text-4xl font-bold text-primary">R$ 350,00</p>
-                  <p className="text-sm text-muted-foreground">Pagamento unico</p>
-                </div>
-                <div className="border rounded-xl p-6 text-center">
-                  <p className="text-muted-foreground mb-2">Mensalidade</p>
-                  <p className="text-4xl font-bold text-primary">R$ 50,00</p>
-                  <p className="text-sm text-muted-foreground">Por mes</p>
-                </div>
-              </div>
+          <div className="space-y-8">
+            {/* Header */}
+            <div className="text-center space-y-4">
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+                Tenha Seu Proprio Gateway de Pagamentos
+              </h1>
+              <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+                Sistema completo identico ao Hyperion Pay com sua marca, seu dominio e sua identidade visual. 
+                Tudo configurado e pronto para usar.
+              </p>
+            </div>
 
-              {/* Beneficios */}
-              <div>
-                <h3 className="font-semibold mb-4">O que esta incluso:</h3>
-                <div className="grid md:grid-cols-2 gap-3">
+            {/* Precos */}
+            <div className="grid md:grid-cols-2 gap-6 max-w-2xl mx-auto">
+              <Card className="border-2 border-primary/30 bg-primary/5">
+                <CardContent className="pt-6 text-center">
+                  <p className="text-muted-foreground mb-2">Taxa de Setup</p>
+                  <p className="text-5xl font-bold text-primary">R$ 350</p>
+                  <p className="text-sm text-muted-foreground mt-1">Pagamento unico</p>
+                </CardContent>
+              </Card>
+              <Card className="border-2 border-muted">
+                <CardContent className="pt-6 text-center">
+                  <p className="text-muted-foreground mb-2">Mensalidade</p>
+                  <p className="text-5xl font-bold text-foreground">R$ 50</p>
+                  <p className="text-sm text-muted-foreground mt-1">Por mes</p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* O que voce recebe */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-2xl text-center">O Que Voce Recebe</CardTitle>
+                <CardDescription className="text-center">Sistema completo pronto para operar</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid md:grid-cols-3 gap-6">
+                  {/* Coluna 1 - Gateway */}
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2 text-primary font-semibold">
+                      <Wallet className="w-5 h-5" />
+                      <span>Gateway Completo</span>
+                    </div>
+                    <div className="space-y-2 pl-7">
+                      {[
+                        "Pagamentos via PIX",
+                        "QR Code dinamico",
+                        "PIX Copia e Cola",
+                        "Confirmacao automatica",
+                        "Sistema de saques",
+                        "Depositos instantaneos",
+                        "Transferencias internas",
+                        "Boleto bancario",
+                        "Split de pagamento",
+                        "Cobrancas recorrentes",
+                      ].map((item, i) => (
+                        <div key={i} className="flex items-center gap-2 text-sm">
+                          <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0" />
+                          <span className="text-muted-foreground">{item}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Coluna 2 - Paineis */}
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2 text-primary font-semibold">
+                      <LayoutDashboard className="w-5 h-5" />
+                      <span>Paineis Administrativos</span>
+                    </div>
+                    <div className="space-y-2 pl-7">
+                      {[
+                        "Painel do Usuario (App)",
+                        "Painel CEO/Admin",
+                        "Dashboard de metricas",
+                        "Relatorios financeiros",
+                        "Gestao de usuarios",
+                        "Sistema de KYC",
+                        "Aprovacao de saques",
+                        "Historico de transacoes",
+                        "Extrato detalhado",
+                        "Graficos e estatisticas",
+                      ].map((item, i) => (
+                        <div key={i} className="flex items-center gap-2 text-sm">
+                          <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0" />
+                          <span className="text-muted-foreground">{item}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Coluna 3 - Personalizacao */}
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2 text-primary font-semibold">
+                      <Palette className="w-5 h-5" />
+                      <span>Personalizacao Total</span>
+                    </div>
+                    <div className="space-y-2 pl-7">
+                      {[
+                        "Sua marca e logo",
+                        "Cores personalizadas",
+                        "Dominio proprio",
+                        "Favicon customizado",
+                        "Textos editaveis",
+                        "Tema claro/escuro",
+                        "Email com sua marca",
+                        "Checkout personalizado",
+                        "SEO configuravel",
+                        "Termos de uso proprios",
+                      ].map((item, i) => (
+                        <div key={i} className="flex items-center gap-2 text-sm">
+                          <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0" />
+                          <span className="text-muted-foreground">{item}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Recursos Tecnicos */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-xl">Recursos Tecnicos e Integracoes</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid md:grid-cols-4 gap-4">
                   {[
-                    "Painel de Usuario completo",
-                    "Painel de CEO/Admin completo",
-                    "Dominio personalizado",
-                    "Logo e cores personalizadas",
-                    "Banco de dados separado",
-                    "Sistema de checkout",
-                    "API completa",
-                    "Webhooks",
-                    "Sistema de saques",
-                    "Relatorios",
-                    "Suporte",
-                    "Atualizacoes automaticas",
+                    { icon: Globe, title: "Dominio Automatico", desc: "Configuracao automatica de DNS e SSL" },
+                    { icon: Database, title: "Banco Isolado", desc: "Seus dados separados e seguros" },
+                    { icon: MessageSquare, title: "Bot Telegram", desc: "Notificacoes em tempo real" },
+                    { icon: Code, title: "API Completa", desc: "Integre com qualquer sistema" },
+                    { icon: Webhook, title: "Webhooks", desc: "Receba eventos automaticamente" },
+                    { icon: Shield, title: "Seguranca", desc: "Criptografia e protecao total" },
+                    { icon: Zap, title: "Alta Performance", desc: "Infraestrutura otimizada" },
+                    { icon: RefreshCw, title: "Atualizacoes", desc: "Novas funcoes automaticas" },
                   ].map((item, i) => (
-                    <div key={i} className="flex items-center gap-2">
-                      <CheckCircle2 className="w-5 h-5 text-green-500" />
-                      <span className="text-foreground">{item}</span>
+                    <div key={i} className="p-4 rounded-lg border bg-muted/20 hover:bg-muted/40 transition-colors">
+                      <item.icon className="w-8 h-8 text-primary mb-2" />
+                      <h4 className="font-semibold text-sm">{item.title}</h4>
+                      <p className="text-xs text-muted-foreground">{item.desc}</p>
                     </div>
                   ))}
                 </div>
-              </div>
+              </CardContent>
+            </Card>
 
-              {/* Contrato */}
-              <div className="border rounded-xl p-6 bg-muted/20">
-                <div className="flex items-center gap-2 mb-4">
-                  <FileText className="w-5 h-5" />
-                  <h3 className="font-semibold">Contrato de Servico</h3>
+            {/* Diferenciais */}
+            <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/30">
+              <CardContent className="pt-6">
+                <div className="grid md:grid-cols-3 gap-6 text-center">
+                  <div>
+                    <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center mx-auto mb-3">
+                      <Rocket className="w-8 h-8 text-primary" />
+                    </div>
+                    <h4 className="font-semibold mb-1">Pronto em 24h</h4>
+                    <p className="text-sm text-muted-foreground">Apos aprovacao, sua plataforma fica pronta em ate 24 horas</p>
+                  </div>
+                  <div>
+                    <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center mx-auto mb-3">
+                      <HeadphonesIcon className="w-8 h-8 text-primary" />
+                    </div>
+                    <h4 className="font-semibold mb-1">Suporte Dedicado</h4>
+                    <p className="text-sm text-muted-foreground">Equipe pronta para ajudar via ticket e Telegram</p>
+                  </div>
+                  <div>
+                    <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center mx-auto mb-3">
+                      <TrendingUp className="w-8 h-8 text-primary" />
+                    </div>
+                    <h4 className="font-semibold mb-1">Escale Seu Negocio</h4>
+                    <p className="text-sm text-muted-foreground">Sem limite de usuarios, transacoes ou faturamento</p>
+                  </div>
                 </div>
-                <div className="h-40 overflow-y-auto text-sm text-muted-foreground bg-background p-4 rounded-lg border mb-4">
-                  <p className="font-semibold mb-2">TERMOS E CONDICOES DE USO - WHITE LABEL HYPERION PAY</p>
-                  <p className="mb-2">1. OBJETO</p>
-                  <p className="mb-2">O presente contrato tem por objeto a licenca de uso da plataforma White Label Hyperion Pay, permitindo ao CONTRATANTE utilizar o sistema com sua propria marca e identidade visual.</p>
-                  <p className="mb-2">2. VALORES E PAGAMENTO</p>
-                  <p className="mb-2">2.1. Taxa de Setup: R$ 350,00 (trezentos e cinquenta reais) - pagamento unico.</p>
-                  <p className="mb-2">2.2. Mensalidade: R$ 50,00 (cinquenta reais) - pagamento mensal.</p>
-                  <p className="mb-2">3. OBRIGACOES DO CONTRATANTE</p>
-                  <p className="mb-2">3.1. Manter os pagamentos em dia.</p>
-                  <p className="mb-2">3.2. Nao utilizar a plataforma para atividades ilegais.</p>
-                  <p className="mb-2">3.3. Respeitar as leis de protecao de dados dos usuarios.</p>
-                  <p className="mb-2">4. CANCELAMENTO</p>
-                  <p className="mb-2">4.1. O contratante pode cancelar a qualquer momento.</p>
-                  <p className="mb-2">4.2. Nao ha reembolso de valores ja pagos.</p>
-                  <p className="mb-2">5. SUPORTE</p>
-                  <p>5.1. Suporte tecnico disponivel via ticket.</p>
+              </CardContent>
+            </Card>
+
+            {/* Configuracoes Disponiveis */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-xl">Todas as Configuracoes Disponiveis</CardTitle>
+                <CardDescription>Apos a ativacao, voce tera acesso a todas essas abas de configuracao:</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                  {[
+                    { icon: Settings, name: "Geral", desc: "Nome, logo, favicon" },
+                    { icon: Palette, name: "Visual", desc: "Cores e tema" },
+                    { icon: Type, name: "Textos", desc: "Textos customizaveis" },
+                    { icon: LayoutDashboard, name: "Modulos", desc: "PIX, boleto, saque" },
+                    { icon: Shield, name: "Sistema", desc: "Limites e taxas" },
+                    { icon: Sparkles, name: "Recursos", desc: "Split, recorrencia" },
+                    { icon: MessageSquare, name: "Telegram", desc: "Bot de alertas" },
+                    { icon: Globe, name: "Dominio", desc: "Dominio proprio" },
+                    { icon: Database, name: "Banco", desc: "Banco isolado" },
+                    { icon: Eye, name: "SEO", desc: "Otimizacao Google" },
+                    { icon: Mail, name: "Email", desc: "SMTP proprio" },
+                    { icon: ExternalLink, name: "Links", desc: "Todos os acessos" },
+                  ].map((item, i) => (
+                    <div key={i} className="p-3 rounded-lg border text-center hover:border-primary/50 transition-colors">
+                      <item.icon className="w-6 h-6 text-primary mx-auto mb-1" />
+                      <p className="font-medium text-sm">{item.name}</p>
+                      <p className="text-xs text-muted-foreground">{item.desc}</p>
+                    </div>
+                  ))}
                 </div>
+              </CardContent>
+            </Card>
+
+            {/* Contrato */}
+            <Card>
+              <CardHeader>
                 <div className="flex items-center gap-2">
+                  <FileText className="w-5 h-5" />
+                  <CardTitle>Contrato de Servico</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="h-48 overflow-y-auto text-sm text-muted-foreground bg-muted/20 p-4 rounded-lg border">
+                  <p className="font-semibold mb-3 text-foreground">TERMOS E CONDICOES DE USO - WHITE LABEL HYPERION PAY</p>
+                  
+                  <p className="font-medium text-foreground mt-3">1. OBJETO</p>
+                  <p className="mb-2">O presente contrato tem por objeto a licenca de uso da plataforma White Label Hyperion Pay, permitindo ao CONTRATANTE utilizar o sistema com sua propria marca e identidade visual.</p>
+                  
+                  <p className="font-medium text-foreground mt-3">2. O QUE ESTA INCLUSO</p>
+                  <p className="mb-2">2.1. Sistema completo de gateway de pagamentos (PIX, boleto, transferencias)</p>
+                  <p className="mb-2">2.2. Painel administrativo (CEO) para gestao completa</p>
+                  <p className="mb-2">2.3. Painel do usuario (App) para clientes finais</p>
+                  <p className="mb-2">2.4. Dominio personalizado com SSL gratuito</p>
+                  <p className="mb-2">2.5. Personalizacao de marca (logo, cores, textos)</p>
+                  <p className="mb-2">2.6. Banco de dados isolado</p>
+                  <p className="mb-2">2.7. API completa para integracoes</p>
+                  <p className="mb-2">2.8. Bot do Telegram para notificacoes</p>
+                  <p className="mb-2">2.9. Suporte tecnico</p>
+                  <p className="mb-2">2.10. Atualizacoes automaticas do sistema</p>
+                  
+                  <p className="font-medium text-foreground mt-3">3. VALORES E PAGAMENTO</p>
+                  <p className="mb-2">3.1. Taxa de Setup: R$ 350,00 (trezentos e cinquenta reais) - pagamento unico para ativacao.</p>
+                  <p className="mb-2">3.2. Mensalidade: R$ 50,00 (cinquenta reais) - pagamento mensal para manutencao e suporte.</p>
+                  <p className="mb-2">3.3. Os pagamentos devem ser realizados via PIX.</p>
+                  
+                  <p className="font-medium text-foreground mt-3">4. OBRIGACOES DO CONTRATANTE</p>
+                  <p className="mb-2">4.1. Manter os pagamentos em dia.</p>
+                  <p className="mb-2">4.2. Nao utilizar a plataforma para atividades ilegais.</p>
+                  <p className="mb-2">4.3. Respeitar as leis de protecao de dados dos usuarios (LGPD).</p>
+                  <p className="mb-2">4.4. Nao realizar engenharia reversa do sistema.</p>
+                  
+                  <p className="font-medium text-foreground mt-3">5. PRAZO E CANCELAMENTO</p>
+                  <p className="mb-2">5.1. O contrato e por tempo indeterminado.</p>
+                  <p className="mb-2">5.2. O contratante pode cancelar a qualquer momento com aviso previo de 30 dias.</p>
+                  <p className="mb-2">5.3. Nao ha reembolso de valores ja pagos.</p>
+                  <p className="mb-2">5.4. Em caso de inadimplencia, o servico sera suspenso apos 5 dias.</p>
+                  
+                  <p className="font-medium text-foreground mt-3">6. SUPORTE</p>
+                  <p className="mb-2">6.1. Suporte tecnico disponivel via ticket e Telegram.</p>
+                  <p className="mb-2">6.2. Tempo de resposta de ate 24 horas uteis.</p>
+                </div>
+                
+                <div className="flex items-center gap-3 p-4 rounded-lg border bg-muted/10">
                   <Switch
                     checked={acceptContract}
                     onCheckedChange={setAcceptContract}
+                    id="accept-contract"
                   />
-                  <Label>Li e aceito os termos do contrato</Label>
+                  <Label htmlFor="accept-contract" className="cursor-pointer">
+                    Li, compreendi e aceito todos os termos do contrato acima
+                  </Label>
                 </div>
-              </div>
 
-              <Button 
-                className="w-full" 
-                size="lg"
-                onClick={acceptContractAndPay}
-                disabled={!acceptContract || processingPayment}
-              >
-                {processingPayment && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
-                Aceitar Contrato e Pagar R$ 350,00
-              </Button>
-            </CardContent>
-          </Card>
+                <Button 
+                  className="w-full h-14 text-lg" 
+                  size="lg"
+                  onClick={acceptContractAndPay}
+                  disabled={!acceptContract || processingPayment}
+                >
+                  {processingPayment ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                      Processando...
+                    </>
+                  ) : (
+                    <>
+                      <Wallet className="w-5 h-5 mr-2" />
+                      Aceitar e Pagar R$ 350,00 via PIX
+                    </>
+                  )}
+                </Button>
+
+                <p className="text-center text-sm text-muted-foreground">
+                  Apos o pagamento, sua plataforma sera ativada em ate 24 horas.
+                </p>
+              </CardContent>
+            </Card>
+          </div>
         ) : (
           // Painel de configuracoes
           <Tabs value={activeTab} onValueChange={setActiveTab}>
