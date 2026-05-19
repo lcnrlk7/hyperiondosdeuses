@@ -1766,7 +1766,7 @@ export default function WhiteLabelPage() {
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                      <CreditCard className="w-5 h-5 text-primary" />
+                      <Wallet className="w-5 h-5 text-primary" />
                       Checkout e Pagamento
                     </CardTitle>
                     <CardDescription>Textos exibidos nas telas de pagamento</CardDescription>
@@ -2289,7 +2289,7 @@ export default function WhiteLabelPage() {
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                      <CreditCard className="w-5 h-5 text-primary" />
+                      <Zap className="w-5 h-5 text-primary" />
                       Limites de Transacao
                     </CardTitle>
                     <CardDescription>Configure os limites de depositos e transacoes</CardDescription>
