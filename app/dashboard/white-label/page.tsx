@@ -709,6 +709,7 @@ export default function WhiteLabelPage() {
           seo_config: seoConfig,
           email_config: emailConfig,
           system_config: systemConfig,
+          telegram_config: telegramConfig,
         })
       })
       

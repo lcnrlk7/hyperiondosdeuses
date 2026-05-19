@@ -74,6 +74,13 @@ export async function POST(request: NextRequest) {
           amount: amount,
           tenant_id: tenant[0].id
         })
+      } else {
+        // Ja pagou setup - apenas retorna sucesso
+        return NextResponse.json({ 
+          success: true, 
+          message: "Contrato ja aceito e setup ja pago.",
+          setup_paid: true
+        })
       }
     } else {
       // Criar novo tenant
@@ -108,8 +115,6 @@ export async function POST(request: NextRequest) {
         tenant_id: tenantId
       })
     }
-
-    return NextResponse.json({ success: true, message: "Contrato aceito" })
   } catch (error: any) {
     console.error("[White Label Contract] Erro:", error)
     return NextResponse.json({ error: error.message }, { status: 500 })
