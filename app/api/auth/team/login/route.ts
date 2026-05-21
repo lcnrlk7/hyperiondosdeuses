@@ -13,6 +13,8 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const { email, password } = body
+    
+    console.log("[v0] CEO Login attempt for email:", email)
 
     if (!email || !password) {
       return NextResponse.json(
@@ -26,9 +28,10 @@ export async function POST(request: NextRequest) {
     try {
       await sql`SELECT 1 FROM admin_team LIMIT 1`
       tableExists = true
+      console.log("[v0] admin_team table exists")
     } catch {
       // Tabela nao existe, vamos criar
-      console.log("[v0] Creating admin_team table...")
+      console.log("[v0] admin_team table does not exist, creating...")
       try {
         await sql`
           CREATE TABLE IF NOT EXISTS admin_team (
@@ -58,6 +61,7 @@ export async function POST(request: NextRequest) {
           INNER JOIN profiles p ON p.id = at.user_id
           WHERE p.email = ${email}
         `
+        console.log("[v0] admin_team query result count:", result.length)
       } catch (e) {
         console.error("[v0] Error querying admin_team:", e)
       }
@@ -65,57 +69,66 @@ export async function POST(request: NextRequest) {
 
     // Se nao encontrou na admin_team, verificar se e um admin na tabela profiles
     if (result.length === 0) {
+      console.log("[v0] Not found in admin_team, checking profiles...")
       try {
-        // Primeiro tenta buscar com role admin/ceo/owner
-        let profileResult = await sql`
-          SELECT id, name, email, password_hash, role 
+        // Busca qualquer usuario com esse email
+        const profileResult = await sql`
+          SELECT id, name, email, password_hash, role, is_active, is_blocked
           FROM profiles 
-          WHERE email = ${email} AND role IN ('admin', 'ceo', 'owner')
+          WHERE email = ${email}
         `
         
-        // Se nao encontrou, busca qualquer usuario com esse email (para permitir primeiro login)
-        if (profileResult.length === 0) {
-          profileResult = await sql`
-            SELECT id, name, email, password_hash, role 
-            FROM profiles 
-            WHERE email = ${email}
-          `
-          
-          // Se encontrou mas nao e admin, verificar se e o primeiro usuario (owner)
-          if (profileResult.length > 0) {
-            const countResult = await sql`SELECT COUNT(*) as total FROM profiles`
-            const totalUsers = parseInt(countResult[0]?.total || '0')
-            
-            // Se e um dos primeiros usuarios ou tem role especial, permite
-            if (totalUsers <= 5 || ['admin', 'ceo', 'owner', 'support'].includes(profileResult[0].role)) {
-              // Atualiza para admin se ainda nao for
-              if (!['admin', 'ceo', 'owner'].includes(profileResult[0].role)) {
-                try {
-                  await sql`UPDATE profiles SET role = 'admin' WHERE id = ${profileResult[0].id}`
-                  profileResult[0].role = 'admin'
-                } catch (e) {
-                  console.error("[v0] Error updating role:", e)
-                }
-              }
-            } else {
-              profileResult = [] // Nao permite login
-            }
-          }
-        }
+        console.log("[v0] profiles query result count:", profileResult.length)
         
         if (profileResult.length > 0) {
           const profile = profileResult[0]
           
+          console.log("[v0] Profile found:", { 
+            id: profile.id, 
+            email: profile.email, 
+            role: profile.role,
+            is_active: profile.is_active, 
+            is_blocked: profile.is_blocked,
+            hasPasswordHash: !!profile.password_hash
+          })
+          
+          // Verificar se conta esta ativa
+          if (!profile.is_active) {
+            return NextResponse.json(
+              { error: 'Conta desativada' },
+              { status: 403 }
+            )
+          }
+          
+          if (profile.is_blocked) {
+            return NextResponse.json(
+              { error: 'Conta bloqueada' },
+              { status: 403 }
+            )
+          }
+          
           // Verificar senha
+          if (!profile.password_hash) {
+            console.log("[v0] No password_hash for profile")
+            return NextResponse.json(
+              { error: 'Erro na conta. Contate o suporte.' },
+              { status: 500 }
+            )
+          }
+          
           const isValid = await bcrypt.compare(password, profile.password_hash)
+          console.log("[v0] Password verification result:", isValid)
+          
           if (!isValid) {
             return NextResponse.json(
-              { error: 'Credenciais invalidas' },
+              { error: 'Email ou senha incorretos' },
               { status: 401 }
             )
           }
           
-          // Criar token JWT para admin
+          // Login bem-sucedido - criar token JWT
+          console.log("[v0] CEO Login successful for:", email)
+          
           const token = await new SignJWT({
             id: profile.id,
             email: profile.email,
@@ -155,13 +168,15 @@ export async function POST(request: NextRequest) {
         console.error("[v0] Error checking profiles for admin:", e)
       }
       
+      console.log("[v0] No user found with email:", email)
       return NextResponse.json(
-        { error: 'Credenciais invalidas' },
+        { error: 'Email ou senha incorretos' },
         { status: 401 }
       )
     }
 
     const member = result[0]
+    console.log("[v0] admin_team member found:", { id: member.id, email: member.email, role: member.role })
 
     // Verificar se esta ativo
     if (!member.is_active) {
@@ -173,9 +188,11 @@ export async function POST(request: NextRequest) {
 
     // Verificar senha
     const isValid = await bcrypt.compare(password, member.password_hash)
+    console.log("[v0] admin_team password verification:", isValid)
+    
     if (!isValid) {
       return NextResponse.json(
-        { error: 'Credenciais invalidas' },
+        { error: 'Email ou senha incorretos' },
         { status: 401 }
       )
     }
