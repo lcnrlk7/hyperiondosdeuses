@@ -64,45 +64,60 @@ export function generateBackupCodes(count: number = 8): string[] {
 
 // Verificar codigo de backup
 export async function verifyBackupCode(userId: string, code: string): Promise<boolean> {
-  const result = await sql`
-    SELECT backup_codes FROM two_factor_auth WHERE user_id = ${userId}
-  `;
+  try {
+    const result = await sql`
+      SELECT backup_codes FROM two_factor_auth WHERE user_id = ${userId}
+    `;
 
-  if (result.length === 0 || !result[0].backup_codes) {
+    if (result.length === 0 || !result[0].backup_codes) {
+      return false;
+    }
+
+    const backupCodes: string[] = result[0].backup_codes;
+    const normalizedCode = code.toUpperCase().replace(/\s/g, "");
+    const index = backupCodes.findIndex(c => c.replace("-", "") === normalizedCode.replace("-", ""));
+
+    if (index === -1) {
+      return false;
+    }
+
+    // Remover codigo usado
+    backupCodes.splice(index, 1);
+    await sql`
+      UPDATE two_factor_auth SET backup_codes = ${backupCodes} WHERE user_id = ${userId}
+    `;
+
+    return true;
+  } catch (error) {
+    console.error("[v0] Error verifying backup code:", error);
     return false;
   }
-
-  const backupCodes: string[] = result[0].backup_codes;
-  const normalizedCode = code.toUpperCase().replace(/\s/g, "");
-  const index = backupCodes.findIndex(c => c.replace("-", "") === normalizedCode.replace("-", ""));
-
-  if (index === -1) {
-    return false;
-  }
-
-  // Remover codigo usado
-  backupCodes.splice(index, 1);
-  await sql`
-    UPDATE two_factor_auth SET backup_codes = ${backupCodes} WHERE user_id = ${userId}
-  `;
-
-  return true;
 }
 
 // Verificar se 2FA esta ativado para usuario
 export async function is2FAEnabled(userId: string): Promise<boolean> {
-  const result = await sql`
-    SELECT is_enabled FROM two_factor_auth WHERE user_id = ${userId}
-  `;
-  return result.length > 0 && result[0].is_enabled === true;
+  try {
+    const result = await sql`
+      SELECT is_enabled FROM two_factor_auth WHERE user_id = ${userId}
+    `;
+    return result.length > 0 && result[0].is_enabled === true;
+  } catch (error) {
+    console.error("[v0] Error checking 2FA status:", error);
+    return false; // Se der erro (tabela nao existe), assume que 2FA nao esta ativado
+  }
 }
 
 // Obter secret do usuario
 export async function getUserSecret(userId: string): Promise<string | null> {
-  const result = await sql`
-    SELECT secret FROM two_factor_auth WHERE user_id = ${userId} AND is_enabled = true
-  `;
-  return result.length > 0 ? result[0].secret : null;
+  try {
+    const result = await sql`
+      SELECT secret FROM two_factor_auth WHERE user_id = ${userId} AND is_enabled = true
+    `;
+    return result.length > 0 ? result[0].secret : null;
+  } catch (error) {
+    console.error("[v0] Error getting user secret:", error);
+    return null;
+  }
 }
 
 // Iniciar setup de 2FA (gerar secret mas nao ativar ainda)
