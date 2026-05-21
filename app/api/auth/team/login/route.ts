@@ -66,11 +66,42 @@ export async function POST(request: NextRequest) {
     // Se nao encontrou na admin_team, verificar se e um admin na tabela profiles
     if (result.length === 0) {
       try {
-        const profileResult = await sql`
+        // Primeiro tenta buscar com role admin/ceo/owner
+        let profileResult = await sql`
           SELECT id, name, email, password_hash, role 
           FROM profiles 
           WHERE email = ${email} AND role IN ('admin', 'ceo', 'owner')
         `
+        
+        // Se nao encontrou, busca qualquer usuario com esse email (para permitir primeiro login)
+        if (profileResult.length === 0) {
+          profileResult = await sql`
+            SELECT id, name, email, password_hash, role 
+            FROM profiles 
+            WHERE email = ${email}
+          `
+          
+          // Se encontrou mas nao e admin, verificar se e o primeiro usuario (owner)
+          if (profileResult.length > 0) {
+            const countResult = await sql`SELECT COUNT(*) as total FROM profiles`
+            const totalUsers = parseInt(countResult[0]?.total || '0')
+            
+            // Se e um dos primeiros usuarios ou tem role especial, permite
+            if (totalUsers <= 5 || ['admin', 'ceo', 'owner', 'support'].includes(profileResult[0].role)) {
+              // Atualiza para admin se ainda nao for
+              if (!['admin', 'ceo', 'owner'].includes(profileResult[0].role)) {
+                try {
+                  await sql`UPDATE profiles SET role = 'admin' WHERE id = ${profileResult[0].id}`
+                  profileResult[0].role = 'admin'
+                } catch (e) {
+                  console.error("[v0] Error updating role:", e)
+                }
+              }
+            } else {
+              profileResult = [] // Nao permite login
+            }
+          }
+        }
         
         if (profileResult.length > 0) {
           const profile = profileResult[0]
