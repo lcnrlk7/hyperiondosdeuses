@@ -16,29 +16,123 @@ export async function POST(request: NextRequest) {
 
     if (!email || !password) {
       return NextResponse.json(
-        { error: 'Email e senha são obrigatórios' },
+        { error: 'Email e senha sao obrigatorios' },
         { status: 400 }
       )
     }
 
-    // Buscar membro da equipe - busca na tabela admin_team vinculada a profiles
-    const result = await sql`
-      SELECT at.id, p.name, p.email, p.password_hash, at.role, at.permissions, at.is_active
-      FROM admin_team at
-      INNER JOIN profiles p ON p.id = at.user_id
-      WHERE p.email = ${email}
-    `
+    // Primeiro verificar se a tabela admin_team existe
+    let tableExists = false
+    try {
+      await sql`SELECT 1 FROM admin_team LIMIT 1`
+      tableExists = true
+    } catch {
+      // Tabela nao existe, vamos criar
+      console.log("[v0] Creating admin_team table...")
+      try {
+        await sql`
+          CREATE TABLE IF NOT EXISTS admin_team (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            user_id UUID NOT NULL REFERENCES profiles(id),
+            role TEXT NOT NULL DEFAULT 'support',
+            permissions JSONB DEFAULT '[]',
+            is_active BOOLEAN DEFAULT true,
+            created_at TIMESTAMP DEFAULT NOW(),
+            updated_at TIMESTAMP DEFAULT NOW()
+          )
+        `
+        tableExists = true
+      } catch (e) {
+        console.error("[v0] Error creating admin_team table:", e)
+      }
+    }
 
+    // Buscar membro da equipe - busca na tabela admin_team vinculada a profiles
+    let result: any[] = []
+    
+    if (tableExists) {
+      try {
+        result = await sql`
+          SELECT at.id, p.name, p.email, p.password_hash, at.role, at.permissions, at.is_active
+          FROM admin_team at
+          INNER JOIN profiles p ON p.id = at.user_id
+          WHERE p.email = ${email}
+        `
+      } catch (e) {
+        console.error("[v0] Error querying admin_team:", e)
+      }
+    }
+
+    // Se nao encontrou na admin_team, verificar se e um admin na tabela profiles
     if (result.length === 0) {
+      try {
+        const profileResult = await sql`
+          SELECT id, name, email, password_hash, role 
+          FROM profiles 
+          WHERE email = ${email} AND role IN ('admin', 'ceo', 'owner')
+        `
+        
+        if (profileResult.length > 0) {
+          const profile = profileResult[0]
+          
+          // Verificar senha
+          const isValid = await bcrypt.compare(password, profile.password_hash)
+          if (!isValid) {
+            return NextResponse.json(
+              { error: 'Credenciais invalidas' },
+              { status: 401 }
+            )
+          }
+          
+          // Criar token JWT para admin
+          const token = await new SignJWT({
+            id: profile.id,
+            email: profile.email,
+            name: profile.name,
+            role: 'ceo',
+            permissions: ['all'],
+            isTeamMember: true,
+          })
+            .setProtectedHeader({ alg: 'HS256' })
+            .setExpirationTime('24h')
+            .sign(JWT_SECRET)
+
+          const response = NextResponse.json({
+            success: true,
+            member: {
+              id: profile.id,
+              name: profile.name,
+              email: profile.email,
+              role: 'ceo',
+              permissions: ['all'],
+            },
+            redirectUrl: '/lp-x7k9m2-internal/ceo',
+            loginTime: Date.now(),
+          })
+
+          response.cookies.set(TEAM_COOKIE_NAME, token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            maxAge: 60 * 60 * 24,
+            path: '/',
+          })
+
+          return response
+        }
+      } catch (e) {
+        console.error("[v0] Error checking profiles for admin:", e)
+      }
+      
       return NextResponse.json(
-        { error: 'Credenciais inválidas' },
+        { error: 'Credenciais invalidas' },
         { status: 401 }
       )
     }
 
     const member = result[0]
 
-    // Verificar se está ativo
+    // Verificar se esta ativo
     if (!member.is_active) {
       return NextResponse.json(
         { error: 'Conta desativada. Contate o administrador.' },
@@ -50,17 +144,21 @@ export async function POST(request: NextRequest) {
     const isValid = await bcrypt.compare(password, member.password_hash)
     if (!isValid) {
       return NextResponse.json(
-        { error: 'Credenciais inválidas' },
+        { error: 'Credenciais invalidas' },
         { status: 401 }
       )
     }
 
-    // Atualizar último login
-    await sql`
-      UPDATE admin_team 
-      SET updated_at = NOW() 
-      WHERE id = ${member.id}
-    `
+    // Atualizar ultimo login
+    try {
+      await sql`
+        UPDATE admin_team 
+        SET updated_at = NOW() 
+        WHERE id = ${member.id}
+      `
+    } catch {
+      // Ignora erro de update
+    }
 
     // Criar token JWT
     const token = await new SignJWT({
