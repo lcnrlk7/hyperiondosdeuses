@@ -24,6 +24,8 @@ import {
   Mail,
   Phone,
   Calendar,
+  Trash2,
+  MoreVertical,
 } from "lucide-react";
 
 interface Ticket {
@@ -112,6 +114,9 @@ export default function AdminTicketsPage() {
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [assignedFilter, setAssignedFilter] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [ticketToDelete, setTicketToDelete] = useState<Ticket | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -245,6 +250,36 @@ export default function AdminTicketsPage() {
     }
   }
 
+  async function handleDeleteTicket() {
+    if (!ticketToDelete) return;
+    setDeleting(true);
+    try {
+      const response = await fetch(`/api/admin/tickets/${ticketToDelete.id}`, {
+        method: "DELETE",
+      });
+      const data = await response.json();
+      if (data.success) {
+        if (selectedTicket?.id === ticketToDelete.id) {
+          setSelectedTicket(null);
+          setMessages([]);
+        }
+        loadTickets();
+        setShowDeleteModal(false);
+        setTicketToDelete(null);
+      }
+    } catch (error) {
+      console.error("Erro ao excluir ticket:", error);
+    } finally {
+      setDeleting(false);
+    }
+  }
+
+  function openDeleteModal(ticket: Ticket, e: React.MouseEvent) {
+    e.stopPropagation();
+    setTicketToDelete(ticket);
+    setShowDeleteModal(true);
+  }
+
   function getStatusBadge(status: string) {
     const s = STATUSES.find((st) => st.value === status);
     return <span className={`px-2 py-0.5 rounded-full text-xs ${s?.bg} ${s?.color}`}>{s?.label || status}</span>;
@@ -373,29 +408,40 @@ export default function AdminTicketsPage() {
                 </div>
               ) : (
                 filteredTickets.map((ticket) => (
-                  <button key={ticket.id} onClick={() => handleSelectTicket(ticket)} className={`w-full p-4 border-b border-border text-left hover:bg-secondary/50 transition-colors ${selectedTicket?.id === ticket.id ? "bg-secondary" : ""}`}>
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1 flex-wrap">
-                          {getStatusBadge(ticket.status)}
-                          {getPriorityBadge(ticket.priority)}
-                          {ticket.unread_count > 0 && (
-                            <span className="w-5 h-5 rounded-full bg-primary text-primary-foreground text-xs flex items-center justify-center">{ticket.unread_count}</span>
-                          )}
+                  <div key={ticket.id} className={`relative group border-b border-border hover:bg-secondary/50 transition-colors ${selectedTicket?.id === ticket.id ? "bg-secondary" : ""}`}>
+                    <button onClick={() => handleSelectTicket(ticket)} className="w-full p-4 text-left">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1 flex-wrap">
+                            {getStatusBadge(ticket.status)}
+                            {getPriorityBadge(ticket.priority)}
+                            {ticket.unread_count > 0 && (
+                              <span className="w-5 h-5 rounded-full bg-primary text-primary-foreground text-xs flex items-center justify-center">{ticket.unread_count}</span>
+                            )}
+                          </div>
+                          <p className="font-medium text-foreground truncate">{ticket.subject}</p>
+                          <div className="mt-1">
+                            <p className="text-xs text-white font-medium">{ticket.user_name || "Sem nome"}</p>
+                            <p className="text-xs text-muted-foreground">{ticket.user_email}</p>
+                          </div>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className="text-xs text-muted-foreground">{CATEGORIES.find((c) => c.value === ticket.category)?.label || ticket.category}</span>
+                            {ticket.admin_name && (<><span className="text-xs text-muted-foreground">•</span><span className="text-xs text-primary">{ticket.admin_name}</span></>)}
+                          </div>
                         </div>
-                        <p className="font-medium text-foreground truncate">{ticket.subject}</p>
-                        <div className="mt-1">
-                          <p className="text-xs text-white font-medium">{ticket.user_name || "Sem nome"}</p>
-                          <p className="text-xs text-muted-foreground">{ticket.user_email}</p>
-                        </div>
-                        <div className="flex items-center gap-2 mt-1">
-                          <span className="text-xs text-muted-foreground">{CATEGORIES.find((c) => c.value === ticket.category)?.label || ticket.category}</span>
-                          {ticket.admin_name && (<><span className="text-xs text-muted-foreground">•</span><span className="text-xs text-primary">{ticket.admin_name}</span></>)}
+                        <div className="flex flex-col items-end gap-2">
+                          <span className="text-xs text-muted-foreground whitespace-nowrap">{formatDate(ticket.last_message_at)}</span>
                         </div>
                       </div>
-                      <span className="text-xs text-muted-foreground whitespace-nowrap">{formatDate(ticket.last_message_at)}</span>
-                    </div>
-                  </button>
+                    </button>
+                    <button
+                      onClick={(e) => openDeleteModal(ticket, e)}
+                      className="absolute top-3 right-3 p-1.5 rounded-lg bg-red-500/10 text-red-400 opacity-0 group-hover:opacity-100 hover:bg-red-500/20 transition-all"
+                      title="Excluir ticket"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
                 ))
               )}
             </div>
@@ -555,11 +601,95 @@ export default function AdminTicketsPage() {
                     <span className="text-foreground">{new Date(selectedTicket.last_message_at).toLocaleString("pt-BR")}</span>
                   </div>
                 </div>
+
+                {/* Botao Excluir */}
+                <div className="pt-4 border-t border-border">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setTicketToDelete(selectedTicket);
+                      setShowDeleteModal(true);
+                    }}
+                    className="w-full gap-2 text-red-400 border-red-500/30 hover:bg-red-500/10 hover:text-red-400"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    Excluir Ticket
+                  </Button>
+                </div>
               </div>
             )}
           </div>
         </div>
       </div>
+
+      {/* Modal de Confirmacao de Exclusao */}
+      <AnimatePresence>
+        {showDeleteModal && ticketToDelete && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            onClick={() => setShowDeleteModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-card border border-border rounded-2xl p-6 w-full max-w-md shadow-2xl"
+            >
+              <div className="flex items-center gap-4 mb-4">
+                <div className="w-12 h-12 rounded-full bg-red-500/20 flex items-center justify-center">
+                  <Trash2 className="w-6 h-6 text-red-400" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground">Excluir Ticket</h3>
+                  <p className="text-sm text-muted-foreground">Esta acao nao pode ser desfeita</p>
+                </div>
+              </div>
+
+              <div className="p-4 bg-secondary/50 rounded-xl mb-6">
+                <p className="text-sm text-foreground font-medium mb-1">{ticketToDelete.subject}</p>
+                <p className="text-xs text-muted-foreground">{ticketToDelete.user_name || ticketToDelete.user_email}</p>
+                <div className="flex gap-2 mt-2">
+                  {getStatusBadge(ticketToDelete.status)}
+                  {getPriorityBadge(ticketToDelete.priority)}
+                </div>
+              </div>
+
+              <p className="text-sm text-muted-foreground mb-6">
+                Tem certeza que deseja excluir este ticket? Todas as mensagens e anexos serao removidos permanentemente.
+              </p>
+
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowDeleteModal(false)}
+                  className="flex-1"
+                  disabled={deleting}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  onClick={handleDeleteTicket}
+                  disabled={deleting}
+                  className="flex-1 bg-red-500 hover:bg-red-600 text-white"
+                >
+                  {deleting ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <>
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Excluir
+                    </>
+                  )}
+                </Button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

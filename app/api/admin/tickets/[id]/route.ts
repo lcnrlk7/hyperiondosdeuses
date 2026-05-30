@@ -242,3 +242,36 @@ export async function PATCH(
     return NextResponse.json({ error: "Erro interno" }, { status: 500 });
   }
 }
+
+// DELETE - Excluir ticket permanentemente
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const admin = await verifyAdmin();
+    if (!admin) return accessDeniedResponse();
+
+    const { id } = await params;
+
+    // Verificar se ticket existe
+    const ticket = await sql`SELECT id, subject FROM support_tickets WHERE id = ${id}`;
+    if (ticket.length === 0) {
+      return NextResponse.json({ error: "Ticket nao encontrado" }, { status: 404 });
+    }
+
+    // Deletar mensagens do ticket primeiro (foreign key)
+    await sql`DELETE FROM ticket_messages WHERE ticket_id = ${id}`;
+
+    // Deletar o ticket
+    await sql`DELETE FROM support_tickets WHERE id = ${id}`;
+
+    return NextResponse.json({ 
+      success: true, 
+      message: `Ticket "${ticket[0].subject}" excluido com sucesso` 
+    });
+  } catch (error) {
+    console.error("[Admin Tickets] Erro ao excluir ticket:", error);
+    return NextResponse.json({ error: "Erro ao excluir ticket" }, { status: 500 });
+  }
+}
