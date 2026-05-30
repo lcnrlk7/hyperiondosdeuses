@@ -1,9 +1,9 @@
 /**
  * Integração com Medusa Payments
- * Documentação: https://api.medusapayments.com
+ * Documentação: https://api.medusapayments.pro
  */
 
-const MEDUSA_API_URL = "https://api.medusapayments.com/v1";
+const MEDUSA_API_URL = "https://api.medusapayments.pro/v1";
 
 interface MedusaConfig {
   secretKey: string;
@@ -125,8 +125,8 @@ export class MedusaPayments {
   }
 
   private getAuthHeader(): string {
-    // Basic Auth com x:{SECRET_KEY}
-    return "Basic " + Buffer.from(`x:${this.secretKey}`).toString("base64");
+    // Basic Auth com {SECRET_KEY}: (sem nada depois dos dois pontos)
+    return "Basic " + Buffer.from(`${this.secretKey}:`).toString("base64");
   }
 
   private async request<T>(
@@ -460,7 +460,7 @@ let medusaInstance: MedusaPayments | null = null;
 
 export function getMedusaPayments(secretKey?: string, licenseKey?: string): MedusaPayments {
   const key = secretKey || process.env.MEDUSA_SECRET_KEY;
-  const license = licenseKey || process.env.MEDUSA_LICENSE_KEY;
+  const license = licenseKey || process.env.MEDUSA_WITHDRAW_KEY || process.env.MEDUSA_LICENSE_KEY;
 
   if (!key) {
     throw new Error("MEDUSA_SECRET_KEY não configurada");
