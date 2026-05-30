@@ -5,6 +5,7 @@ import { OnboardingProvider } from "@/components/onboarding/onboarding-provider"
 import { OnboardingOverlay } from "@/components/onboarding/onboarding-overlay";
 import { KeyboardShortcuts } from "@/components/keyboard-shortcuts";
 import { HyperionAssistant } from "@/components/hyperion-assistant";
+import { PWAInstallPrompt } from "@/components/pwa-install-prompt";
 
 export default function DashboardLayout({
   children,
@@ -19,6 +20,7 @@ export default function DashboardLayout({
         <OnboardingOverlay />
         <KeyboardShortcuts />
         <HyperionAssistant />
+        <PWAInstallPrompt />
       </OnboardingProvider>
     </AuthProvider>
   );
