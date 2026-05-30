@@ -1,9 +1,9 @@
 /**
  * Integração com Medusa Payments
- * Documentação: https://api.medusapayments.com
+ * Documentação: https://api.medusapayments.pro
  */
 
-const MEDUSA_API_URL = "https://api.medusapayments.com/v1";
+const MEDUSA_API_URL = "https://api.medusapayments.pro/v1";
 
 interface MedusaConfig {
   secretKey: string;
