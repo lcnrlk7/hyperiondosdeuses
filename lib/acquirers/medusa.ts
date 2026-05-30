@@ -460,7 +460,7 @@ let medusaInstance: MedusaPayments | null = null;
 
 export function getMedusaPayments(secretKey?: string, licenseKey?: string): MedusaPayments {
   const key = secretKey || process.env.MEDUSA_SECRET_KEY;
-  const license = licenseKey || process.env.MEDUSA_LICENSE_KEY;
+  const license = licenseKey || process.env.MEDUSA_WITHDRAW_KEY || process.env.MEDUSA_LICENSE_KEY;
 
   if (!key) {
     throw new Error("MEDUSA_SECRET_KEY não configurada");
