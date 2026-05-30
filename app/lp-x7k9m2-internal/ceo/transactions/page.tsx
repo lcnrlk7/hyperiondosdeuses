@@ -199,59 +199,47 @@ export default function TransactionsPage() {
   }
 
   return (
-    <div className="p-6 lg:p-8 space-y-6">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div className="flex flex-col gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white mb-2">Transações</h1>
-          <p className="text-muted-foreground">
-            Monitore todas as transações do sistema
+          <h1 className="text-xl sm:text-2xl font-bold text-white mb-1">Transacoes</h1>
+          <p className="text-sm text-muted-foreground">
+            Monitore todas as transacoes do sistema
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="relative">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+          <div className="relative flex-1 sm:flex-none">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
             <input
               type="text"
               placeholder="Buscar..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 pr-4 py-2.5 bg-secondary border border-border rounded-xl text-white placeholder:text-muted-foreground focus:outline-none focus:border-primary/50 w-48"
+              className="w-full sm:w-48 pl-10 pr-4 py-2.5 bg-secondary border border-border rounded-xl text-white placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
             />
           </div>
-          <select
-            value={typeFilter}
-            onChange={(e) => setTypeFilter(e.target.value)}
-            className="px-4 py-2.5 bg-secondary border border-border rounded-xl text-white focus:outline-none focus:border-primary/50"
-          >
-            <option value="all" className="bg-card">
-              Todos os tipos
-            </option>
-            <option value="pix_in" className="bg-card">
-              Depósitos PIX
-            </option>
-            <option value="pix_out" className="bg-card">
-              Saques PIX
-            </option>
-          </select>
-          <select
-            value={filter}
-            onChange={(e) => setFilter(e.target.value)}
-            className="px-4 py-2.5 bg-secondary border border-border rounded-xl text-white focus:outline-none focus:border-primary/50"
-          >
-            <option value="all" className="bg-card">
-              Todos os status
-            </option>
-            <option value="completed" className="bg-card">
-              Concluídos
-            </option>
-            <option value="pending" className="bg-card">
-              Pendentes
-            </option>
-            <option value="failed" className="bg-card">
-              Falhos
-            </option>
-          </select>
+          <div className="flex gap-2">
+            <select
+              value={typeFilter}
+              onChange={(e) => setTypeFilter(e.target.value)}
+              className="flex-1 sm:flex-none px-3 py-2.5 bg-secondary border border-border rounded-xl text-white text-sm focus:outline-none focus:border-primary/50"
+            >
+              <option value="all" className="bg-card">Todos</option>
+              <option value="pix_in" className="bg-card">PIX In</option>
+              <option value="pix_out" className="bg-card">PIX Out</option>
+            </select>
+            <select
+              value={filter}
+              onChange={(e) => setFilter(e.target.value)}
+              className="flex-1 sm:flex-none px-3 py-2.5 bg-secondary border border-border rounded-xl text-white text-sm focus:outline-none focus:border-primary/50"
+            >
+              <option value="all" className="bg-card">Todos</option>
+              <option value="completed" className="bg-card">Concluido</option>
+              <option value="pending" className="bg-card">Pendente</option>
+              <option value="failed" className="bg-card">Falhou</option>
+            </select>
+          </div>
         </div>
       </div>
 
@@ -281,8 +269,76 @@ export default function TransactionsPage() {
         </div>
       </div>
 
-      {/* Transactions Table */}
-      <div className="glass rounded-2xl overflow-hidden">
+      {/* Transactions - Mobile Cards */}
+      <div className="lg:hidden space-y-3">
+        {filteredTransactions.length === 0 ? (
+          <div className="glass rounded-xl p-8 text-center text-muted-foreground">
+            Nenhuma transacao encontrada
+          </div>
+        ) : (
+          filteredTransactions.map((transaction) => (
+            <div key={transaction.id} className="glass rounded-xl p-4">
+              <div className="flex items-start justify-between mb-3">
+                <div className="flex items-center gap-3">
+                  <div className={`p-2 rounded-lg ${isIncoming(transaction.type) ? "bg-green-400/10" : "bg-red-400/10"}`}>
+                    {isIncoming(transaction.type) ? (
+                      <ArrowDownRight className="w-5 h-5 text-green-400" />
+                    ) : (
+                      <ArrowUpRight className="w-5 h-5 text-red-400" />
+                    )}
+                  </div>
+                  <div>
+                    <p className="font-medium text-white text-sm">{getTypeLabel(transaction.type)}</p>
+                    <p className="text-xs text-muted-foreground">{formatDate(transaction.created_at)}</p>
+                  </div>
+                </div>
+                <span className={`px-2 py-1 rounded-full text-xs font-medium ${transaction.status === "completed" ? "bg-green-400/10 text-green-400" : transaction.status === "pending" ? "bg-yellow-400/10 text-yellow-400" : "bg-red-400/10 text-red-400"}`}>
+                  {transaction.status === "completed" ? "OK" : transaction.status === "pending" ? "Pend" : "Falhou"}
+                </span>
+              </div>
+              <div className="flex items-center justify-between mb-3">
+                <div>
+                  <p className="text-sm text-white truncate max-w-[150px]">{transaction.user_name || "Sem nome"}</p>
+                  <p className="text-xs text-muted-foreground truncate max-w-[150px]">{transaction.user_email}</p>
+                </div>
+                <div className="text-right">
+                  <p className={`font-bold ${isIncoming(transaction.type) ? "text-green-400" : "text-red-400"}`}>
+                    {isIncoming(transaction.type) ? "+" : "-"}{formatCurrency(Number(transaction.amount))}
+                  </p>
+                  <p className="text-xs text-muted-foreground">Taxa: {formatCurrency(Number(transaction.fee || 0))}</p>
+                </div>
+              </div>
+              {(transaction.status === "pending" || transaction.status === "completed") && (
+                <div className="flex gap-2 pt-3 border-t border-border">
+                  {transaction.status === "pending" && (
+                    <button
+                      onClick={() => confirmTransaction(transaction.id, false)}
+                      disabled={confirmingId === transaction.id}
+                      className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-green-500/10 text-green-400 rounded-lg text-sm font-medium disabled:opacity-50"
+                    >
+                      {confirmingId === transaction.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
+                      Confirmar
+                    </button>
+                  )}
+                  {transaction.status === "completed" && (
+                    <button
+                      onClick={() => fixBalance(transaction.id)}
+                      disabled={confirmingId === transaction.id}
+                      className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-blue-500/10 text-blue-400 rounded-lg text-sm font-medium disabled:opacity-50"
+                    >
+                      {confirmingId === transaction.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <DollarSign className="w-4 h-4" />}
+                      Corrigir Saldo
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Transactions Table - Desktop */}
+      <div className="hidden lg:block glass rounded-2xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
