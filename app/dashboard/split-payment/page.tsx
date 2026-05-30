@@ -15,30 +15,32 @@ export default function DividirPagamentoPage() {
   const [parcelasPagas, setParcelasPagas] = useState<number[]>([])
   const [processando, setProcessando] = useState(false)
   const [textoCopied, setTextoCopied] = useState(false)
+  const [erroUltimo, setErroUltimo] = useState<string | null>(null)
 
   // Criar lista de valores divididos
   const criarParcelas = () => {
     const total = parseFloat(inputValor.replace(",", "."))
-    if (!total || total < 100) {
-      toast.error("Valor minimo R$ 100")
+    if (!total || total < 10) {
+      toast.error("Valor minimo R$ 10,00")
       return
     }
 
+    // Dividir em parcelas iguais baseado no valor total
+    // Maximo de R$ 1000 por parcela (limite do gateway)
+    const maxParcela = 1000
+    const numParcelas = Math.ceil(total / maxParcela)
+    const valorBase = Math.floor((total / numParcelas) * 100) / 100
+    
     const valores: number[] = []
-    let restante = total
-    const bases = [1500, 1600, 1700, 1800, 1900, 2000]
-    let i = 0
-
-    while (restante > 0) {
-      if (restante <= 2000) {
-        valores.push(restante)
-        break
-      }
-      const v = bases[i % bases.length]
-      valores.push(v)
-      restante -= v
-      i++
+    let somaParcial = 0
+    
+    for (let i = 0; i < numParcelas - 1; i++) {
+      valores.push(valorBase)
+      somaParcial += valorBase
     }
+    // Ultima parcela pega o restante para garantir que soma = total
+    const ultima = Math.round((total - somaParcial) * 100) / 100
+    valores.push(ultima)
 
     setListaValores(valores)
     setIndiceParcela(0)
@@ -50,35 +52,56 @@ export default function DividirPagamentoPage() {
   // Chamar API para gerar PIX - IDENTICO A WALLET
   const chamarApiPix = async () => {
     const valorParcela = listaValores[indiceParcela]
-    if (!valorParcela) return
+    if (!valorParcela || valorParcela <= 0) return
+
+    // Arredondar para 2 casas decimais
+    const valorLimpo = Math.round(valorParcela * 100) / 100
 
     setProcessando(true)
+    setErroUltimo(null)
 
     try {
       const resp = await fetch("/api/pix/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          amount: valorParcela,
-          description: `Parcela ${indiceParcela + 1}/${listaValores.length}`,
+          amount: valorLimpo,
+          description: "Deposito via PIX - Hyperion Pay",
         }),
       })
 
-      const json = await resp.json()
+      const text = await resp.text()
+      let json: any
+      try {
+        json = JSON.parse(text)
+      } catch {
+        throw { message: "Falha na conexao. Tente novamente.", code: "REDE-003" }
+      }
 
       if (!resp.ok) {
-        throw new Error(json.error || "Falha ao gerar")
+        const code = json.code || "SPLIT-ERR"
+        throw { message: `${json.error || "Erro ao gerar PIX"} (${code})`, code }
+      }
+
+      // Pegar o copyPaste - pode vir como copyPaste, copy_paste, qrCode ou qrCodeBase64
+      const copiaCola = json.copyPaste || json.copy_paste || json.qrCode || json.qrCodeBase64 || ""
+      const qrCode = json.qrCodeBase64 || json.qrCode || copiaCola || ""
+
+      if (!copiaCola && !qrCode) {
+        throw new Error("PIX gerado mas sem codigo. Tente novamente.")
       }
 
       setPixAtual({
-        qrCode: json.qrCodeBase64 || json.qrCode || "",
-        copiaCola: json.copyPaste || "",
+        qrCode: qrCode,
+        copiaCola: copiaCola,
         valor: valorParcela
       })
 
       toast.success("PIX gerado!")
     } catch (e: any) {
-      toast.error(e.message || "Erro")
+      const msg = e.message || "Erro ao gerar PIX. Tente novamente. (SPLIT-500)"
+      setErroUltimo(msg)
+      toast.error(msg)
     } finally {
       setProcessando(false)
     }
@@ -121,7 +144,7 @@ export default function DividirPagamentoPage() {
     <div className="max-w-3xl mx-auto p-4 space-y-6">
       <div>
         <h1 className="text-2xl font-bold">Pagamento Dividido</h1>
-        <p className="text-gray-500">Divida valores grandes em parcelas menores</p>
+        <p className="text-muted-foreground">Divida valores grandes em parcelas menores</p>
       </div>
 
       {listaValores.length === 0 ? (
@@ -138,7 +161,7 @@ export default function DividirPagamentoPage() {
               onChange={(e) => setInputValor(e.target.value)}
               className="text-xl"
             />
-            <Button onClick={criarParcelas} className="w-full bg-orange-500 hover:bg-orange-600">
+            <Button onClick={criarParcelas} className="w-full bg-indigo-600 hover:bg-indigo-700">
               Dividir em Parcelas
             </Button>
           </CardContent>
@@ -150,17 +173,17 @@ export default function DividirPagamentoPage() {
             <CardContent className="py-4">
               <div className="flex justify-between items-center">
                 <div>
-                  <p className="text-sm text-gray-500">Progresso</p>
+                  <p className="text-sm text-muted-foreground">Progresso</p>
                   <p className="text-xl font-bold">{parcelasPagas.length}/{listaValores.length}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-sm text-gray-500">Recebido</p>
+                  <p className="text-sm text-muted-foreground">Recebido</p>
                   <p className="text-xl font-bold text-green-500">R$ {totalPago.toFixed(2)}</p>
                 </div>
               </div>
-              <div className="mt-3 h-2 bg-gray-200 rounded-full overflow-hidden">
+                <div className="mt-3 h-2 bg-muted rounded-full overflow-hidden">
                 <div 
-                  className="h-full bg-orange-500 transition-all"
+                  className="h-full bg-indigo-600 transition-all"
                   style={{ width: `${(parcelasPagas.length / listaValores.length) * 100}%` }}
                 />
               </div>
@@ -174,19 +197,19 @@ export default function DividirPagamentoPage() {
               const atual = idx === indiceParcela && !pago
 
               return (
-                <Card key={idx} className={atual ? "ring-2 ring-orange-500" : pago ? "opacity-60" : ""}>
+                <Card key={idx} className={atual ? "ring-2 ring-indigo-500" : pago ? "opacity-60" : ""}>
                   <CardContent className="py-4">
                     <div className="flex justify-between items-center">
                       <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${pago ? "bg-green-500 text-white" : atual ? "bg-orange-500 text-white" : "bg-gray-200"}`}>
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${pago ? "bg-green-500 text-white" : atual ? "bg-indigo-600 text-white" : "bg-muted"}`}>
                           {pago ? <CheckCircle2 className="w-5 h-5" /> : idx + 1}
                         </div>
                         <div>
                           <p className="font-medium">Parcela {idx + 1}</p>
-                          <p className="text-sm text-gray-500">R$ {valor.toFixed(2)}</p>
+                          <p className="text-sm text-muted-foreground">R$ {valor.toFixed(2)}</p>
                         </div>
                       </div>
-                      <span className={`text-xs px-2 py-1 rounded ${pago ? "bg-green-100 text-green-700" : "bg-orange-100 text-orange-700"}`}>
+                      <span className={`text-xs px-2 py-1 rounded ${pago ? "bg-green-100 text-green-700" : "bg-indigo-100 text-indigo-700"}`}>
                         {pago ? "Pago" : "Pendente"}
                       </span>
                     </div>
@@ -195,28 +218,54 @@ export default function DividirPagamentoPage() {
                     {atual && (
                       <div className="mt-4 pt-4 border-t">
                         {!pixAtual ? (
-                          <Button 
-                            onClick={chamarApiPix} 
-                            disabled={processando}
-                            className="w-full bg-orange-500 hover:bg-orange-600"
-                          >
-                            {processando ? (
-                              <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Gerando...</>
-                            ) : (
-                              <><QrCode className="w-4 h-4 mr-2" /> Gerar QR Code</>
+                          <div className="space-y-3">
+                            <Button 
+                              onClick={chamarApiPix} 
+                              disabled={processando}
+                              className="w-full bg-indigo-600 hover:bg-indigo-700"
+                            >
+                              {processando ? (
+                                <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Gerando...</>
+                              ) : (
+                                <><QrCode className="w-4 h-4 mr-2" /> Gerar QR Code</>
+                              )}
+                            </Button>
+                            {erroUltimo && (
+                              <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-3">
+                                <p className="text-sm text-destructive">{erroUltimo}</p>
+                                <Button 
+                                  variant="outline" 
+                                  size="sm" 
+                                  onClick={chamarApiPix}
+                                  disabled={processando}
+                                  className="mt-2"
+                                >
+                                  <RotateCcw className="w-3 h-3 mr-1" /> Tentar novamente
+                                </Button>
+                              </div>
                             )}
-                          </Button>
+                          </div>
                         ) : (
                           <div className="space-y-4">
                             {/* QR Code */}
                             <div className="flex justify-center">
                               <div className="bg-white p-3 rounded-lg border">
-                                <img
-                                  src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(pixAtual.copiaCola)}`}
-                                  alt="QR Code"
-                                  width={180}
-                                  height={180}
-                                />
+                                {pixAtual.qrCode.startsWith("data:") ? (
+                                  <img
+                                    src={pixAtual.qrCode}
+                                    alt="QR Code"
+                                    width={180}
+                                    height={180}
+                                  />
+                                ) : (
+                                  <img
+                                    src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(pixAtual.copiaCola || pixAtual.qrCode)}`}
+                                    alt="QR Code"
+                                    width={180}
+                                    height={180}
+                                    crossOrigin="anonymous"
+                                  />
+                                )}
                               </div>
                             </div>
 
@@ -225,7 +274,7 @@ export default function DividirPagamentoPage() {
 
                             {/* Copia e Cola */}
                             <div>
-                              <p className="text-xs text-gray-500 mb-1">Codigo Copia e Cola:</p>
+                              <p className="text-xs text-muted-foreground mb-1">Codigo Copia e Cola:</p>
                               <div className="flex gap-2">
                                 <Input 
                                   value={pixAtual.copiaCola} 

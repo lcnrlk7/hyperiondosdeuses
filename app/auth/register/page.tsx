@@ -305,7 +305,7 @@ function RegisterForm() {
           </p>
           <Button 
             onClick={() => window.location.href = "/dashboard"}
-            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground glow-orange-sm"
+            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground glow-primary-sm"
           >
             Acessar Dashboard
           </Button>
@@ -478,7 +478,7 @@ function RegisterForm() {
                     type="button"
                     onClick={handleSendCode}
                     disabled={loading}
-                    className="w-full bg-primary hover:bg-primary/90 text-primary-foreground glow-orange-sm"
+                    className="w-full bg-primary hover:bg-primary/90 text-primary-foreground glow-primary-sm"
                   >
                     {loading ? (
                       <Loader2 className="w-5 h-5 animate-spin" />
@@ -532,7 +532,7 @@ function RegisterForm() {
                     type="button"
                     onClick={handleVerifyCode}
                     disabled={loading || verificationCode.length !== 6}
-                    className="w-full bg-primary hover:bg-primary/90 text-primary-foreground glow-orange-sm"
+                    className="w-full bg-primary hover:bg-primary/90 text-primary-foreground glow-primary-sm"
                   >
                     {loading ? (
                       <Loader2 className="w-5 h-5 animate-spin" />
@@ -624,7 +624,7 @@ function RegisterForm() {
                     type="button"
                     onClick={handleCreateAccount}
                     disabled={loading}
-                    className="w-full bg-primary hover:bg-primary/90 text-primary-foreground glow-orange-sm"
+                    className="w-full bg-primary hover:bg-primary/90 text-primary-foreground glow-primary-sm"
                   >
                     {loading ? (
                       <Loader2 className="w-5 h-5 animate-spin" />

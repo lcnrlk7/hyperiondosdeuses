@@ -144,7 +144,7 @@ export function ApiContent({ profile, userId }: ApiContentProps) {
               Criar uma cobrança PIX:
             </p>
             <pre className="text-sm text-foreground font-mono overflow-x-auto whitespace-pre-wrap break-all">
-{`curl -X POST https://hyperionpay.site/api/pix/create \\
+{`curl -X POST https://hyperionpay.com.br/api/pix/create \\
   -H "Content-Type: application/json" \\
   -d '{
     "apiKey": "${profile?.api_key || "SUA_API_KEY"}",

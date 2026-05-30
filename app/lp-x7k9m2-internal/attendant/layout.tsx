@@ -75,7 +75,7 @@ export default function AttendantLayout({
           <Image src="/images/logo-hyperion.png" alt="Hyperion Pay" width={40} height={40} />
           <div>
             <div className="flex items-baseline">
-              <span className="text-xl font-bold text-foreground">Legacy</span>
+              <span className="text-xl font-bold text-foreground">Hyperion</span>
               <span className="text-xl font-bold text-primary">Pay</span>
             </div>
             <span className="text-xs text-primary/80 flex items-center gap-1">

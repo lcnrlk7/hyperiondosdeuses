@@ -174,17 +174,22 @@ export default function WalletPage() {
 const handleDeposit = async () => {
     const amount = parseFloat(depositAmount);
     if (!depositAmount || amount <= 0) {
-      setError("Informe um valor válido");
+      setError("Informe um valor valido");
       return;
     }
     
     if (amount < systemSettings.minDeposit) {
-      setError(`Valor mínimo: R$ ${systemSettings.minDeposit.toFixed(2).replace('.', ',')}`);
+      setError(`Valor minimo: R$ ${systemSettings.minDeposit.toFixed(2).replace('.', ',')}`);
+      return;
+    }
+
+    if (amount > 1000) {
+      setError("Limite de R$ 1.000,00 por transacao. Para valores maiores, use o Pagamento Dividido.");
       return;
     }
     
     if (amount > systemSettings.maxDeposit) {
-      setError(`Valor máximo: R$ ${systemSettings.maxDeposit.toFixed(2).replace('.', ',')}`);
+      setError(`Valor maximo: R$ ${systemSettings.maxDeposit.toFixed(2).replace('.', ',')}`);
       return;
     }
 
@@ -197,14 +202,17 @@ const handleDeposit = async () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           amount: amount,
-          description: "Depósito via PIX - Hyperion Pay",
+          description: "Deposito via PIX - Hyperion Pay",
         }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Erro ao gerar QR Code");
+        // Mostrar mensagem amigavel com codigo
+        const code = data.code || "ERRO";
+        setError(`${data.error || "Erro ao gerar QR Code"} (${code})`);
+        return;
       }
 
       setPixTransaction({
@@ -217,7 +225,7 @@ const handleDeposit = async () => {
         status: "pending",
       });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao gerar QR Code");
+      setError("Falha na conexao. Tente novamente. (REDE-001)");
     } finally {
       setLoading(false);
     }
@@ -269,7 +277,10 @@ const handleDeposit = async () => {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Erro ao processar saque");
+        const code = data.code || "SAQUE-ERR";
+        setError(`${data.error || "Erro ao processar saque"} (${code})`);
+        setLoading(false);
+        return;
       }
 
       // Salvar dados do saque para o comprovante
@@ -291,7 +302,7 @@ const handleDeposit = async () => {
       setWithdrawPixKey("");
       loadBalance();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao processar saque");
+      setError("Falha na conexao. Tente novamente. (REDE-002)");
     } finally {
       setLoading(false);
     }
@@ -351,7 +362,7 @@ const handleDeposit = async () => {
       >
         <div className="flex flex-col md:flex-row md:items-center gap-4 mb-4">
           <div className="flex items-center gap-4 flex-1">
-            <div className="w-14 h-14 rounded-2xl bg-primary flex items-center justify-center glow-orange-sm">
+            <div className="w-14 h-14 rounded-2xl bg-primary flex items-center justify-center glow-primary-sm">
               <Wallet className="w-7 h-7 text-primary-foreground" />
             </div>
             <div>
@@ -388,7 +399,7 @@ const handleDeposit = async () => {
             if (!open) resetDeposit();
           }}>
             <DialogTrigger asChild>
-              <Button className="bg-primary hover:bg-primary/90 text-primary-foreground glow-orange-sm">
+              <Button className="bg-primary hover:bg-primary/90 text-primary-foreground glow-primary-sm">
                 <ArrowDownLeft className="w-4 h-4 mr-2" />
                 Depositar
               </Button>
@@ -418,10 +429,16 @@ const handleDeposit = async () => {
                   onChange={(e) => setDepositAmount(e.target.value)}
                   className="bg-[#252525] border-border"
                   min={systemSettings.minDeposit}
-                  max={systemSettings.maxDeposit}
+                  max={1000}
                 />
+                {parseFloat(depositAmount) > 1000 && (
+                  <div className="flex items-center gap-2 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg text-yellow-400 text-sm">
+                    <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                    <span>Limite de R$ 1.000,00 por transacao. Para valores maiores, use o <a href="/dashboard/split-payment" className="underline font-semibold">Pagamento Dividido</a>.</span>
+                  </div>
+                )}
                 <p className="text-xs text-muted-foreground">
-                  Mínimo: R$ {systemSettings.minDeposit.toFixed(2).replace('.', ',')} | Máximo: R$ {systemSettings.maxDeposit.toFixed(2).replace('.', ',')}
+                  Minimo: R$ {systemSettings.minDeposit.toFixed(2).replace('.', ',')} | Maximo: R$ 1.000,00 por transacao
                 </p>
                     </div>
                     <Button

@@ -95,9 +95,9 @@ export function DashboardHeader({ profile }: HeaderProps) {
       <div className="flex items-center gap-3 sm:gap-6">
         {/* Rewards Progress - hidden on very small screens */}
         <div className="hidden sm:flex items-center gap-2">
-          <Trophy className="w-4 h-4 text-orange-500" />
+          <Trophy className="w-4 h-4 text-indigo-500" />
           <div className="flex items-center gap-2">
-            <span className="text-xs font-medium text-orange-400">
+            <span className="text-xs font-medium text-indigo-400">
               {formatCompact(totalRevenue)}
             </span>
             <span className="text-xs text-muted-foreground">/</span>
@@ -106,11 +106,11 @@ export function DashboardHeader({ profile }: HeaderProps) {
             </span>
             <div className="w-16 sm:w-24 h-1.5 bg-secondary rounded-full overflow-hidden">
               <div 
-                className="h-full bg-gradient-to-r from-orange-500 to-orange-400 rounded-full transition-all duration-500"
+                className="h-full bg-gradient-to-r from-indigo-500 to-indigo-400 rounded-full transition-all duration-500"
                 style={{ width: `${progressPercent}%` }}
               />
             </div>
-            <span className="text-xs text-orange-400 font-medium">
+            <span className="text-xs text-indigo-400 font-medium">
               {progressPercent}%
             </span>
           </div>

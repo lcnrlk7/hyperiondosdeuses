@@ -123,7 +123,7 @@ export default function AffiliatesPage() {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-gradient-to-br from-primary/20 to-orange-500/10 border border-primary/30 rounded-2xl p-6"
+        className="bg-gradient-to-br from-primary/20 to-indigo-500/10 border border-primary/30 rounded-2xl p-6"
       >
         <div className="flex items-center gap-3 mb-4">
           <div className="w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center">

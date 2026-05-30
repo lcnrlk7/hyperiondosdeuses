@@ -58,7 +58,7 @@ export default function ForgotPasswordPage() {
           <div className="flex items-center justify-center gap-3 mb-2">
             <Image src="/images/logo-hyperion.png" alt="Hyperion Pay" width={48} height={48} />
             <div className="flex items-baseline">
-              <span className="text-2xl font-bold text-white">Legacy</span>
+              <span className="text-2xl font-bold text-white">Hyperion</span>
               <span className="text-2xl font-bold text-primary">Pay</span>
             </div>
           </div>

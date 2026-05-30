@@ -268,7 +268,7 @@ export async function testUtmifyConnection(apiToken: string): Promise<{ success:
     refundedAt: null,
     customer: {
       name: "Teste Hyperion Pay",
-      email: "teste@hyperionpay.site",
+      email: "teste@hyperionpay.com.br",
       phone: null,
       document: null,
       country: "BR",

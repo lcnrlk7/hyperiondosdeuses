@@ -9,7 +9,7 @@ const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY || "UUxI4O8-FbRouAevSmBQ
 
 if (VAPID_PUBLIC_KEY && VAPID_PRIVATE_KEY) {
   webpush.setVapidDetails(
-    "mailto:suporte@hyperionpay.site",
+    "mailto:suporte@hyperionpay.com.br",
     VAPID_PUBLIC_KEY,
     VAPID_PRIVATE_KEY
   );

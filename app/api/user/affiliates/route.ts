@@ -76,7 +76,7 @@ export async function GET() {
 
     return NextResponse.json({
       referralCode,
-      referralLink: `${process.env.NEXT_PUBLIC_APP_URL || 'https://hyperionpay.site'}/register?ref=${referralCode}`,
+      referralLink: `${process.env.NEXT_PUBLIC_APP_URL || 'https://hyperionpay.com.br'}/register?ref=${referralCode}`,
       affiliates,
       summary: commissionsSummary[0] || {
         total_commissions: 0,

@@ -8,10 +8,24 @@ import Image from "next/image";
 
 // Mapeamento de imagens das premiacoes
 const rewardImages: Record<string, string> = {
-  bracelet: "/images/rewards/pulseira-20k.png",
-  plaque_100k: "/images/rewards/placa-100k.png",
-  plaque_500k: "/images/rewards/placa-500k.png",
-  plaque_1m: "/images/rewards/placa-1m.png",
+  bracelet: "/rewards/pulseira.png",
+  plaque_50k: "/rewards/placa-50k.png",
+  plaque_100k: "/rewards/placa-100k.png",
+  plaque_500k: "/rewards/placa-50k.png", // Usando imagem disponivel
+  plaque_1m: "/rewards/placa-1m-v1.png",
+};
+
+// Opcoes de variacao para premiacoes
+const rewardVariations: Record<string, { id: string; name: string; image: string }[]> = {
+  bracelet: [
+    { id: "pulseira", name: "Pulseira", image: "/rewards/pulseira.png" },
+    { id: "garrafa", name: "Garrafa", image: "/rewards/garrafa-caneca.png" },
+    { id: "caneca", name: "Caneca", image: "/rewards/garrafa-caneca.png" },
+  ],
+  plaque_1m: [
+    { id: "classica", name: "Placa Clássica", image: "/rewards/placa-1m-v1.png" },
+    { id: "mascote", name: "Placa com Mascote", image: "/rewards/placa-1m-v2.png" },
+  ],
 };
 
 interface Reward {
@@ -104,7 +118,7 @@ const achievementNames: Record<string, string> = {
 };
 
 const achievementLevels = [
-  { name: "Conquista Bronze", minValue: 0, maxValue: 20000, color: "from-orange-700 to-orange-900" },
+  { name: "Conquista Bronze", minValue: 0, maxValue: 20000, color: "from-indigo-600 to-indigo-800" },
   { name: "Conquista Prata", minValue: 20000, maxValue: 100000, color: "from-gray-400 to-gray-600" },
   { name: "Conquista Ouro", minValue: 100000, maxValue: 500000, color: "from-yellow-500 to-yellow-700" },
   { name: "Conquista Diamante", minValue: 500000, maxValue: 1000000, color: "from-cyan-400 to-blue-600" },
@@ -122,6 +136,7 @@ export function GoalsRoadmap({ totalRevenue, userId }: GoalsRoadmapProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [showSimulation, setShowSimulation] = useState(false);
   const [currentRewardIndex, setCurrentRewardIndex] = useState(0);
+  const [selectedVariation, setSelectedVariation] = useState<string>("");
 
   useEffect(() => {
     loadRewards();
@@ -152,6 +167,7 @@ export function GoalsRoadmap({ totalRevenue, userId }: GoalsRoadmapProps) {
           rewardType: selectedMilestone.badgeType,
           amount: selectedMilestone.value,
           address,
+          variation: selectedVariation || undefined,
         }),
       });
 
@@ -253,7 +269,7 @@ export function GoalsRoadmap({ totalRevenue, userId }: GoalsRoadmapProps) {
                 onClick={() => { setPreviewMilestone(milestones.find(m => m.badgeType === "bracelet")!); setShowPreview(true); }}
                 className={`aspect-square rounded-full border-2 overflow-hidden relative ${totalRevenue >= 20000 ? "border-primary" : "border-primary/40"}`}
               >
-                <Image src="/images/rewards/pulseira-20k.png" alt="Pulseira 20K" fill className={`object-cover ${totalRevenue >= 20000 ? "" : "grayscale opacity-50"}`} />
+                <Image src="/rewards/pulseira.png" alt="Pulseira 20K" fill className={`object-cover ${totalRevenue >= 20000 ? "" : "grayscale opacity-50"}`} />
               </button>
               <div className={`aspect-square rounded-full border-2 flex items-center justify-center ${totalRevenue >= 50000 ? "border-primary bg-primary/20" : "border-gray-600 bg-gray-800/50"}`}>
                 <span className={`text-xs font-bold ${totalRevenue >= 50000 ? "text-primary" : "text-gray-400"}`}>R$ 50K</span>
@@ -270,7 +286,7 @@ export function GoalsRoadmap({ totalRevenue, userId }: GoalsRoadmapProps) {
                 onClick={() => { setPreviewMilestone(milestones.find(m => m.badgeType === "plaque_100k")!); setShowPreview(true); }}
                 className={`aspect-square rounded-full border-2 overflow-hidden relative ${totalRevenue >= 100000 ? "border-primary" : "border-primary/40"}`}
               >
-                <Image src="/images/rewards/placa-100k.png" alt="Placa 100K" fill className={`object-cover ${totalRevenue >= 100000 ? "" : "grayscale opacity-50"}`} />
+                <Image src="/rewards/placa-100k.png" alt="Placa 100K" fill className={`object-cover ${totalRevenue >= 100000 ? "" : "grayscale opacity-50"}`} />
               </button>
               <div className={`aspect-square rounded-full border-2 flex items-center justify-center ${totalRevenue >= 250000 ? "border-primary bg-primary/20" : "border-gray-600 bg-gray-800/50"}`}>
                 <span className={`text-xs font-bold ${totalRevenue >= 250000 ? "text-primary" : "text-gray-400"}`}>R$ 250K</span>
@@ -284,7 +300,7 @@ export function GoalsRoadmap({ totalRevenue, userId }: GoalsRoadmapProps) {
                 onClick={() => { setPreviewMilestone(milestones.find(m => m.badgeType === "plaque_500k")!); setShowPreview(true); }}
                 className={`aspect-square rounded-full border-2 overflow-hidden relative ${totalRevenue >= 500000 ? "border-primary" : "border-primary/40"}`}
               >
-                <Image src="/images/rewards/placa-500k.png" alt="Placa 500K" fill className={`object-cover ${totalRevenue >= 500000 ? "" : "grayscale opacity-50"}`} />
+                <Image src="/rewards/placa-50k.png" alt="Placa 500K" fill className={`object-cover ${totalRevenue >= 500000 ? "" : "grayscale opacity-50"}`} />
               </button>
               <div className={`aspect-square rounded-full border-2 flex items-center justify-center ${totalRevenue >= 750000 ? "border-primary bg-primary/20" : "border-gray-600 bg-gray-800/50"}`}>
                 <span className={`text-xs font-bold ${totalRevenue >= 750000 ? "text-primary" : "text-gray-400"}`}>R$ 750K</span>
@@ -298,7 +314,7 @@ export function GoalsRoadmap({ totalRevenue, userId }: GoalsRoadmapProps) {
                 onClick={() => { setPreviewMilestone(milestones.find(m => m.badgeType === "plaque_1m")!); setShowPreview(true); }}
                 className={`aspect-square rounded-full border-2 overflow-hidden relative ${totalRevenue >= 1000000 ? "border-primary" : "border-primary/40"}`}
               >
-                <Image src="/images/rewards/placa-1m.png" alt="Placa 1M" fill className={`object-cover ${totalRevenue >= 1000000 ? "" : "grayscale opacity-50"}`} />
+                <Image src="/rewards/placa-1m-v1.png" alt="Placa 1M" fill className={`object-cover ${totalRevenue >= 1000000 ? "" : "grayscale opacity-50"}`} />
               </button>
               <div className="aspect-square" /> {/* Empty cell */}
             </div>
@@ -333,7 +349,7 @@ export function GoalsRoadmap({ totalRevenue, userId }: GoalsRoadmapProps) {
                   onClick={() => { setPreviewMilestone(milestones.find(m => m.badgeType === "bracelet")!); setShowPreview(true); }}
                   className={`w-[70px] h-[70px] md:w-[90px] md:h-[90px] rounded-full border-2 overflow-hidden relative flex-shrink-0 transition-transform hover:scale-105 ${totalRevenue >= 20000 ? "border-primary" : "border-primary/40"}`}
                 >
-                  <Image src="/images/rewards/pulseira-20k.png" alt="Pulseira 20K" fill className={`object-cover ${totalRevenue >= 20000 ? "" : "grayscale opacity-50"}`} />
+                  <Image src="/rewards/pulseira.png" alt="Pulseira 20K" fill className={`object-cover ${totalRevenue >= 20000 ? "" : "grayscale opacity-50"}`} />
                 </button>
                 
                 <div className={`h-0.5 flex-1 mx-1 md:mx-2 ${totalRevenue >= 50000 ? "bg-primary" : "bg-gray-700"}`} />
@@ -370,7 +386,7 @@ export function GoalsRoadmap({ totalRevenue, userId }: GoalsRoadmapProps) {
                   onClick={() => { setPreviewMilestone(milestones.find(m => m.badgeType === "plaque_100k")!); setShowPreview(true); }}
                   className={`w-[70px] h-[70px] md:w-[90px] md:h-[90px] rounded-full border-2 overflow-hidden relative flex-shrink-0 transition-transform hover:scale-105 ${totalRevenue >= 100000 ? "border-primary" : "border-primary/40"}`}
                 >
-                  <Image src="/images/rewards/placa-100k.png" alt="Placa 100K" fill className={`object-cover ${totalRevenue >= 100000 ? "" : "grayscale opacity-50"}`} />
+                  <Image src="/rewards/placa-100k.png" alt="Placa 100K" fill className={`object-cover ${totalRevenue >= 100000 ? "" : "grayscale opacity-50"}`} />
                 </button>
                 
                 <div className={`h-0.5 flex-1 mx-1 md:mx-2 ${totalRevenue >= 250000 ? "bg-primary" : "bg-gray-700"}`} />
@@ -407,7 +423,7 @@ export function GoalsRoadmap({ totalRevenue, userId }: GoalsRoadmapProps) {
                   onClick={() => { setPreviewMilestone(milestones.find(m => m.badgeType === "plaque_500k")!); setShowPreview(true); }}
                   className={`w-[70px] h-[70px] md:w-[90px] md:h-[90px] rounded-full border-2 overflow-hidden relative flex-shrink-0 transition-transform hover:scale-105 ${totalRevenue >= 500000 ? "border-primary" : "border-primary/40"}`}
                 >
-                  <Image src="/images/rewards/placa-500k.png" alt="Placa 500K" fill className={`object-cover ${totalRevenue >= 500000 ? "" : "grayscale opacity-50"}`} />
+                  <Image src="/rewards/placa-50k.png" alt="Placa 500K" fill className={`object-cover ${totalRevenue >= 500000 ? "" : "grayscale opacity-50"}`} />
                 </button>
                 
                 <div className={`h-0.5 flex-1 mx-1 md:mx-2 ${totalRevenue >= 750000 ? "bg-primary" : "bg-gray-700"}`} />
@@ -431,7 +447,7 @@ export function GoalsRoadmap({ totalRevenue, userId }: GoalsRoadmapProps) {
                   onClick={() => { setPreviewMilestone(milestones.find(m => m.badgeType === "plaque_1m")!); setShowPreview(true); }}
                   className={`w-[70px] h-[70px] md:w-[90px] md:h-[90px] rounded-full border-2 overflow-hidden relative flex-shrink-0 transition-transform hover:scale-105 ${totalRevenue >= 1000000 ? "border-primary" : "border-primary/40"}`}
                 >
-                  <Image src="/images/rewards/placa-1m.png" alt="Placa 1M" fill className={`object-cover ${totalRevenue >= 1000000 ? "" : "grayscale opacity-50"}`} />
+                  <Image src="/rewards/placa-1m-v1.png" alt="Placa 1M" fill className={`object-cover ${totalRevenue >= 1000000 ? "" : "grayscale opacity-50"}`} />
                 </button>
               </div>
             </div>
@@ -514,9 +530,10 @@ export function GoalsRoadmap({ totalRevenue, userId }: GoalsRoadmapProps) {
                 <Button
                   onClick={() => {
                     setSelectedMilestone(nextAvailableReward);
+                    setSelectedVariation("");
                     setShowModal(true);
                   }}
-                  className="w-full bg-gradient-to-r from-primary to-orange-500 hover:from-primary/90 hover:to-orange-500/90 mb-4"
+                  className="w-full bg-gradient-to-r from-primary to-indigo-500 hover:from-primary/90 hover:to-indigo-500/90 mb-4"
                 >
                   <Gift className="w-4 h-4 mr-2" />
                   Resgatar Premiacao
@@ -535,7 +552,7 @@ export function GoalsRoadmap({ totalRevenue, userId }: GoalsRoadmapProps) {
                       initial={{ width: 0 }}
                       animate={{ width: `${progressPercent}%` }}
                       transition={{ duration: 1 }}
-                      className="h-full bg-gradient-to-r from-primary to-orange-400 rounded-full"
+                      className="h-full bg-gradient-to-r from-primary to-indigo-400 rounded-full"
                     />
                   </div>
                   <p className="text-xs text-center text-muted-foreground mt-2">
@@ -556,7 +573,7 @@ export function GoalsRoadmap({ totalRevenue, userId }: GoalsRoadmapProps) {
                   setShowSimulation(true);
                   setCurrentRewardIndex(0);
                 }}
-                className="w-full bg-gradient-to-r from-primary to-orange-500 hover:from-primary/90 hover:to-orange-500/90"
+                className="w-full bg-gradient-to-r from-primary to-indigo-500 hover:from-primary/90 hover:to-indigo-500/90"
               >
                 <Play className="w-4 h-4 mr-2" />
                 Iniciar Simulacao
@@ -605,22 +622,59 @@ export function GoalsRoadmap({ totalRevenue, userId }: GoalsRoadmapProps) {
               <div className="space-y-4">
                 <div className="p-4 rounded-xl bg-primary/5 border border-primary/20">
                   <p className="text-sm text-muted-foreground mb-2">
-                    Parabens por atingir essa meta!
+                    Parabéns por atingir essa meta!
                   </p>
                   <p className="text-lg font-bold text-primary">
                     Meta atingida: {selectedMilestone.label}
                   </p>
                 </div>
 
+                {/* Selecao de variacao */}
+                {rewardVariations[selectedMilestone.badgeType] && (
+                  <div>
+                    <label className="text-sm text-muted-foreground mb-2 block">
+                      Escolha sua premiação *
+                    </label>
+                    <div className="grid grid-cols-2 gap-2">
+                      {rewardVariations[selectedMilestone.badgeType].map((variation) => (
+                        <button
+                          key={variation.id}
+                          onClick={() => setSelectedVariation(variation.id)}
+                          className={`relative p-2 rounded-lg border-2 transition-all ${
+                            selectedVariation === variation.id
+                              ? "border-primary bg-primary/10"
+                              : "border-border hover:border-primary/50"
+                          }`}
+                        >
+                          <div className="aspect-square relative rounded-md overflow-hidden mb-2">
+                            <Image
+                              src={variation.image}
+                              alt={variation.name}
+                              fill
+                              className="object-cover"
+                            />
+                          </div>
+                          <p className="text-xs font-medium text-center">{variation.name}</p>
+                          {selectedVariation === variation.id && (
+                            <div className="absolute top-1 right-1 w-5 h-5 bg-primary rounded-full flex items-center justify-center">
+                              <Check className="w-3 h-3 text-white" />
+                            </div>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 <div>
                   <label className="text-sm text-muted-foreground mb-2 flex items-center gap-2">
                     <MapPin className="w-4 h-4" />
-                    Endereco de Entrega *
+                    Endereço de Entrega *
                   </label>
                   <textarea
                     value={address}
                     onChange={(e) => setAddress(e.target.value)}
-                    placeholder="Rua, numero, complemento, bairro, cidade, estado, CEP"
+                    placeholder="Rua, número, complemento, bairro, cidade, estado, CEP"
                     rows={3}
                     className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-foreground resize-none"
                   />
@@ -628,16 +682,16 @@ export function GoalsRoadmap({ totalRevenue, userId }: GoalsRoadmapProps) {
 
                 <Button
                   onClick={claimReward}
-                  disabled={!address || isClaiming}
+                  disabled={!address || isClaiming || (rewardVariations[selectedMilestone.badgeType] && !selectedVariation)}
                   className="w-full bg-primary hover:bg-primary/90"
                 >
                   {isClaiming && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                   <Gift className="w-4 h-4 mr-2" />
-                  Solicitar Premiacao
+                  Solicitar Premiação
                 </Button>
 
                 <p className="text-xs text-muted-foreground text-center">
-                  Sua premiacao sera enviada em ate 15 dias uteis apos a solicitacao.
+                  Sua premiação será enviada em até 15 dias úteis após a solicitação.
                 </p>
               </div>
             </motion.div>
@@ -677,7 +731,7 @@ export function GoalsRoadmap({ totalRevenue, userId }: GoalsRoadmapProps) {
               </div>
 
               {/* Active Mode Badge */}
-              <div className="bg-gradient-to-r from-primary to-orange-500 text-primary-foreground text-center py-2 px-4 rounded-lg text-sm font-medium mb-6">
+              <div className="bg-gradient-to-r from-primary to-indigo-500 text-primary-foreground text-center py-2 px-4 rounded-lg text-sm font-medium mb-6">
                 Modo Simulacao Ativo
               </div>
 
@@ -753,7 +807,7 @@ export function GoalsRoadmap({ totalRevenue, userId }: GoalsRoadmapProps) {
                     initial={{ width: 0 }}
                     animate={{ width: `${((currentRewardIndex + 1) / simulationRewards.length) * 100}%` }}
                     transition={{ duration: 0.3 }}
-                    className="h-full bg-gradient-to-r from-primary to-orange-400 rounded-full"
+                    className="h-full bg-gradient-to-r from-primary to-indigo-400 rounded-full"
                   />
                 </div>
               </div>
@@ -852,7 +906,7 @@ export function GoalsRoadmap({ totalRevenue, userId }: GoalsRoadmapProps) {
                     </p>
                     <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
                       <div 
-                        className="h-full bg-gradient-to-r from-primary to-orange-400 rounded-full transition-all"
+                        className="h-full bg-gradient-to-r from-primary to-indigo-400 rounded-full transition-all"
                         style={{ width: `${Math.min((totalRevenue / previewMilestone.value) * 100, 100)}%` }}
                       />
                     </div>

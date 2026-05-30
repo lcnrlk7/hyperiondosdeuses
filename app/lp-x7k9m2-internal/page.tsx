@@ -76,7 +76,7 @@ export default function SecretAdminLogin() {
               height={40}
             />
             <div className="flex items-baseline">
-              <span className="text-2xl font-bold text-white">Legacy</span>
+              <span className="text-2xl font-bold text-white">Hyperion</span>
               <span className="text-2xl font-bold text-primary">Pay</span>
             </div>
           </div>

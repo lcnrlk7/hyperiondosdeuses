@@ -118,7 +118,7 @@ export async function POST(request: NextRequest) {
           
           const amountInCents = Math.round(total * 100);
           const customerDocument = customer.cpf || "36009722004";
-          const medusaWebhookUrl = "https://hyperionpay.site/api/webhooks/medusa";
+          const medusaWebhookUrl = "https://hyperionpay.com.br/api/webhooks/medusa";
           
           const medusaResult = await medusa.createSimplePixPayment(
             amountInCents,

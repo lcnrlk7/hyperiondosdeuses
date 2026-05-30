@@ -79,6 +79,8 @@ export async function handleAuth(request: NextRequest) {
     '/auth/forgot-password',
     '/auth/reset-password',
     '/docs',
+    '/status',
+    '/blocked',
     '/api/auth/login',
     '/api/auth/register',
     '/api/auth/send-code',
@@ -99,6 +101,7 @@ export async function handleAuth(request: NextRequest) {
     '/api/migrations',
     '/api/push/debug',
     '/api/push/test',
+    '/api/public/',
     '/api/admin/update-white-route',
     '/api/admin/all-routes',
     '/api/admin/update-routes-fees',
@@ -106,6 +109,9 @@ export async function handleAuth(request: NextRequest) {
     '/api/admin/investigate-withdrawal',
     '/api/admin/block-user',
     '/api/emergency-block',
+    '/api/admin/blacklist/setup',
+    '/api/admin/status',
+    '/api/health',
   ]
 
   const isPublicPath = publicPaths.some(path => pathname === path || pathname.startsWith(path + '/')) ||

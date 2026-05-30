@@ -12,7 +12,7 @@ export async function POST() {
     }
 
     // URL do webhook - usar o dominio de producao
-    const webhookUrl = "https://app.legacypay.site/api/telegram/webhook";
+    const webhookUrl = "https://app.hyperionpay.com/api/telegram/webhook";
     
     // Configurar webhook no Telegram
     const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/setWebhook`, {

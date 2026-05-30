@@ -224,7 +224,7 @@ export class MedusaPayments {
 
     // Garantir que name e email nunca sejam undefined
     const safeName = (payerName || "Cliente").trim() || "Cliente";
-    const safeEmail = (payerEmail || "cliente@hyperionpay.site").trim() || "cliente@hyperionpay.site";
+    const safeEmail = (payerEmail || "cliente@hyperionpay.com.br").trim() || "cliente@hyperionpay.com.br";
 
     const customer: MedusaCustomer = {
       name: safeName,

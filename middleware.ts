@@ -1,42 +1,169 @@
 import { handleAuth } from '@/lib/middleware-auth'
 import { type NextRequest, NextResponse } from 'next/server'
 import { neon } from '@neondatabase/serverless'
+import { jwtVerify } from 'jose'
 
-// Cache de IPs bloqueados (atualiza a cada 60 segundos)
-let blockedIpsCache: Set<string> = new Set()
-let lastCacheUpdate = 0
-const CACHE_TTL = 60000 // 60 segundos
+const JWT_SECRET = new TextEncoder().encode(
+  process.env.JWT_SECRET || 'fallback-secret-change-in-production'
+)
 
-async function isIpBlocked(ip: string): Promise<boolean> {
-  if (!ip || ip === 'unknown') return false
-  
-  // Verifica cache primeiro
-  const now = Date.now()
-  if (now - lastCacheUpdate < CACHE_TTL && blockedIpsCache.size > 0) {
-    return blockedIpsCache.has(ip)
+// Cache de White Label tenants
+interface WhiteLabelCache {
+  domain: string
+  tenant: any
+  timestamp: number
+}
+const whiteLabelCache = new Map<string, WhiteLabelCache>()
+const WL_CACHE_TTL = 60000 // 1 minuto
+
+async function getWhiteLabelTenant(domain: string): Promise<any | null> {
+  const cached = whiteLabelCache.get(domain)
+  if (cached && Date.now() - cached.timestamp < WL_CACHE_TTL) {
+    return cached.tenant
   }
   
-  // Atualiza cache - só tenta se DATABASE_URL estiver disponível
   const databaseUrl = process.env.DATABASE_URL
-  if (!databaseUrl) {
-    // Em Edge Runtime, a variável pode não estar disponível
-    // Retorna cache existente ou false
-    return blockedIpsCache.has(ip)
-  }
+  if (!databaseUrl) return null
   
   try {
     const sql = neon(databaseUrl)
-    const blockedIps = await sql`SELECT ip_address FROM blocked_ips`
-    blockedIpsCache = new Set(blockedIps.map((row: { ip_address: string }) => row.ip_address))
-    lastCacheUpdate = now
-    return blockedIpsCache.has(ip)
+    const result = await sql`
+      SELECT * FROM white_label_tenants 
+      WHERE (domain_app = ${domain} OR domain_admin = ${domain})
+      AND is_active = true
+      LIMIT 1
+    `
+    
+    const tenant = result[0] || null
+    whiteLabelCache.set(domain, { domain, tenant, timestamp: Date.now() })
+    return tenant
   } catch (error) {
-    // Silencia erro em produção, apenas loga se for erro diferente de conexão
-    if (error instanceof Error && !error.message.includes('database connection')) {
-      console.error('[Middleware] Erro ao verificar IP bloqueado:', error)
-    }
-    return blockedIpsCache.has(ip)
+    return null
   }
+}
+
+// Cache de bloqueios (atualiza a cada 60 segundos)
+interface BlockCache {
+  ips: Set<string>
+  emails: Set<string>
+  cpfs: Set<string>
+  devices: Set<string>
+  phones: Set<string>
+  userIds: Set<string>
+}
+
+let blockedCache: BlockCache = {
+  ips: new Set(),
+  emails: new Set(),
+  cpfs: new Set(),
+  devices: new Set(),
+  phones: new Set(),
+  userIds: new Set(),
+}
+let lastCacheUpdate = 0
+const CACHE_TTL = 60000 // 60 segundos
+
+async function updateBlockedCache(): Promise<void> {
+  const databaseUrl = process.env.DATABASE_URL
+  if (!databaseUrl) return
+
+  try {
+    const sql = neon(databaseUrl)
+    const blocks = await sql`
+      SELECT type, value, user_id 
+      FROM blacklist 
+      WHERE is_active = true 
+      AND (expires_at IS NULL OR expires_at > NOW())
+    `
+
+    const newCache: BlockCache = {
+      ips: new Set(),
+      emails: new Set(),
+      cpfs: new Set(),
+      devices: new Set(),
+      phones: new Set(),
+      userIds: new Set(),
+    }
+
+    for (const block of blocks) {
+      switch (block.type) {
+        case 'ip':
+          newCache.ips.add(block.value)
+          break
+        case 'email':
+          newCache.emails.add(block.value.toLowerCase())
+          break
+        case 'cpf':
+          newCache.cpfs.add(block.value.replace(/\D/g, ''))
+          break
+        case 'device':
+          newCache.devices.add(block.value)
+          break
+        case 'phone':
+          newCache.phones.add(block.value.replace(/\D/g, ''))
+          break
+      }
+      if (block.user_id) {
+        newCache.userIds.add(block.user_id)
+      }
+    }
+
+    blockedCache = newCache
+    lastCacheUpdate = Date.now()
+  } catch (error) {
+    // Silencia erros de conexao
+  }
+}
+
+async function isBlocked(request: NextRequest): Promise<{ blocked: boolean; reason?: string }> {
+  const now = Date.now()
+  
+  // Atualiza cache se necessario
+  if (now - lastCacheUpdate > CACHE_TTL) {
+    await updateBlockedCache()
+  }
+
+  // Verifica IP
+  const ip = getClientIp(request)
+  if (ip && ip !== 'unknown' && blockedCache.ips.has(ip)) {
+    return { blocked: true, reason: 'IP bloqueado' }
+  }
+
+  // Verifica device_id do cookie
+  const deviceId = request.cookies.get('device_id')?.value
+  if (deviceId && blockedCache.devices.has(deviceId)) {
+    return { blocked: true, reason: 'Dispositivo bloqueado' }
+  }
+
+  // Verifica usuario logado
+  const authToken = request.cookies.get('auth-token')?.value
+  if (authToken) {
+    try {
+      const { payload } = await jwtVerify(authToken, JWT_SECRET)
+      
+      // Verifica user_id
+      if (payload.id && blockedCache.userIds.has(payload.id as string)) {
+        return { blocked: true, reason: 'Usuario bloqueado' }
+      }
+      
+      // Verifica email
+      if (payload.email && blockedCache.emails.has((payload.email as string).toLowerCase())) {
+        return { blocked: true, reason: 'Email bloqueado' }
+      }
+      
+      // Verifica CPF (se estiver no token)
+      if (payload.cpf) {
+        const cleanCpf = (payload.cpf as string).replace(/\D/g, '')
+        if (blockedCache.cpfs.has(cleanCpf)) {
+          return { blocked: true, reason: 'CPF bloqueado' }
+        }
+      }
+    } catch {
+      // Token invalido, continua sem verificar usuario
+    }
+  }
+
+  return { blocked: false }
 }
 
 function getClientIp(request: NextRequest): string {
@@ -57,10 +184,10 @@ const MAIN_DOMAINS = [
 const CHECKOUT_DOMAIN = 'pay-checkout-pagamentoseguros.online'
 
 // Dominio do app (dashboard de usuario)
-const APP_DOMAIN = 'app.hyperionpay.site'
+const APP_DOMAIN = 'app.hyperionpay.com.br'
 
 // Dominio do painel CEO/Admin
-const CEO_DOMAIN = 'ceo.hyperionpay.site'
+const CEO_DOMAIN = 'ceo.hyperionpay.com.br'
 
 function isMainDomain(hostname: string): boolean {
   const cleanHostname = hostname.replace(/^www\./, '').split(':')[0]
@@ -112,17 +239,16 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
   
-  // Verificar se IP esta bloqueado
-  const clientIp = getClientIp(request)
-  const blocked = await isIpBlocked(clientIp)
+  // Verificar se esta bloqueado (IP, email, CPF, device, usuario)
+  const blockCheck = await isBlocked(request)
   
-  if (blocked) {
+  if (blockCheck.blocked) {
     const url = request.nextUrl.clone()
     url.pathname = '/blocked'
     return NextResponse.rewrite(url)
   }
   
-  // Se for dominio principal (www.hyperionpay.site) - APENAS landing page
+  // Se for dominio principal (www.hyperionpay.com.br) - APENAS landing page
   if (isMainDomain(hostname)) {
     // Ignora arquivos estaticos e API
     if (
@@ -133,21 +259,21 @@ export async function middleware(request: NextRequest) {
       return await handleAuth(request)
     }
     
-    // Redireciona rotas de auth para app.hyperionpay.site
+    // Redireciona rotas de auth para app.hyperionpay.com.br
     if (pathname.startsWith('/auth/')) {
-      const url = new URL(`https://app.hyperionpay.site${pathname}${request.nextUrl.search}`)
+      const url = new URL(`https://app.hyperionpay.com.br${pathname}${request.nextUrl.search}`)
       return NextResponse.redirect(url)
     }
     
-    // Redireciona dashboard para app.hyperionpay.site
+    // Redireciona dashboard para app.hyperionpay.com.br
     if (pathname.startsWith('/dashboard')) {
-      const url = new URL(`https://app.hyperionpay.site${pathname}${request.nextUrl.search}`)
+      const url = new URL(`https://app.hyperionpay.com.br${pathname}${request.nextUrl.search}`)
       return NextResponse.redirect(url)
     }
     
-    // Redireciona painel admin para ceo.hyperionpay.site
+    // Redireciona painel admin para ceo.hyperionpay.com.br
     if (pathname.startsWith('/lp-x7k9m2-internal')) {
-      const url = new URL(`https://ceo.hyperionpay.site${pathname}${request.nextUrl.search}`)
+      const url = new URL(`https://ceo.hyperionpay.com.br${pathname}${request.nextUrl.search}`)
       return NextResponse.redirect(url)
     }
     
@@ -155,7 +281,7 @@ export async function middleware(request: NextRequest) {
     return await handleAuth(request)
   }
   
-  // Se for dominio do CEO (ceo.hyperionpay.site) - painel admin exclusivo
+  // Se for dominio do CEO (ceo.hyperionpay.com.br) - painel admin exclusivo
   if (isCeoDomain(hostname)) {
     // Ignora arquivos estaticos
     if (
@@ -187,7 +313,7 @@ export async function middleware(request: NextRequest) {
     return await handleAuth(request)
   }
   
-  // Se for dominio do app (app.hyperionpay.site) - dashboard de usuario
+  // Se for dominio do app (app.hyperionpay.com.br) - dashboard de usuario
   if (isAppDomain(hostname)) {
     // Ignora arquivos estaticos
     if (
@@ -248,6 +374,48 @@ export async function middleware(request: NextRequest) {
     }
     
     return NextResponse.next()
+  }
+  
+  // Outro dominio desconhecido - pode ser White Label
+  const cleanHostname = hostname.replace(/^www\./, '').split(':')[0]
+  const whiteLabelTenant = await getWhiteLabelTenant(cleanHostname)
+  
+  if (whiteLabelTenant) {
+    // E um dominio White Label
+    const isAdminDomain = whiteLabelTenant.domain_admin === cleanHostname
+    
+    // Adicionar header com info do tenant para as APIs usarem
+    const response = await handleAuth(request)
+    response.headers.set('x-tenant-id', whiteLabelTenant.id)
+    response.headers.set('x-tenant-database', whiteLabelTenant.database_url || '')
+    response.headers.set('x-tenant-is-admin', isAdminDomain ? 'true' : 'false')
+    
+    // Se acessar a raiz
+    if (pathname === '/' || pathname === '') {
+      const url = request.nextUrl.clone()
+      
+      if (isAdminDomain) {
+        // Admin domain - redireciona para painel CEO
+        const teamUser = request.cookies.get('team_session')?.value
+        if (teamUser) {
+          url.pathname = '/lp-x7k9m2-internal/ceo'
+        } else {
+          url.pathname = '/lp-x7k9m2-internal/team-login'
+        }
+      } else {
+        // App domain - redireciona para dashboard ou login
+        const user = request.cookies.get('auth-token')?.value
+        if (user) {
+          url.pathname = '/dashboard'
+        } else {
+          url.pathname = '/auth/login'
+        }
+      }
+      
+      return NextResponse.redirect(url)
+    }
+    
+    return response
   }
   
   // Outro dominio desconhecido - segue fluxo normal

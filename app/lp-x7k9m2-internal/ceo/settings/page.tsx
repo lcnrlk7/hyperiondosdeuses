@@ -251,8 +251,8 @@ export default function SettingsPage() {
         className="glass rounded-2xl p-6"
       >
         <div className="flex items-center gap-3 mb-6">
-          <div className="p-3 rounded-xl bg-orange-500/10">
-            <Percent className="w-6 h-6 text-orange-400" />
+          <div className="p-3 rounded-xl bg-indigo-500/10">
+            <Percent className="w-6 h-6 text-indigo-400" />
           </div>
           <div>
             <h2 className="text-lg font-semibold text-white">Taxas de Saque (PIX Out)</h2>

@@ -214,7 +214,7 @@ export function WebhooksContent({
                   </code>
                   <span className={`px-2 py-0.5 rounded text-xs font-medium ${
                     item.category === "Checkout" 
-                      ? "bg-orange-500/20 text-orange-500"
+                      ? "bg-indigo-500/20 text-indigo-500"
                       : item.category === "PIX"
                       ? "bg-green-500/20 text-green-500"
                       : "bg-blue-500/20 text-blue-500"
@@ -327,7 +327,7 @@ export function WebhooksContent({
 
           <div>
             <p className="text-sm text-muted-foreground mb-2">
-              <span className="px-2 py-0.5 rounded bg-orange-500/20 text-orange-500 text-xs font-medium mr-2">Checkout</span>
+              <span className="px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-500 text-xs font-medium mr-2">Checkout</span>
               checkout.order_created
             </p>
             <div className="bg-secondary rounded-xl p-4">
@@ -371,7 +371,7 @@ export function WebhooksContent({
 
           <div>
             <p className="text-sm text-muted-foreground mb-2">
-              <span className="px-2 py-0.5 rounded bg-orange-500/20 text-orange-500 text-xs font-medium mr-2">Checkout</span>
+              <span className="px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-500 text-xs font-medium mr-2">Checkout</span>
               checkout.payment_confirmed
             </p>
             <div className="bg-secondary rounded-xl p-4">

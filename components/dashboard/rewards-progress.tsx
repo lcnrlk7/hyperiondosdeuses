@@ -154,7 +154,7 @@ export function RewardsProgress({ totalRevenue, userId }: RewardsProgressProps) 
                 initial={{ width: 0 }}
                 animate={{ width: `${progressToNext}%` }}
                 transition={{ duration: 1, ease: "easeOut" }}
-                className="h-full bg-gradient-to-r from-primary to-orange-400 rounded-full"
+                className="h-full bg-gradient-to-r from-primary to-indigo-400 rounded-full"
               />
             </div>
             <p className="text-[10px] sm:text-xs text-muted-foreground mt-2 text-center truncate">

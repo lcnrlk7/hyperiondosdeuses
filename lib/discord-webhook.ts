@@ -26,7 +26,7 @@ const COLORS = {
   error: 0xef4444,      // Vermelho
   warning: 0xf59e0b,    // Amarelo
   info: 0x3b82f6,       // Azul
-  primary: 0xf97316,    // Laranja (cor da Hyperion Pay)
+  primary: 0x4f46e5,    // Indigo (cor da Hyperion Pay)
   purple: 0x8b5cf6,     // Roxo
   pink: 0xec4899,       // Rosa
 };
@@ -73,7 +73,7 @@ function sendDiscordWebhook(
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           username: "Hyperion Pay Logs",
-          avatar_url: "https://hyperionpay.site/logo.png",
+          avatar_url: "https://hyperionpay.com.br/mascote.png",
           ...payload,
         }),
       });

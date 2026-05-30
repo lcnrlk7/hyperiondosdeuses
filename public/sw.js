@@ -1,4 +1,4 @@
-// Service Worker para Push Notifications - LegacyPay
+// Service Worker para Push Notifications - Hyperion Pay
 
 self.addEventListener('install', (event) => {
   console.log('[SW] Service Worker instalado');
@@ -15,11 +15,11 @@ self.addEventListener('push', (event) => {
   console.log('[SW] Push recebido:', event);
   
   let data = {
-    title: 'LegacyPay',
+    title: 'Hyperion Pay',
     body: 'Você tem uma nova notificação!',
     icon: '/icon-192.png',
     badge: '/icon-192.png',
-    tag: 'legacypay-notification',
+    tag: 'hyperionpay-notification',
     data: {}
   };
 

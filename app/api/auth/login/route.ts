@@ -24,61 +24,89 @@ export async function POST(request: NextRequest) {
     }
 
     // SEGURANCA: Rate limiting de login
-    const ip = await getClientIP();
+    let ip = "127.0.0.1";
+    try {
+      ip = await getClientIP();
+    } catch (e) {
+      console.error("[v0] Error getting client IP:", e);
+    }
     
     // SEGURANCA: Verificar ataques nos campos
-    for (const [field, value] of Object.entries({ email, password })) {
-      if (typeof value === "string") {
-        const attack = detectAttack(value);
-        if (attack.detected) {
-          await logAttack({
-            attackType: attack.attackType!,
-            ipAddress: ip,
-            userEmail: email,
-            payload: value.substring(0, 100),
-            endpoint: "/api/auth/login",
-            severity: attack.severity || "high",
-            blocked: true,
-          });
-          
-          // Bloquear IP para ataques criticos
-          if (attack.severity === "critical" || attack.severity === "high") {
+    try {
+      for (const [field, value] of Object.entries({ email, password })) {
+        if (typeof value === "string") {
+          const attack = detectAttack(value);
+          if (attack.detected) {
             try {
-              await sql`
-                INSERT INTO blocked_ips (ip_address, reason)
-                VALUES (${ip}, ${`${attack.attackType} no login - campo ${field}`})
-                ON CONFLICT (ip_address) DO NOTHING
-              `;
-            } catch {
-              // Ignora
+              await logAttack({
+                attackType: attack.attackType!,
+                ipAddress: ip,
+                userEmail: email,
+                payload: value.substring(0, 100),
+                endpoint: "/api/auth/login",
+                severity: attack.severity || "high",
+                blocked: true,
+              });
+            } catch (e) {
+              console.error("[v0] Error logging attack:", e);
             }
+            
+            // Bloquear IP para ataques criticos
+            if (attack.severity === "critical" || attack.severity === "high") {
+              try {
+                await sql`
+                  INSERT INTO blocked_ips (ip_address, reason)
+                  VALUES (${ip}, ${`${attack.attackType} no login - campo ${field}`})
+                  ON CONFLICT (ip_address) DO NOTHING
+                `;
+              } catch {
+                // Ignora
+              }
+            }
+            
+            return NextResponse.json(
+              { error: "Conteúdo não permitido" },
+              { status: 400 }
+            );
           }
-          
-          return NextResponse.json(
-            { error: "Conteúdo não permitido" },
-            { status: 400 }
-          );
         }
       }
+    } catch (e) {
+      console.error("[v0] Error detecting attacks:", e);
     }
     
     // Verificar se IP esta bloqueado
-    const blockedIp = await sql`SELECT id FROM blocked_ips WHERE ip_address = ${ip}`;
-    if (blockedIp.length > 0) {
-      return NextResponse.json(
-        { error: "Acesso negado" },
-        { status: 403 }
-      );
+    try {
+      const blockedIp = await sql`SELECT id FROM blocked_ips WHERE ip_address = ${ip}`;
+      if (blockedIp.length > 0) {
+        return NextResponse.json(
+          { error: "Acesso negado" },
+          { status: 403 }
+        );
+      }
+    } catch (e) {
+      console.error("[v0] Error checking blocked IP:", e);
+      // Continua mesmo se der erro (tabela pode nao existir)
     }
     
-    const loginCheck = await checkLoginAttempts(email, ip);
-    
-    if (!loginCheck.allowed) {
-      await logSuspiciousActivity(null, "LOGIN_BLOCKED", `IP: ${ip}, Email: ${email}, Reason: ${loginCheck.reason}`, ip);
-      return NextResponse.json(
-        { error: loginCheck.reason || "Muitas tentativas. Aguarde alguns minutos." },
-        { status: 429 }
-      );
+    // Rate limiting
+    try {
+      const loginCheck = await checkLoginAttempts(email, ip);
+      
+      if (!loginCheck.allowed) {
+        try {
+          await logSuspiciousActivity(null, "LOGIN_BLOCKED", `IP: ${ip}, Email: ${email}, Reason: ${loginCheck.reason}`, ip);
+        } catch (e) {
+          console.error("[v0] Error logging suspicious activity:", e);
+        }
+        return NextResponse.json(
+          { error: loginCheck.reason || "Muitas tentativas. Aguarde alguns minutos." },
+          { status: 429 }
+        );
+      }
+    } catch (e) {
+      console.error("[v0] Error checking login attempts:", e);
+      // Continua mesmo se der erro
     }
 
     const { user, error } = await loginUser(email, password);
@@ -107,7 +135,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Verificar se usuario tem 2FA ativado
-    const has2FA = await is2FAEnabled(user.id);
+    let has2FA = false;
+    try {
+      has2FA = await is2FAEnabled(user.id);
+    } catch (e) {
+      console.error("[v0] Error checking 2FA:", e);
+      // Continua sem 2FA se der erro
+    }
     
     if (has2FA) {
       // Se nao forneceu codigo 2FA, retornar que precisa

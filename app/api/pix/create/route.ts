@@ -8,6 +8,32 @@ import { detectAttack } from "@/lib/sanitize";
 import { logAttack } from "@/lib/attack-logger";
 import { notifyPixCreated } from "@/lib/notifications";
 
+// Sistema de codigos de erro - nunca expor erros internos ao usuario
+function errorResponse(code: string, status: number, internalMsg?: string) {
+  const messages: Record<string, string> = {
+    "PIX-001": "Valor invalido. Informe um valor positivo.",
+    "PIX-002": "Valor abaixo do minimo permitido.",
+    "PIX-003": "Valor acima do limite por transacao. Use o Pagamento Dividido para valores maiores.",
+    "PIX-004": "Sessao expirada. Faca login novamente.",
+    "PIX-005": "Conta desativada. Entre em contato com o suporte.",
+    "PIX-006": "Conta bloqueada. Entre em contato com o suporte.",
+    "PIX-007": "Rota de pagamento nao configurada. Entre em contato com o suporte.",
+    "PIX-008": "Conteudo nao permitido.",
+    "PIX-009": "Falha ao gerar cobranca. Tente novamente em alguns segundos.",
+    "PIX-010": "Erro ao registrar transacao. Tente novamente.",
+    "PIX-500": "Erro interno. Entre em contato com o suporte informando o codigo PIX-500.",
+  };
+
+  if (internalMsg) {
+    console.error(`[PIX Error ${code}]`, internalMsg);
+  }
+
+  return NextResponse.json(
+    { error: messages[code] || messages["PIX-500"], code },
+    { status }
+  );
+}
+
 function getClientIp(request: NextRequest): string {
   return request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
          request.headers.get("x-real-ip") || "unknown";
@@ -50,19 +76,13 @@ export async function POST(request: NextRequest) {
             severity: attack.severity || "high",
             blocked: true,
           });
-          return NextResponse.json(
-            { error: "Conteúdo não permitido" },
-            { status: 400 }
-          );
+          return errorResponse("PIX-008", 400, `Attack detected: ${attack.attackType} in ${field}`);
         }
       }
     }
 
     if (!amount || amount <= 0) {
-      return NextResponse.json(
-        { error: "Valor inválido" },
-        { status: 400 }
-      );
+      return errorResponse("PIX-001", 400);
     }
 
     // Buscar configurações
@@ -78,10 +98,7 @@ export async function POST(request: NextRequest) {
     // Nota: o minimo de deposito especifico da adquirente sera verificado depois de buscar o profile
     
     if (amount > settings.max_deposit) {
-      return NextResponse.json(
-        { error: `Valor máximo: R$ ${settings.max_deposit.toFixed(2)}` },
-        { status: 400 }
-      );
+      return errorResponse("PIX-003", 400, `amount=${amount} > max=${settings.max_deposit}`);
     }
 
     let profile;
@@ -105,25 +122,16 @@ export async function POST(request: NextRequest) {
     }
 
     if (!profile) {
-      return NextResponse.json(
-        { error: "Não autorizado. Faça login ou forneça uma API Key válida." },
-        { status: 401 }
-      );
+      return errorResponse("PIX-004", 401);
     }
 
     if (!profile.is_active) {
-      return NextResponse.json(
-        { error: "Conta desativada" },
-        { status: 403 }
-      );
+      return errorResponse("PIX-005", 403);
     }
 
     // SEGURANCA: Verificar se usuario esta bloqueado
     if (profile.is_blocked) {
-      return NextResponse.json(
-        { error: "Conta bloqueada. Entre em contato com o suporte." },
-        { status: 403 }
-      );
+      return errorResponse("PIX-006", 403);
     }
 
     // Buscar minimo de deposito da adquirente especifica do usuario
@@ -138,25 +146,16 @@ export async function POST(request: NextRequest) {
     const effectiveMinDeposit = acquirerMinDeposit ? Number(acquirerMinDeposit) : settings.min_deposit;
 
     if (amount < effectiveMinDeposit) {
-      return NextResponse.json(
-        { error: `Valor mínimo: R$ ${effectiveMinDeposit.toFixed(2)}` },
-        { status: 400 }
-      );
+      return errorResponse("PIX-002", 400, `amount=${amount} < min=${effectiveMinDeposit}`);
     }
 
     if (profile.kyc_status !== "approved") {
-      return NextResponse.json(
-        { error: "Você precisa completar a verificação KYC para usar esta funcionalidade." },
-        { status: 403 }
-      );
+      return errorResponse("PIX-005", 403, "KYC not approved");
     }
 
     // Buscar adquirente configurada para o usuario (obrigatorio ter acquirer_id)
     if (!profile.acquirer_id) {
-      return NextResponse.json(
-        { error: "Rota de pagamento nao configurada. Entre em contato com o suporte." },
-        { status: 400 }
-      );
+      return errorResponse("PIX-007", 400, `user ${profile.id} has no acquirer_id`);
     }
     
     const acquirerResult = await sql`
@@ -164,10 +163,7 @@ export async function POST(request: NextRequest) {
     `;
 
     if (acquirerResult.length === 0) {
-      return NextResponse.json(
-        { error: "Rota de pagamento inativa ou invalida. Entre em contato com o suporte." },
-        { status: 400 }
-      );
+      return errorResponse("PIX-007", 400, `acquirer ${profile.acquirer_id} not found or inactive`);
     }
 
     const acquirer = acquirerResult[0];
@@ -193,7 +189,7 @@ export async function POST(request: NextRequest) {
         const customerEmail = profile.email || "cliente@hyperionpay.com";
         
         // URL do webhook Medusa - usar domínio de produção
-        const medusaWebhookUrl = "https://www.hyperionpay.site/api/webhooks/medusa";
+        const medusaWebhookUrl = "https://www.hyperionpay.com.br/api/webhooks/medusa";
         
         const medusaResult = await medusa.createSimplePixPayment(
           amountInCents,
@@ -264,17 +260,11 @@ export async function POST(request: NextRequest) {
         };
       }
     } else {
-      return NextResponse.json(
-        { error: "Adquirente não suportado" },
-        { status: 500 }
-      );
+      return errorResponse("PIX-007", 500, `Unsupported acquirer: ${acquirer.code}`);
     }
 
     if (!pixResult.success || !pixResult.data) {
-      return NextResponse.json(
-        { error: pixResult.error || "Erro ao criar cobrança PIX" },
-        { status: 500 }
-      );
+      return errorResponse("PIX-009", 500, `PIX creation failed: ${pixResult.error}`);
     }
 
     // Buscar taxas personalizadas do usuario (ou padrao da rota se nao tiver)
@@ -376,10 +366,6 @@ export async function POST(request: NextRequest) {
       copyPaste: pixResult.data.copyPaste,
     });
   } catch (error) {
-    console.error("Error creating PIX charge:", error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Erro ao criar cobrança PIX" },
-      { status: 500 }
-    );
+    return errorResponse("PIX-500", 500, error instanceof Error ? error.message : String(error));
   }
 }

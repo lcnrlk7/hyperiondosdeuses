@@ -162,7 +162,7 @@ export function WithdrawalReceipt({ withdrawal, onClose }: WithdrawalReceiptProp
                 </svg>
               </div>
               <div>
-                <span className="text-xl font-bold text-foreground">Legacy</span>
+                <span className="text-xl font-bold text-foreground">Hyperion</span>
                 <span className="text-xl font-bold text-primary">Pay</span>
               </div>
             </div>

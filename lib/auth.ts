@@ -204,32 +204,50 @@ export async function loginUser(
   password: string
 ): Promise<{ user: SessionUser | null; error: string | null }> {
   try {
+    console.log("[v0] loginUser called with email:", email)
+    
     const result = await sql`
       SELECT id, email, name, CASE WHEN is_admin THEN 'admin' ELSE 'user' END as role, kyc_status, password_hash, is_active, is_blocked
       FROM profiles
       WHERE email = ${email}
     `
+    
+    console.log("[v0] Query result count:", result.length)
 
     if (result.length === 0) {
-      return { user: null, error: 'Credenciais inválidas' }
+      console.log("[v0] No user found with email:", email)
+      return { user: null, error: 'Email ou senha incorretos' }
     }
 
     const user = result[0] as User & { password_hash: string; is_active: boolean; is_blocked: boolean }
     
+    console.log("[v0] User found:", { id: user.id, email: user.email, is_active: user.is_active, is_blocked: user.is_blocked, hasPasswordHash: !!user.password_hash })
+    
     // Verificar se a conta está ativa
     if (!user.is_active) {
+      console.log("[v0] User is not active")
       return { user: null, error: 'Conta desativada. Entre em contato com o suporte.' }
     }
 
     // SEGURANCA: Verificar se a conta está bloqueada
     if (user.is_blocked) {
+      console.log("[v0] User is blocked")
       return { user: null, error: 'Conta bloqueada. Entre em contato com o suporte.' }
     }
 
+    // Verificar se tem password_hash
+    if (!user.password_hash) {
+      console.log("[v0] User has no password_hash")
+      return { user: null, error: 'Erro na conta. Entre em contato com o suporte.' }
+    }
+
     const isValid = await verifyPassword(password, user.password_hash)
+    
+    console.log("[v0] Password verification result:", isValid)
 
     if (!isValid) {
-      return { user: null, error: 'Credenciais inválidas' }
+      console.log("[v0] Invalid password for user:", email)
+      return { user: null, error: 'Email ou senha incorretos' }
     }
 
     const sessionUser: SessionUser = {
@@ -239,11 +257,13 @@ export async function loginUser(
       role: user.role,
       kyc_status: user.kyc_status,
     }
+    
+    console.log("[v0] Login successful for user:", email)
 
     return { user: sessionUser, error: null }
   } catch (error) {
-    console.error('Login error:', error)
-    return { user: null, error: 'Erro ao fazer login' }
+    console.error('[v0] Login error:', error)
+    return { user: null, error: 'Erro ao fazer login. Tente novamente.' }
   }
 }
 

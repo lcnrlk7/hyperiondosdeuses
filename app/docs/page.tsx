@@ -78,8 +78,8 @@ export default function DocsPage() {
     return code
       .replace(/(["'])(.*?)\1/g, '<span class="text-green-400">$&</span>')
       .replace(/\b(const|let|var|function|return|import|from|export|async|await|if|else)\b/g, '<span class="text-purple-400">$&</span>')
-      .replace(/\b(true|false|null|undefined)\b/g, '<span class="text-orange-400">$&</span>')
-      .replace(/(\d+\.?\d*)/g, '<span class="text-orange-400">$&</span>')
+      .replace(/\b(true|false|null|undefined)\b/g, '<span class="text-indigo-400">$&</span>')
+      .replace(/(\d+\.?\d*)/g, '<span class="text-indigo-400">$&</span>')
       .replace(/(\/\/.*$)/gm, '<span class="text-muted-foreground">$&</span>');
   };
 
@@ -97,7 +97,7 @@ export default function DocsPage() {
     );
   };
 
-  const baseUrl = "https://hyperionpay.site";
+  const baseUrl = "https://hyperionpay.com.br";
 
   return (
     <div className="min-h-screen bg-background">
@@ -122,7 +122,7 @@ export default function DocsPage() {
                 className="w-8 h-8"
               />
               <span className="font-bold text-foreground">
-                Legacy<span className="text-primary">Pay</span>
+                Hyperion<span className="text-primary">Pay</span>
               </span>
               <span className="text-muted-foreground text-sm">API Docs</span>
             </div>
@@ -300,9 +300,9 @@ export default function DocsPage() {
 
                     <div className="bg-background/50 rounded-xl p-4 border border-border">
                       <div className="flex items-center gap-2 mb-2">
-                        <span className="w-2 h-2 rounded-full bg-orange-500"></span>
+                        <span className="w-2 h-2 rounded-full bg-indigo-500"></span>
                         <h3 className="font-semibold text-foreground">Client ID + Client Secret</h3>
-                        <span className="text-xs bg-orange-500/20 text-orange-400 px-2 py-0.5 rounded">Integracoes</span>
+                        <span className="text-xs bg-indigo-500/20 text-indigo-400 px-2 py-0.5 rounded">Integracoes</span>
                       </div>
                       <p className="text-sm text-muted-foreground mb-2">
                         Par de credenciais para integracoes avancadas. Encontrado no Dashboard &gt; Integracao API.
@@ -1042,7 +1042,7 @@ app.post('/webhook', (req, res) => {
               >
                 <div>
                   <div className="flex items-center gap-3 mb-4">
-                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary to-orange-600 flex items-center justify-center">
+                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary to-indigo-600 flex items-center justify-center">
                       <Sparkles className="w-6 h-6 text-white" />
                     </div>
                     <div>
@@ -1056,7 +1056,7 @@ app.post('/webhook', (req, res) => {
                   </p>
                 </div>
 
-                <div className="bg-gradient-to-r from-primary/10 to-orange-500/10 border border-primary/20 rounded-2xl p-6">
+                <div className="bg-gradient-to-r from-primary/10 to-indigo-500/10 border border-primary/20 rounded-2xl p-6">
                   <div className="flex items-center gap-2 mb-4">
                     <Wand2 className="w-5 h-5 text-primary" />
                     <h2 className="text-xl font-semibold text-foreground">Como usar</h2>
@@ -1184,8 +1184,8 @@ app.post('/webhook', (req, res) => {
                 <div className="bg-card border border-border rounded-2xl p-6">
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-orange-500/20 flex items-center justify-center">
-                        <ArrowUpDown className="w-5 h-5 text-orange-400" />
+              <div className="w-10 h-10 rounded-xl bg-indigo-500/20 flex items-center justify-center">
+                <ArrowUpDown className="w-5 h-5 text-indigo-400" />
                       </div>
                       <div>
                         <h2 className="text-lg font-semibold text-foreground">Prompt para Transferencias</h2>
@@ -1195,7 +1195,7 @@ app.post('/webhook', (req, res) => {
                     <Button
                       onClick={() => copyCode(transferPrompt, "transfer-prompt")}
                       variant="outline"
-                      className="border-orange-500/50 text-orange-400 hover:bg-orange-500/10"
+                      className="border-indigo-500/50 text-indigo-400 hover:bg-indigo-500/10"
                     >
                       {copied === "transfer-prompt" ? (
                         <>
@@ -1252,7 +1252,7 @@ const fullIntegrationPrompt = `Preciso integrar a API de pagamentos PIX da Hyper
 
 ## Informacoes da API
 
-**URL Base:** https://api.hyperionpay.site
+**URL Base:** https://api.hyperionpay.com.br
 **Autenticacao:** Bearer Token no header Authorization
 **Minha API Key:** SUA_API_KEY (substitua pela sua chave real)
 
@@ -1302,7 +1302,7 @@ Por favor, crie uma integracao completa para meu projeto com:
 
 const chargePrompt = `Preciso criar cobrancas PIX com QR Code usando a API Hyperion Pay.
 
-**URL Base:** https://api.hyperionpay.site
+**URL Base:** https://api.hyperionpay.com.br
 **Minha API Key:** SUA_API_KEY
 
 **Endpoint:** POST /v1/pix/charge
@@ -1339,7 +1339,7 @@ Crie uma funcao que:
 
 const webhookPrompt = `Preciso configurar um webhook para receber notificacoes de pagamento da Hyperion Pay.
 
-**URL Base:** https://api.hyperionpay.site
+**URL Base:** https://api.hyperionpay.com.br
 **Minha API Key:** SUA_API_KEY
 
 **Eventos disponiveis:**
@@ -1376,7 +1376,7 @@ Crie um endpoint webhook que:
 
 const transferPrompt = `Preciso enviar transferencias PIX automaticamente usando a API Hyperion Pay.
 
-**URL Base:** https://api.hyperionpay.site
+**URL Base:** https://api.hyperionpay.com.br
 **Minha API Key:** SUA_API_KEY
 
 **Endpoint:** POST /v1/pix/transfer

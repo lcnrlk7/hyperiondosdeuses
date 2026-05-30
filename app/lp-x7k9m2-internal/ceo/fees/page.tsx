@@ -283,13 +283,13 @@ export default function AdminFeesPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          className="p-6 rounded-2xl bg-gradient-to-br from-orange-500/20 to-orange-600/10 border border-orange-500/20"
+          className="p-6 rounded-2xl bg-gradient-to-br from-indigo-500/20 to-indigo-600/10 border border-indigo-500/20"
         >
           <div className="flex items-center gap-3 mb-3">
-            <div className="p-2 rounded-xl bg-orange-500/20">
-              <Users className="w-5 h-5 text-orange-400" />
+            <div className="p-2 rounded-xl bg-indigo-500/20">
+              <Users className="w-5 h-5 text-indigo-400" />
             </div>
-            <span className="text-sm text-orange-400">Taxa Media</span>
+            <span className="text-sm text-indigo-400">Taxa Media</span>
           </div>
           <p className="text-2xl font-bold text-white">
             {(summary?.averageFeePercentage || 0).toFixed(2)}%
@@ -342,7 +342,7 @@ export default function AdminFeesPage() {
               onClick={() => setFeeTypeFilter("withdrawal")}
               className={`px-4 py-2 text-sm font-medium transition-colors flex items-center gap-1 ${
                 feeTypeFilter === "withdrawal"
-                  ? "bg-orange-500 text-white"
+                  ? "bg-indigo-500 text-white"
                   : "bg-secondary text-muted-foreground hover:text-white"
               }`}
             >
@@ -411,7 +411,7 @@ export default function AdminFeesPage() {
                   >
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/20 to-orange-500/20 flex items-center justify-center">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/20 to-indigo-500/20 flex items-center justify-center">
                           <span className="text-sm font-bold text-primary">
                             {(user.name || user.email || "?").charAt(0).toUpperCase()}
                           </span>

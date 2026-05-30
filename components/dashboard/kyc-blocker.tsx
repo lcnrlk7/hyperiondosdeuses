@@ -76,7 +76,7 @@ export function KYCBlocker({ kycStatus }: KYCBlockerProps) {
         <div className="flex items-center justify-center gap-2 mb-6">
           <Image src="/images/logo-hyperion.png" alt="Hyperion Pay" width={40} height={40} />
           <div className="flex items-baseline">
-            <span className="text-xl font-bold text-white">Legacy</span>
+            <span className="text-xl font-bold text-white">Hyperion</span>
             <span className="text-xl font-bold text-primary">Pay</span>
           </div>
         </div>

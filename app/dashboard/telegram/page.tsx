@@ -24,8 +24,8 @@ import { motion } from "framer-motion"
 
 export default function TelegramPage() {
   const [copied, setCopied] = useState(false)
-  const botUsername = "@Legacypay_bot"
-  const botLink = "https://t.me/Legacypay_bot"
+  const botUsername = "@HyperionPay_bot"
+  const botLink = "https://t.me/HyperionPay_bot"
 
   const handleCopy = () => {
     navigator.clipboard.writeText(botUsername)
@@ -36,9 +36,9 @@ export default function TelegramPage() {
   const commands = [
     { command: "/start", description: "Abrir menu principal do bot", icon: Bot },
     { command: "/saldo", description: "Ver seu saldo atual", icon: Wallet },
-    { command: "/depositar", description: "Gerar PIX para deposito", icon: ArrowDownCircle },
+    { command: "/depositar", description: "Gerar PIX para depósito", icon: ArrowDownCircle },
     { command: "/sacar", description: "Solicitar saque via PIX", icon: ArrowUpCircle },
-    { command: "/historico", description: "Ver ultimas 10 transacoes", icon: History },
+    { command: "/historico", description: "Ver últimas 10 transações", icon: History },
     { command: "/taxas", description: "Consultar taxas aplicadas", icon: HelpCircle },
     { command: "/ajuda", description: "Suporte e ajuda", icon: HelpCircle },
   ]
@@ -46,23 +46,23 @@ export default function TelegramPage() {
   const features = [
     {
       icon: Zap,
-      title: "Depositos Instantaneos",
+      title: "Depósitos Instantâneos",
       description: "Gere QR Code PIX e tenha seu saldo creditado automaticamente"
     },
     {
       icon: Shield,
-      title: "Seguro e Confiavel",
-      description: "Suas transacoes sao protegidas e vinculadas a sua conta"
+      title: "Seguro e Confiável",
+      description: "Suas transações são protegidas e vinculadas à sua conta"
     },
     {
       icon: Clock,
-      title: "Disponivel 24/7",
+      title: "Disponível 24/7",
       description: "Use o bot a qualquer hora, todos os dias da semana"
     },
     {
       icon: Smartphone,
-      title: "Facil de Usar",
-      description: "Interface simples com botoes interativos"
+      title: "Fácil de Usar",
+      description: "Interface simples com botões interativos"
     },
   ]
 
@@ -72,7 +72,7 @@ export default function TelegramPage() {
       <div className="flex flex-col gap-2">
         <h1 className="text-2xl font-bold text-foreground">Bot Telegram</h1>
         <p className="text-muted-foreground">
-          Use nosso bot no Telegram para depositar, sacar e gerenciar seu saldo de forma rapida e pratica.
+          Use nosso bot no Telegram para depositar, sacar e gerenciar seu saldo de forma rápida e prática.
         </p>
       </div>
 
@@ -90,7 +90,7 @@ export default function TelegramPage() {
               </div>
               <div>
                 <CardTitle className="text-xl">Acesse o Bot</CardTitle>
-                <CardDescription>Clique no botao abaixo para iniciar</CardDescription>
+                <CardDescription>Clique no botão abaixo para iniciar</CardDescription>
               </div>
             </div>
           </CardHeader>
@@ -160,10 +160,10 @@ export default function TelegramPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <HelpCircle className="h-5 w-5 text-primary" />
-              Comandos Disponiveis
+              Comandos Disponíveis
             </CardTitle>
             <CardDescription>
-              Lista de todos os comandos que voce pode usar no bot
+              Lista de todos os comandos que você pode usar no bot
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -200,13 +200,13 @@ export default function TelegramPage() {
               Taxas do Bot
             </CardTitle>
             <CardDescription>
-              Informacoes sobre taxas e limites
+              Informações sobre taxas e limites
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <div className="p-4 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
-                <p className="text-sm text-muted-foreground">Taxa de Deposito</p>
+                <p className="text-sm text-muted-foreground">Taxa de Depósito</p>
                 <p className="text-2xl font-bold text-emerald-500">5%</p>
               </div>
               <div className="p-4 rounded-lg bg-blue-500/10 border border-blue-500/20">
@@ -214,11 +214,11 @@ export default function TelegramPage() {
                 <p className="text-2xl font-bold text-blue-500">R$ 7,00</p>
               </div>
               <div className="p-4 rounded-lg bg-amber-500/10 border border-amber-500/20">
-                <p className="text-sm text-muted-foreground">Deposito Minimo</p>
+                <p className="text-sm text-muted-foreground">Depósito Mínimo</p>
                 <p className="text-2xl font-bold text-amber-500">R$ 10,00</p>
               </div>
               <div className="p-4 rounded-lg bg-purple-500/10 border border-purple-500/20">
-                <p className="text-sm text-muted-foreground">Saque Minimo</p>
+                <p className="text-sm text-muted-foreground">Saque Mínimo</p>
                 <p className="text-2xl font-bold text-purple-500">R$ 20,00</p>
               </div>
             </div>
@@ -235,7 +235,7 @@ export default function TelegramPage() {
         <Card>
           <CardHeader>
             <CardTitle>Como Usar o Bot</CardTitle>
-            <CardDescription>Passo a passo para comecar</CardDescription>
+            <CardDescription>Passo a passo para começar</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -250,21 +250,21 @@ export default function TelegramPage() {
                 <Badge className="h-8 w-8 rounded-full flex items-center justify-center bg-primary text-primary-foreground shrink-0">2</Badge>
                 <div>
                   <h4 className="font-semibold">Inicie o Bot</h4>
-                  <p className="text-sm text-muted-foreground">Clique em &quot;Iniciar&quot; ou envie o comando /start para comecar</p>
+                  <p className="text-sm text-muted-foreground">Clique em &quot;Iniciar&quot; ou envie o comando /start para começar</p>
                 </div>
               </div>
               <div className="flex gap-4 items-start">
                 <Badge className="h-8 w-8 rounded-full flex items-center justify-center bg-primary text-primary-foreground shrink-0">3</Badge>
                 <div>
-                  <h4 className="font-semibold">Entre nos Canais Obrigatorios</h4>
-                  <p className="text-sm text-muted-foreground">O bot ira solicitar que voce entre em nossos canais oficiais</p>
+                  <h4 className="font-semibold">Entre nos Canais Obrigatórios</h4>
+                  <p className="text-sm text-muted-foreground">O bot irá solicitar que você entre em nossos canais oficiais</p>
                 </div>
               </div>
               <div className="flex gap-4 items-start">
                 <Badge className="h-8 w-8 rounded-full flex items-center justify-center bg-primary text-primary-foreground shrink-0">4</Badge>
                 <div>
                   <h4 className="font-semibold">Pronto para Usar!</h4>
-                  <p className="text-sm text-muted-foreground">Agora voce pode depositar, sacar e gerenciar seu saldo pelo Telegram</p>
+                  <p className="text-sm text-muted-foreground">Agora você pode depositar, sacar e gerenciar seu saldo pelo Telegram</p>
                 </div>
               </div>
             </div>

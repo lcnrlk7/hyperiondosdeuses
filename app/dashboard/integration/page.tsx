@@ -1101,7 +1101,7 @@ export default function IntegrationPage() {
                 <div className="bg-secondary/30 rounded-xl p-4">
                   <h4 className="text-sm font-semibold text-foreground mb-2">Base URL</h4>
                   <code className="block p-3 bg-background rounded-lg text-sm font-mono text-primary">
-                    https://hyperionpay.site/api/v1/integration
+                    https://hyperionpay.com.br/api/v1/integration
                   </code>
                 </div>
 
@@ -1150,10 +1150,10 @@ export default function IntegrationPage() {
                     <div className="bg-background/50 rounded-lg p-3 border border-border">
                       <div className="flex items-center justify-between mb-1">
                         <div className="flex items-center gap-2">
-                          <span className="w-2 h-2 rounded-full bg-orange-500"></span>
+                          <span className="w-2 h-2 rounded-full bg-red-500"></span>
                           <span className="font-semibold text-foreground">Client Secret</span>
                         </div>
-                        <span className="text-[10px] bg-orange-500/20 text-orange-400 px-2 py-0.5 rounded">SECRETO</span>
+                        <span className="text-[10px] bg-red-500/20 text-red-400 px-2 py-0.5 rounded">SECRETO</span>
                       </div>
                       <p className="text-muted-foreground mb-2">
                         Senha secreta da integracao. Comeca com <code className="text-primary">sec_</code>
@@ -1325,7 +1325,7 @@ client.on("interactionCreate", async (interaction) => {
   if (!interaction.isCommand() || interaction.commandName !== "pix") return;
   
   const valor = interaction.options.getNumber("valor");
-  const response = await fetch("https://hyperionpay.site/api/v1/integration/pix", {
+  const response = await fetch("https://hyperionpay.com.br/api/v1/integration/pix", {
     method: "POST",
     headers: {
       "Authorization": "Basic " + credentials,
@@ -1370,7 +1370,7 @@ const credentials = Buffer.from(CLIENT_ID + ":" + CLIENT_SECRET).toString("base6
 export async function POST(request: NextRequest) {
   const { amount, orderId, customerName } = await request.json();
 
-  const response = await fetch("https://hyperionpay.site/api/v1/integration/pix", {
+  const response = await fetch("https://hyperionpay.com.br/api/v1/integration/pix", {
     method: "POST",
     headers: {
       "Authorization": "Basic " + credentials,
@@ -1425,7 +1425,7 @@ credentials = base64.b64encode(f"{CLIENT_ID}:{CLIENT_SECRET}".encode()).decode()
 async def criar_pix(amount: float, order_id: str):
     async with httpx.AsyncClient() as client:
         response = await client.post(
-            "https://hyperionpay.site/api/v1/integration/pix",
+            "https://hyperionpay.com.br/api/v1/integration/pix",
             headers={
                 "Authorization": f"Basic {credentials}",
                 "Content-Type": "application/json"
@@ -1476,7 +1476,7 @@ $credentials = base64_encode($clientId . ":" . $clientSecret);
 function criarPix($amount, $orderId, $description) {
     global $credentials;
     
-    $ch = curl_init("https://hyperionpay.site/api/v1/integration/pix");
+    $ch = curl_init("https://hyperionpay.com.br/api/v1/integration/pix");
     curl_setopt_array($ch, [
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_POST => true,
@@ -1638,7 +1638,7 @@ echo json_encode(["received" => true]);`}
                   <code className="block p-3 bg-secondary rounded-lg text-xs font-mono whitespace-pre overflow-x-auto">
 {`const CLIENT_ID = "seu_client_id";
 const CLIENT_SECRET = "seu_client_secret";
-const BASE_URL = "https://hyperionpay.site/api/v1/integration";
+const BASE_URL = "https://hyperionpay.com.br/api/v1/integration";
 
 // Criar credenciais em Base64
 const credentials = Buffer.from(
@@ -1713,8 +1713,8 @@ console.log("Status:", status.data.status);`}
                 </div>
 
                 {/* SAQUES / WITHDRAWALS */}
-                <div className="bg-orange-500/5 border border-orange-500/20 rounded-xl p-4">
-                  <h4 className="text-base font-semibold text-orange-400 mb-3">API de Saques (PIX Out)</h4>
+                <div className="bg-indigo-500/5 border border-indigo-500/20 rounded-xl p-4">
+                  <h4 className="text-base font-semibold text-indigo-400 mb-3">API de Saques (PIX Out)</h4>
                   <p className="text-xs text-muted-foreground mb-4">
                     Realize saques programaticos para qualquer chave PIX diretamente via API.
                   </p>

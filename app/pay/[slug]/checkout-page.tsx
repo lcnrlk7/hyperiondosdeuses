@@ -673,7 +673,7 @@ export function CheckoutPage({ checkout }: { checkout: Checkout }) {
                   <div
                     key={product.id}
                     onClick={() => setSelectedProduct(product)}
-                    className="p-4 rounded-xl border cursor-pointer transition-all hover:border-orange-500"
+                    className="p-4 rounded-xl border cursor-pointer transition-all hover:border-indigo-500"
                     style={{ 
                       backgroundColor: "rgba(255,255,255,0.05)",
                       borderColor: selectedProduct?.id === product.id ? primaryColor : "rgba(255,255,255,0.1)"

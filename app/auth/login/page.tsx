@@ -169,7 +169,7 @@ export default function LoginPage() {
                 <Button
                   type="submit"
                   disabled={loading}
-                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground glow-orange-sm"
+                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground glow-primary-sm"
                 >
                   {loading ? (
                     <Loader2 className="w-5 h-5 animate-spin" />
@@ -231,7 +231,7 @@ export default function LoginPage() {
                 <Button
                   type="submit"
                   disabled={loading || (!isBackupCode && twoFactorCode.length !== 6)}
-                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground glow-orange-sm"
+                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground glow-primary-sm"
                 >
                   {loading ? (
                     <Loader2 className="w-5 h-5 animate-spin" />

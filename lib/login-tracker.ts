@@ -50,7 +50,8 @@ export async function trackLogin(data: LoginData): Promise<void> {
       VALUES (${data.userId}, ${ipAddress}, ${userAgent}, ${device}, ${browser}, ${data.success})
     `;
   } catch (error) {
-    console.error("Erro ao registrar login:", error);
+    // Ignora erros silenciosamente (tabela pode nao existir)
+    console.error("[v0] Error tracking login (non-blocking):", error);
   }
 }
 

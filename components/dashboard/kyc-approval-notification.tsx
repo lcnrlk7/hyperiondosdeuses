@@ -68,7 +68,7 @@ export function KYCApprovalNotification({ userId, userName, kycApprovalNotified 
           recycle={false}
           numberOfPieces={500}
           gravity={0.3}
-          colors={["#ff6a00", "#ff8533", "#ffcc00", "#00ff88", "#00ccff", "#ff00cc"]}
+            colors={["#6366f1", "#818cf8", "#a5b4fc", "#00ff88", "#00ccff", "#c084fc"]}
           style={{ position: "fixed", top: 0, left: 0, zIndex: 9999 }}
         />
       )}

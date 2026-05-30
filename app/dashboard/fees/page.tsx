@@ -123,14 +123,14 @@ export default function FeesPage() {
         {fees && (
           <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl ${
             fees.route_type === 'black' 
-              ? 'bg-orange-500/10 border border-orange-500/20' 
+              ? 'bg-indigo-500/10 border border-indigo-500/20' 
               : 'bg-zinc-500/10 border border-zinc-500/20'
           }`}>
             <div className={`w-2 h-2 rounded-full ${
-              fees.route_type === 'black' ? 'bg-orange-500' : 'bg-zinc-400'
+              fees.route_type === 'black' ? 'bg-indigo-500' : 'bg-zinc-400'
             }`} />
             <span className={`font-semibold ${
-              fees.route_type === 'black' ? 'text-orange-500' : 'text-zinc-400'
+              fees.route_type === 'black' ? 'text-indigo-500' : 'text-zinc-400'
             }`}>
               Sua Rota: {fees.route_type?.toUpperCase() || 'BLACK'}
             </span>
@@ -199,17 +199,17 @@ export default function FeesPage() {
             onClick={() => setSelectedRoute("black")}
             className={`flex-1 p-4 rounded-xl border-2 transition-all ${
               selectedRoute === "black"
-                ? "border-orange-500 bg-orange-500/10"
-                : "border-border bg-card hover:border-orange-500/50"
+                ? "border-indigo-500 bg-indigo-500/10"
+                : "border-border bg-card hover:border-indigo-500/50"
             }`}
           >
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-orange-500" />
-                <span className="font-bold text-orange-500">ROTA BLACK</span>
+                <div className="w-3 h-3 rounded-full bg-indigo-500" />
+                <span className="font-bold text-indigo-500">ROTA BLACK</span>
               </div>
               {selectedRoute === "black" && (
-                <Check className="w-5 h-5 text-orange-500" />
+                <Check className="w-5 h-5 text-indigo-500" />
               )}
             </div>
             <p className="text-sm text-muted-foreground text-left">
@@ -250,27 +250,27 @@ export default function FeesPage() {
           {/* Taxa de Depósito */}
           <div className={`p-5 rounded-xl border ${
             selectedRoute === "black" 
-              ? "bg-orange-500/5 border-orange-500/20" 
+              ? "bg-indigo-500/5 border-indigo-500/20" 
               : "bg-zinc-500/5 border-zinc-500/20"
           }`}>
             <div className="flex items-center gap-3 mb-3">
               <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                selectedRoute === "black" ? "bg-orange-500/20" : "bg-zinc-500/20"
+                selectedRoute === "black" ? "bg-indigo-500/20" : "bg-zinc-500/20"
               }`}>
                 <ArrowDownLeft className={`w-5 h-5 ${
-                  selectedRoute === "black" ? "text-orange-500" : "text-zinc-400"
+                  selectedRoute === "black" ? "text-indigo-500" : "text-zinc-400"
                 }`} />
               </div>
               <span className="text-sm text-muted-foreground">Taxa Depósito</span>
             </div>
             <p className={`text-2xl font-bold ${
-              selectedRoute === "black" ? "text-orange-500" : "text-zinc-400"
+              selectedRoute === "black" ? "text-indigo-500" : "text-zinc-400"
             }`}>
               {formatPercent(currentRouteFees.depositPercentage)}
             </p>
             {currentRouteFees.depositFixed > 0 && (
               <p className={`text-lg font-semibold ${
-                selectedRoute === "black" ? "text-orange-400" : "text-zinc-500"
+                selectedRoute === "black" ? "text-indigo-400" : "text-zinc-500"
               }`}>
                 + {formatCurrency(currentRouteFees.depositFixed)}
               </p>
@@ -280,27 +280,27 @@ export default function FeesPage() {
           {/* Taxa de Saque */}
           <div className={`p-5 rounded-xl border ${
             selectedRoute === "black" 
-              ? "bg-orange-500/5 border-orange-500/20" 
+              ? "bg-indigo-500/5 border-indigo-500/20" 
               : "bg-zinc-500/5 border-zinc-500/20"
           }`}>
             <div className="flex items-center gap-3 mb-3">
               <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                selectedRoute === "black" ? "bg-orange-500/20" : "bg-zinc-500/20"
+                selectedRoute === "black" ? "bg-indigo-500/20" : "bg-zinc-500/20"
               }`}>
                 <ArrowUpRight className={`w-5 h-5 ${
-                  selectedRoute === "black" ? "text-orange-500" : "text-zinc-400"
+                  selectedRoute === "black" ? "text-indigo-500" : "text-zinc-400"
                 }`} />
               </div>
               <span className="text-sm text-muted-foreground">Taxa Saque</span>
             </div>
             <p className={`text-2xl font-bold ${
-              selectedRoute === "black" ? "text-orange-500" : "text-zinc-400"
+              selectedRoute === "black" ? "text-indigo-500" : "text-zinc-400"
             }`}>
               {formatPercent(currentRouteFees.withdrawalPercentage)}
             </p>
             {currentRouteFees.withdrawalFixed > 0 && (
               <p className={`text-lg font-semibold ${
-                selectedRoute === "black" ? "text-orange-400" : "text-zinc-500"
+                selectedRoute === "black" ? "text-indigo-400" : "text-zinc-500"
               }`}>
                 + {formatCurrency(currentRouteFees.withdrawalFixed)}
               </p>
@@ -342,14 +342,14 @@ export default function FeesPage() {
           animate={{ opacity: 1, y: 0 }}
           className={`flex items-center gap-3 p-4 rounded-xl ${
             fees.route_type === 'black'
-              ? 'bg-orange-500/10 border border-orange-500/20'
+              ? 'bg-indigo-500/10 border border-indigo-500/20'
               : 'bg-zinc-500/10 border border-zinc-500/20'
           }`}
         >
           <TrendingDown className={`w-5 h-5 flex-shrink-0 ${
-            fees.route_type === 'black' ? 'text-orange-500' : 'text-zinc-400'
+            fees.route_type === 'black' ? 'text-indigo-500' : 'text-zinc-400'
           }`} />
-          <p className={`text-sm ${fees.route_type === 'black' ? 'text-orange-400' : 'text-zinc-400'}`}>
+          <p className={`text-sm ${fees.route_type === 'black' ? 'text-indigo-400' : 'text-zinc-400'}`}>
             Você está na rota <strong>{fees.route_type?.toUpperCase() || 'BLACK'}</strong> - 
             {fees.route_type === 'black' ? (
               <> Taxa de <strong>5%</strong> em depósitos e <strong>5%</strong> em saques</>
@@ -403,8 +403,8 @@ export default function FeesPage() {
           className="p-6 rounded-xl bg-card border border-border"
         >
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 rounded-lg bg-orange-500/10 flex items-center justify-center">
-              <ArrowUpRight className="w-5 h-5 text-orange-500" />
+            <div className="w-10 h-10 rounded-lg bg-indigo-500/10 flex items-center justify-center">
+              <ArrowUpRight className="w-5 h-5 text-indigo-500" />
             </div>
             <div>
               <h3 className="font-semibold text-foreground">Saques (PIX Out)</h3>

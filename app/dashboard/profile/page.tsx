@@ -42,11 +42,11 @@ const DEFAULT_AVATARS = [
 
 // Gerar avatar com iniciais como fallback
 const GRADIENT_AVATARS = [
-  { id: "g1", gradient: "from-orange-500 to-red-500" },
+  { id: "g1", gradient: "from-indigo-500 to-violet-500" },
   { id: "g2", gradient: "from-blue-500 to-purple-500" },
   { id: "g3", gradient: "from-green-500 to-teal-500" },
   { id: "g4", gradient: "from-pink-500 to-rose-500" },
-  { id: "g5", gradient: "from-yellow-500 to-orange-500" },
+  { id: "g5", gradient: "from-yellow-500 to-amber-500" },
   { id: "g6", gradient: "from-indigo-500 to-blue-500" },
 ];
 

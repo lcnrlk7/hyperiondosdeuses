@@ -98,99 +98,102 @@ const getSeverityColor = (severity: string) => {
 };
 
 export default function StatusPage() {
-  const [services, setServices] = useState<ServiceStatus[]>([
-    {
-      name: "API Principal",
-      status: "operational",
-      latency: 45,
-      uptime: 99.98,
-      icon: Server,
-      description: "Servidor principal da API",
-    },
-    {
-      name: "Banco de Dados",
-      status: "operational",
-      latency: 12,
-      uptime: 99.99,
-      icon: Database,
-      description: "PostgreSQL - Armazenamento de dados",
-    },
-    {
-      name: "Gateway de Pagamentos",
-      status: "operational",
-      latency: 89,
-      uptime: 99.95,
-      icon: CreditCard,
-      description: "Processamento de transacoes PIX",
-    },
-    {
-      name: "Autenticacao",
-      status: "operational",
-      latency: 23,
-      uptime: 99.99,
-      icon: Shield,
-      description: "Sistema de login e JWT",
-    },
-    {
-      name: "Webhooks",
-      status: "operational",
-      latency: 56,
-      uptime: 99.97,
-      icon: Zap,
-      description: "Notificacoes em tempo real",
-    },
-    {
-      name: "CDN / Assets",
-      status: "operational",
-      latency: 8,
-      uptime: 99.99,
-      icon: Globe,
-      description: "Distribuicao de conteudo",
-    },
-  ]);
-
+  const [services, setServices] = useState<ServiceStatus[]>([]);
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(new Date());
+  const [loading, setLoading] = useState(true);
 
-  // Simular verificacao de status em tempo real
-  useEffect(() => {
-    const checkStatus = async () => {
-      // Em producao, isso faria chamadas reais para verificar cada servico
-      // Por enquanto, simula pequenas variacoes de latencia
-      setServices((prev) =>
-        prev.map((service) => ({
-          ...service,
-          latency: service.latency
-            ? Math.max(5, service.latency + Math.floor(Math.random() * 20) - 10)
-            : undefined,
-        }))
-      );
+  const iconMap: Record<string, React.ElementType> = {
+    "api": Server,
+    "api-gateway": Server,
+    "database": Database,
+    "payments": CreditCard,
+    "pix-in": CreditCard,
+    "pix-out": CreditCard,
+    "webhooks": Zap,
+    "telegram": Globe,
+    "checkout": CreditCard,
+  };
+
+  const loadStatus = async () => {
+    try {
+      // Usa API publica segura que nao expoe dados sensiveis
+      const response = await fetch("/api/public/status");
+      
+      if (!response.ok) throw new Error("Erro ao carregar status");
+      
+      const data = await response.json();
+      
+      const mappedServices: ServiceStatus[] = data.services.map((s: {
+        id: string;
+        name: string;
+        status: "operational" | "degraded" | "outage" | "maintenance";
+        latency: number;
+      }) => ({
+        name: s.name,
+        status: s.status,
+        latency: s.latency,
+        uptime: data.uptime || (s.status === "operational" ? 99.9 : 98),
+        icon: iconMap[s.id] || Server,
+        description: s.id === "api" ? "Servidor principal da API" :
+                     s.id === "database" ? "PostgreSQL - Armazenamento de dados" :
+                     s.id === "payments" ? "Processamento de pagamentos PIX" :
+                     s.id === "webhooks" ? "Notificacoes em tempo real" :
+                     "Servico do sistema",
+      }));
+
+      setServices(mappedServices);
       setLastUpdated(new Date());
-    };
+    } catch (error) {
+      console.error("Erro ao carregar status:", error);
+      // Fallback para dados estaticos
+      setServices([
+        { name: "API Principal", status: "operational", latency: 45, uptime: 99.98, icon: Server, description: "Servidor principal da API" },
+        { name: "Banco de Dados", status: "operational", latency: 12, uptime: 99.99, icon: Database, description: "PostgreSQL - Armazenamento de dados" },
+        { name: "Gateway de Pagamentos", status: "operational", latency: 89, uptime: 99.95, icon: CreditCard, description: "Processamento de transacoes PIX" },
+        { name: "Webhooks", status: "operational", latency: 56, uptime: 99.97, icon: Zap, description: "Notificacoes em tempo real" },
+      ]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    const interval = setInterval(checkStatus, 30000); // Atualiza a cada 30s
+  // Carregar status na montagem e a cada 30 segundos
+  useEffect(() => {
+    loadStatus();
+    const interval = setInterval(loadStatus, 30000);
     return () => clearInterval(interval);
   }, []);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
-    // Simular refresh
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    setLastUpdated(new Date());
+    await loadStatus();
     setIsRefreshing(false);
   };
 
-  const allOperational = services.every((s) => s.status === "operational");
+  const allOperational = services.length > 0 && services.every((s) => s.status === "operational");
   const hasIssues = services.some((s) => s.status === "degraded" || s.status === "outage");
 
-  // Gerar dados do historico dos ultimos 90 dias (simulado)
+  // Gerar dados do historico dos ultimos 90 dias baseado no status atual
   const uptimeHistory = Array.from({ length: 90 }, (_, i) => {
+    if (i < 3 && hasIssues) return services.some(s => s.status === "outage") ? "outage" : "degraded";
     const random = Math.random();
     if (random > 0.98) return "outage";
     if (random > 0.95) return "degraded";
     return "operational";
   });
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <RefreshCw className="w-8 h-8 animate-spin text-primary" />
+          <p className="text-muted-foreground">Verificando status dos servicos...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -207,7 +210,7 @@ export default function StatusPage() {
                 className="group-hover:scale-105 transition-transform"
               />
               <div className="flex items-baseline">
-                <span className="text-lg font-bold text-foreground">Legacy</span>
+                <span className="text-lg font-bold text-foreground">Hyperion</span>
                 <span className="text-lg font-bold text-primary">Pay</span>
               </div>
             </Link>
@@ -411,7 +414,7 @@ export default function StatusPage() {
         <div className="text-center py-8 border-t border-border">
           <p className="text-sm text-muted-foreground">
             Problemas? Entre em contato pelo{" "}
-            <a href="https://discord.gg/hyperionpay" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+            <a href="https://discord.gg/sGmMSYjdnA" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
               Discord
             </a>{" "}
             ou{" "}

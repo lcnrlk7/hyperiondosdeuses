@@ -32,7 +32,7 @@ async function testAll() {
    🕐 ${now}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-      ⚡ <b>LegacyPay</b> - Bot Telegram
+      ⚡ <b>Hyperion Pay</b> - Bot Telegram
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`;
   
   const depOk = await send("@legacypaybot", depMsg);
@@ -55,7 +55,7 @@ async function testAll() {
    🕐 ${now}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-      ⚡ <b>LegacyPay</b> - Bot Telegram
+      ⚡ <b>Hyperion Pay</b> - Bot Telegram
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`;
   
   const sacOk = await send("@legacypaybot", sacMsg);
@@ -87,7 +87,7 @@ async function testAll() {
    📢 <b>SISTEMA TELEGRAM ATIVO</b> 📢
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-O bot do LegacyPay foi atualizado!
+O bot do Hyperion Pay foi atualizado!
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
          ✨ <b>FUNCIONALIDADES</b>
@@ -104,16 +104,16 @@ O bot do LegacyPay foi atualizado!
          📱 <b>ACESSE AGORA</b>
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-   🤖 Bot: @Legacypay_bot
+   🤖 Bot: @HyperionPay_bot
    📊 Vendas: @legacypaybot
    📣 Avisos: @legacypayavisos
    
-   🌐 Site: https://www.legacypay.site
+   🌐 Site: https://www.hyperionpay.com.br
    💬 Discord: https://discord.gg/ea32hgRSeM
    📱 WhatsApp: (34) 99935-3187
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-      ⚡ <b>LegacyPay</b> - A melhor!
+      ⚡ <b>Hyperion Pay</b> - A melhor!
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`;
   
   const avisoOk = await send("@legacypayavisos", avisoMsg);
@@ -146,8 +146,8 @@ O bot do LegacyPay foi atualizado!
   console.log("\nTaxas:");
   console.log("  - Deposito: 5%");
   console.log("  - Saque: R$7,00 fixo");
-  console.log("\nWebhook: https://www.legacypay.site/api/telegram/webhook");
-  console.log("\nBot: @Legacypay_bot");
+  console.log("\nWebhook: https://www.hyperionpay.com.br/api/telegram/webhook");
+  console.log("\nBot: @HyperionPay_bot");
 }
 
 testAll();

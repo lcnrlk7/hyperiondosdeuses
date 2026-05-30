@@ -254,7 +254,7 @@ export async function createPixPayment(
         });
 
         // URL do webhook para callbacks
-        const webhookUrl = "https://hyperionpay.site/api/webhooks/medusa";
+        const webhookUrl = "https://hyperionpay.com.br/api/webhooks/medusa";
 
         // Garantir que todos os parâmetros tenham valores válidos
         const safePayerName = (payerName && payerName.trim()) ? payerName.trim() : "Cliente Hyperion Pay";
@@ -292,7 +292,7 @@ export async function createPixPayment(
           licenseKey: config.api_secret
         });
 
-        const webhookUrl = "https://hyperionpay.site/api/webhooks/medusa";
+        const webhookUrl = "https://hyperionpay.com.br/api/webhooks/medusa";
         const safePayerName = (payerName && payerName.trim()) ? payerName.trim() : "Cliente Hyperion Pay";
         const safePayerDocument = "36009722004";
         const safeDescription = (description && description.trim()) ? description.trim() : "Deposito PIX - Hyperion Pay";
@@ -393,7 +393,7 @@ export async function createWithdrawal(
         }
 
         // URL do webhook para receber status do saque
-        const withdrawalWebhookUrl = "https://www.hyperionpay.site/api/webhooks/medusa";
+        const withdrawalWebhookUrl = "https://www.hyperionpay.com.br/api/webhooks/medusa";
 
         // A Medusa cobra R$ 5 de taxa que é descontada do valor enviado
         // Para o usuário receber o valor líquido correto, enviamos: valor + taxa_medusa
@@ -441,7 +441,7 @@ export async function createWithdrawal(
     const beneficiaryName = user?.name || "Usuario Hyperion Pay";
     const beneficiaryDocument = (user?.cpf_cnpj || "00000000000").replace(/\D/g, "");
 
-    const withdrawalWebhookUrl = "https://www.hyperionpay.site/api/webhooks/medusa";
+    const withdrawalWebhookUrl = "https://www.hyperionpay.com.br/api/webhooks/medusa";
     
     // Medusa White taxa de saque e R$ 5,00
     const MEDUSA_WHITE_WITHDRAWAL_FEE = 5.00;

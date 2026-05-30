@@ -277,7 +277,7 @@ export default function SupportPage() {
           <p className="text-sm text-muted-foreground mb-3">Prefere outro canal de atendimento?</p>
           <div className="flex flex-wrap gap-3">
             <a
-              href="https://discord.gg/hyperionpay"
+              href="https://discord.gg/sGmMSYjdnA"
               target="_blank"
               rel="noopener noreferrer"
               className="group flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#5865F2]/10 to-[#5865F2]/5 text-[#5865F2] hover:from-[#5865F2]/20 hover:to-[#5865F2]/10 transition-all border border-[#5865F2]/20"
