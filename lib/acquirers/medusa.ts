@@ -125,8 +125,8 @@ export class MedusaPayments {
   }
 
   private getAuthHeader(): string {
-    // Basic Auth com x:{SECRET_KEY}
-    return "Basic " + Buffer.from(`x:${this.secretKey}`).toString("base64");
+    // Basic Auth com {SECRET_KEY}: (sem nada depois dos dois pontos)
+    return "Basic " + Buffer.from(`${this.secretKey}:`).toString("base64");
   }
 
   private async request<T>(
