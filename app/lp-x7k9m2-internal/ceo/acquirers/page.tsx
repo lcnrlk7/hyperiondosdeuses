@@ -63,6 +63,7 @@ export default function AcquirersPage() {
     api_secret: "",
     fee_percentage: 2.5,
     withdrawal_fee: 0,
+    withdrawal_fee_is_percentage: false,
     min_deposit: 1,
     min_withdrawal: 10,
     max_withdrawal: 10000,
@@ -152,6 +153,7 @@ export default function AcquirersPage() {
               api_secret: form.api_secret,
               fee_percentage: form.fee_percentage,
               withdrawal_fee: form.withdrawal_fee,
+              withdrawal_fee_is_percentage: form.withdrawal_fee_is_percentage,
               min_deposit: form.min_deposit,
               min_withdrawal: form.min_withdrawal,
               route_type: form.route_type,
@@ -213,6 +215,7 @@ export default function AcquirersPage() {
       api_secret: "",
       fee_percentage: 2.5,
       withdrawal_fee: 0,
+      withdrawal_fee_is_percentage: false,
       min_deposit: 1,
       min_withdrawal: 10,
       max_withdrawal: 10000,
@@ -232,6 +235,7 @@ export default function AcquirersPage() {
       api_secret: acquirer.api_secret || "",
       fee_percentage: acquirer.fee_percentage || 2.5,
       withdrawal_fee: acquirer.withdrawal_fee || 0,
+      withdrawal_fee_is_percentage: acquirer.withdrawal_fee_is_percentage ?? false,
       min_deposit: acquirer.min_deposit || 1,
       min_withdrawal: acquirer.min_withdrawal || 10,
       max_withdrawal: (acquirer as any).max_withdrawal || 10000,
@@ -252,6 +256,7 @@ export default function AcquirersPage() {
       api_secret: "",
       fee_percentage: 2.5,
       withdrawal_fee: 0,
+      withdrawal_fee_is_percentage: false,
       min_deposit: 1,
       min_withdrawal: 10,
       max_withdrawal: 10000,
@@ -575,19 +580,31 @@ export default function AcquirersPage() {
                 </div>
                 <div>
                   <label className="text-sm font-medium text-muted-foreground mb-2 block">
-                    Taxa Saque (%)
+                    Taxa Saque ({form.withdrawal_fee_is_percentage ? "%" : "R$"})
                   </label>
-                  <input
-                    type="number"
-                    value={form.withdrawal_fee}
-                    onChange={(e) =>
-                      setForm({ ...form, withdrawal_fee: Number(e.target.value) })
-                    }
-                    placeholder="0"
-                    min="0"
-                    step="0.1"
-                    className="w-full px-4 py-2.5 bg-secondary border border-border rounded-xl text-white placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
-                  />
+                  <div className="flex gap-2">
+                    <input
+                      type="number"
+                      value={form.withdrawal_fee}
+                      onChange={(e) =>
+                        setForm({ ...form, withdrawal_fee: Number(e.target.value) })
+                      }
+                      placeholder="0"
+                      min="0"
+                      step="0.1"
+                      className="flex-1 px-4 py-2.5 bg-secondary border border-border rounded-xl text-white placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
+                    />
+                    <select
+                      value={form.withdrawal_fee_is_percentage ? "percent" : "fixed"}
+                      onChange={(e) =>
+                        setForm({ ...form, withdrawal_fee_is_percentage: e.target.value === "percent" })
+                      }
+                      className="px-3 py-2.5 bg-secondary border border-border rounded-xl text-white focus:outline-none focus:border-primary/50"
+                    >
+                      <option value="fixed">R$</option>
+                      <option value="percent">%</option>
+                    </select>
+                  </div>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
