@@ -106,20 +106,30 @@ export async function POST(request: NextRequest) {
     // Buscar configurações do sistema
     const settingsResult = await sql`
       SELECT key, value FROM system_settings
-      WHERE key IN ('min_withdrawal', 'max_withdrawal', 'auto_withdraw_limit')
+      WHERE key IN ('min_withdrawal', 'max_withdrawal', 'auto_withdraw_limit', 'withdrawal_mode')
     `;
 
-    const settings: Record<string, number> = {
+    const settings: Record<string, number | string> = {
       min_withdrawal: 25, // Minimo R$ 25 para rota black
       max_withdrawal: 50000,
       auto_withdraw_limit: 500, // Ate R$ 500 automatico, acima vai para admin
+      withdrawal_mode: "automatic", // Modo padrao: automatico
     };
 
     settingsResult.forEach((s: { key: string; value: string }) => {
       try {
-        settings[s.key] = parseFloat(JSON.parse(s.value)) || settings[s.key];
+        const parsedValue = JSON.parse(s.value);
+        if (s.key === "withdrawal_mode") {
+          settings[s.key] = parsedValue;
+        } else {
+          settings[s.key] = parseFloat(parsedValue) || settings[s.key];
+        }
       } catch {
-        settings[s.key] = parseFloat(s.value) || settings[s.key];
+        if (s.key === "withdrawal_mode") {
+          settings[s.key] = s.value;
+        } else {
+          settings[s.key] = parseFloat(s.value) || settings[s.key];
+        }
       }
     });
 
@@ -136,14 +146,14 @@ export async function POST(request: NextRequest) {
 
     if (amount < effectiveMinWithdrawal) {
       return NextResponse.json(
-        { error: `Valor mínimo para saque: R$ ${effectiveMinWithdrawal.toFixed(2)}` },
+        { error: `Valor mínimo para saque: R$ ${Number(effectiveMinWithdrawal).toFixed(2)}` },
         { status: 400 }
       );
     }
 
-    if (amount > settings.max_withdrawal) {
+    if (amount > Number(settings.max_withdrawal)) {
       return NextResponse.json(
-        { error: `Valor máximo para saque: R$ ${settings.max_withdrawal.toFixed(2)}` },
+        { error: `Valor máximo para saque: R$ ${Number(settings.max_withdrawal).toFixed(2)}` },
         { status: 400 }
       );
     }
@@ -243,9 +253,13 @@ export async function POST(request: NextRequest) {
     `;
     const userRouteType = userRouteResult[0]?.route_type || 'black';
     
-    // Saques automáticos até R$ 400, acima disso vai para aprovação manual no painel admin
-    const AUTO_WITHDRAWAL_LIMIT = 400;
-    const requiresApproval = amount > AUTO_WITHDRAWAL_LIMIT;
+    // Verificar modo de saque: manual = todos pendentes, automatic = usa limite
+    const withdrawalMode = settings.withdrawal_mode as string;
+    const AUTO_WITHDRAWAL_LIMIT = Number(settings.auto_withdraw_limit) || 400;
+    
+    // Se modo manual, TODOS os saques vão para aprovação
+    // Se modo automático, saques até o limite são automáticos
+    const requiresApproval = withdrawalMode === "manual" ? true : amount > AUTO_WITHDRAWAL_LIMIT;
 
     // Buscar adquirente baseado na rota do usuário
     const acquirer = await getAcquirerForUser(sessionUser.id);
@@ -367,7 +381,11 @@ export async function POST(request: NextRequest) {
     if (withdrawalStatus === "processing") {
       message = `Saque de R$ ${netAmount.toFixed(2)} enviado para processamento!`;
     } else if (requiresApproval) {
-      message = `Saque acima de R$ ${AUTO_WITHDRAWAL_LIMIT.toFixed(2)} requer aprovação. Valor líquido: R$ ${netAmount.toFixed(2)}`;
+      if (withdrawalMode === "manual") {
+        message = `Saque de R$ ${netAmount.toFixed(2)} enviado para aprovacao. Aguarde a analise.`;
+      } else {
+        message = `Saque acima de R$ ${AUTO_WITHDRAWAL_LIMIT.toFixed(2)} requer aprovacao. Valor liquido: R$ ${netAmount.toFixed(2)}`;
+      }
     } else {
       // Não requer aprovação mas ficou pendente (falha no processamento automático)
       message = `Saque de R$ ${netAmount.toFixed(2)} está aguardando processamento.`;

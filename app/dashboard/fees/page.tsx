@@ -36,26 +36,10 @@ interface UserFees {
   total_volume: number;
 }
 
-// Taxas fixas por rota (apenas visual)
-const ROUTE_FEES = {
-  black: {
-    name: "BLACK",
-    depositPercentage: 5,
-    depositFixed: 0,
-    withdrawalPercentage: 5,
-    withdrawalFixed: 0,
-    color: "orange",
-    description: "Taxa percentual em depósitos e saques",
-  },
-  white: {
-    name: "WHITE",
-    depositPercentage: 2,
-    depositFixed: 0.70,
-    withdrawalPercentage: 2,
-    withdrawalFixed: 0,
-    color: "zinc",
-    description: "Taxa reduzida com valor fixo adicional",
-  },
+// Descrições das rotas
+const ROUTE_DESCRIPTIONS = {
+  black: "Taxa percentual em depósitos + taxa fixa em saques",
+  white: "Taxa reduzida com valor fixo adicional",
 };
 
 export default function FeesPage() {
@@ -99,8 +83,6 @@ export default function FeesPage() {
     const num = Number(value) || 0;
     return `${num.toFixed(0)}%`;
   };
-
-  const currentRouteFees = ROUTE_FEES[selectedRoute];
 
   if (loading) {
     return (
@@ -213,7 +195,7 @@ export default function FeesPage() {
               )}
             </div>
             <p className="text-sm text-muted-foreground text-left">
-              {ROUTE_FEES.black.description}
+              {ROUTE_DESCRIPTIONS.black}
             </p>
           </button>
 
@@ -235,7 +217,7 @@ export default function FeesPage() {
               )}
             </div>
             <p className="text-sm text-muted-foreground text-left">
-              {ROUTE_FEES.white.description}
+              {ROUTE_DESCRIPTIONS.white}
             </p>
           </button>
         </div>
@@ -266,13 +248,13 @@ export default function FeesPage() {
             <p className={`text-2xl font-bold ${
               selectedRoute === "black" ? "text-indigo-500" : "text-zinc-400"
             }`}>
-              {formatPercent(currentRouteFees.depositPercentage)}
+              {formatPercent(fees?.pix_percentage_fee || 0)}
             </p>
-            {currentRouteFees.depositFixed > 0 && (
+            {(fees?.pix_fixed_fee || 0) > 0 && (
               <p className={`text-lg font-semibold ${
                 selectedRoute === "black" ? "text-indigo-400" : "text-zinc-500"
               }`}>
-                + {formatCurrency(currentRouteFees.depositFixed)}
+                + {formatCurrency(fees?.pix_fixed_fee || 0)}
               </p>
             )}
           </div>
@@ -296,15 +278,11 @@ export default function FeesPage() {
             <p className={`text-2xl font-bold ${
               selectedRoute === "black" ? "text-indigo-500" : "text-zinc-400"
             }`}>
-              {formatPercent(currentRouteFees.withdrawalPercentage)}
+              {fees?.withdrawal_fee_is_percentage 
+                ? formatPercent(fees?.withdrawal_fee || 0)
+                : formatCurrency(fees?.withdrawal_fee || 0)
+              }
             </p>
-            {currentRouteFees.withdrawalFixed > 0 && (
-              <p className={`text-lg font-semibold ${
-                selectedRoute === "black" ? "text-indigo-400" : "text-zinc-500"
-              }`}>
-                + {formatCurrency(currentRouteFees.withdrawalFixed)}
-              </p>
-            )}
           </div>
 
           {/* Limite Diário */}
@@ -351,11 +329,8 @@ export default function FeesPage() {
           }`} />
           <p className={`text-sm ${fees.route_type === 'black' ? 'text-indigo-400' : 'text-zinc-400'}`}>
             Você está na rota <strong>{fees.route_type?.toUpperCase() || 'BLACK'}</strong> - 
-            {fees.route_type === 'black' ? (
-              <> Taxa de <strong>5%</strong> em depósitos e <strong>5%</strong> em saques</>
-            ) : (
-              <> Taxa de <strong>2% + R$0,70</strong> em depósitos e <strong>2%</strong> em saques</>
-            )}
+            Taxa de <strong>{fees.pix_percentage_fee}%{fees.pix_fixed_fee > 0 ? ` + R$${fees.pix_fixed_fee.toFixed(2)}` : ''}</strong> em depósitos e{' '}
+            <strong>{fees.withdrawal_fee_is_percentage ? `${fees.withdrawal_fee}%` : `R$${fees.withdrawal_fee.toFixed(2)}`}</strong> em saques
           </p>
         </motion.div>
       )}
@@ -430,6 +405,7 @@ export default function FeesPage() {
       </div>
 
       {/* Exemplo de Cálculo */}
+      {fees && (
       <motion.div
         key={`calc-${selectedRoute}`}
         initial={{ opacity: 0, y: 20 }}
@@ -442,7 +418,7 @@ export default function FeesPage() {
             <Percent className="w-6 h-6 text-purple-500" />
           </div>
           <div>
-            <h3 className="font-semibold text-foreground">Exemplo de Cálculo - Rota {currentRouteFees.name}</h3>
+            <h3 className="font-semibold text-foreground">Exemplo de Cálculo - Sua Rota</h3>
             <p className="text-sm text-muted-foreground">Veja como as taxas são aplicadas</p>
           </div>
         </div>
@@ -454,21 +430,22 @@ export default function FeesPage() {
           </div>
           <div className="flex justify-between items-center pb-3 border-b border-border">
             <span className="text-muted-foreground">
-              Taxa ({formatPercent(currentRouteFees.depositPercentage)}
-              {currentRouteFees.depositFixed > 0 && ` + ${formatCurrency(currentRouteFees.depositFixed)}`})
+              Taxa ({formatPercent(fees.pix_percentage_fee)}
+              {fees.pix_fixed_fee > 0 && ` + ${formatCurrency(fees.pix_fixed_fee)}`})
             </span>
             <span className="font-semibold text-red-400">
-              - {formatCurrency(100 * currentRouteFees.depositPercentage / 100 + currentRouteFees.depositFixed)}
+              - {formatCurrency(100 * fees.pix_percentage_fee / 100 + fees.pix_fixed_fee)}
             </span>
           </div>
           <div className="flex justify-between items-center pt-1">
             <span className="font-semibold text-foreground">Valor líquido</span>
             <span className="font-bold text-green-400 text-lg">
-              {formatCurrency(100 - (100 * currentRouteFees.depositPercentage / 100) - currentRouteFees.depositFixed)}
+              {formatCurrency(100 - (100 * fees.pix_percentage_fee / 100) - fees.pix_fixed_fee)}
             </span>
           </div>
         </div>
       </motion.div>
+      )}
 
       {/* Informações */}
       <motion.div
@@ -484,8 +461,8 @@ export default function FeesPage() {
               <strong className="text-foreground">Como funcionam as taxas?</strong>
             </p>
             <ul className="list-disc list-inside space-y-1 ml-2">
-              <li><strong>Rota BLACK:</strong> 5% em depósitos + 5% em saques</li>
-              <li><strong>Rota WHITE:</strong> 2% + R$0,70 em depósitos + 2% em saques</li>
+              <li><strong>Rota BLACK:</strong> Taxa percentual em depósitos + taxa fixa em saques (R$)</li>
+              <li><strong>Rota WHITE:</strong> Taxa percentual + taxa fixa em depósitos</li>
               <li>A taxa de depósito é descontada automaticamente do valor recebido</li>
               <li>A taxa de saque é descontada do valor sacado</li>
               <li>Entre em contato com o suporte para mais informações</li>

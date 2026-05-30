@@ -14,6 +14,9 @@ import {
   RefreshCw,
   Edit3,
   Loader2,
+  Settings,
+  ToggleLeft,
+  ToggleRight,
 } from "lucide-react";
 
 interface Withdrawal {
@@ -44,9 +47,12 @@ export default function WithdrawalsPage() {
   const [rejectionReason, setRejectionReason] = useState("");
   const [showStatusModal, setShowStatusModal] = useState(false);
   const [changingStatus, setChangingStatus] = useState(false);
+  const [withdrawalMode, setWithdrawalMode] = useState<"automatic" | "manual">("automatic");
+  const [savingMode, setSavingMode] = useState(false);
 
   useEffect(() => {
     loadWithdrawals();
+    loadWithdrawalMode();
   }, []);
 
   useEffect(() => {
@@ -82,6 +88,40 @@ export default function WithdrawalsPage() {
       console.error("Error loading withdrawals:", error);
     } finally {
       setIsLoading(false);
+    }
+  }
+
+  async function loadWithdrawalMode() {
+    try {
+      const response = await fetch("/api/admin/settings");
+      const data = await response.json();
+      if (data.withdrawal_mode) {
+        const mode = typeof data.withdrawal_mode === "string" 
+          ? data.withdrawal_mode.replace(/"/g, "") 
+          : data.withdrawal_mode;
+        setWithdrawalMode(mode as "automatic" | "manual");
+      }
+    } catch (error) {
+      console.error("Error loading withdrawal mode:", error);
+    }
+  }
+
+  async function toggleWithdrawalMode() {
+    const newMode = withdrawalMode === "automatic" ? "manual" : "automatic";
+    setSavingMode(true);
+    try {
+      const response = await fetch("/api/admin/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ settings: { withdrawal_mode: newMode } }),
+      });
+      if (response.ok) {
+        setWithdrawalMode(newMode);
+      }
+    } catch (error) {
+      console.error("Error saving withdrawal mode:", error);
+    } finally {
+      setSavingMode(false);
     }
   }
 
@@ -269,7 +309,30 @@ export default function WithdrawalsPage() {
             Gerencie as solicitações de saque
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
+          {/* Toggle Modo de Saque */}
+          <div className="flex items-center gap-3 px-4 py-2.5 bg-secondary border border-border rounded-xl">
+            <Settings className="w-4 h-4 text-muted-foreground" />
+            <span className="text-sm text-muted-foreground">Modo:</span>
+            <button
+              onClick={toggleWithdrawalMode}
+              disabled={savingMode}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                withdrawalMode === "automatic"
+                  ? "bg-green-500/20 text-green-400"
+                  : "bg-yellow-500/20 text-yellow-400"
+              }`}
+            >
+              {savingMode ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : withdrawalMode === "automatic" ? (
+                <ToggleRight className="w-5 h-5" />
+              ) : (
+                <ToggleLeft className="w-5 h-5" />
+              )}
+              {withdrawalMode === "automatic" ? "Automatico" : "Manual"}
+            </button>
+          </div>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
             <input
@@ -304,6 +367,32 @@ export default function WithdrawalsPage() {
               Falhou
             </option>
           </select>
+        </div>
+      </div>
+
+      {/* Info do Modo */}
+      <div className={`p-4 rounded-xl border ${
+        withdrawalMode === "automatic" 
+          ? "bg-green-500/5 border-green-500/20" 
+          : "bg-yellow-500/5 border-yellow-500/20"
+      }`}>
+        <div className="flex items-center gap-3">
+          {withdrawalMode === "automatic" ? (
+            <CheckCircle className="w-5 h-5 text-green-400" />
+          ) : (
+            <Clock className="w-5 h-5 text-yellow-400" />
+          )}
+          <div>
+            <p className={`font-medium ${withdrawalMode === "automatic" ? "text-green-400" : "text-yellow-400"}`}>
+              Modo {withdrawalMode === "automatic" ? "Automatico" : "Manual"} Ativo
+            </p>
+            <p className="text-sm text-muted-foreground">
+              {withdrawalMode === "automatic" 
+                ? "Saques ate R$ 400 sao processados automaticamente. Acima disso, requerem aprovacao."
+                : "TODOS os saques requerem aprovacao manual de um administrador antes de serem processados."
+              }
+            </p>
+          </div>
         </div>
       </div>
 

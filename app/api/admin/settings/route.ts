@@ -65,6 +65,8 @@ function getSettingDescription(key: string): string {
     max_withdrawal: "Valor maximo para saque por transacao",
     daily_withdrawal_limit: "Limite diario de saque",
     auto_withdraw_limit: "Saques ate este valor sao automaticos",
+    // Modo de saque
+    withdrawal_mode: "Modo de processamento de saques (automatic ou manual)",
   }
   return descriptions[key] || ""
 }

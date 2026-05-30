@@ -1,6 +1,5 @@
 import { sql } from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
-import { notifyAdminDeposit } from "@/lib/notifications";
 import { verifyAdmin, accessDeniedResponse } from "@/lib/admin-auth";
 
 export const dynamic = 'force-dynamic';
@@ -82,29 +81,8 @@ export async function POST(request: NextRequest) {
       console.error("Error creating audit log:", logError);
     }
 
-    // Criar notificação e enviar push para o usuário
-    try {
-      if (operation === 'add') {
-        // Enviar notificacao com push para credito
-        await notifyAdminDeposit(userId, Number(amount));
-      } else {
-        // Para debito, criar notificacao simples
-        const notificationId = crypto.randomUUID();
-        await sql`
-          INSERT INTO user_notifications (id, user_id, title, message, type, created_at)
-          VALUES (
-            ${notificationId},
-            ${userId},
-            'Debito em sua conta',
-            ${`Foi debitado R$ ${Number(amount).toFixed(2)} da sua conta. ${reason ? `Motivo: ${reason}` : ''}`},
-            'warning',
-            NOW()
-          )
-        `;
-      }
-    } catch (notifError) {
-      console.error("Error creating notification:", notifError);
-    }
+    // Nota: Alteracoes de saldo pelo admin NAO geram notificacoes para o usuario
+    // O registro fica apenas no audit_log para controle interno
 
     return NextResponse.json({ 
       success: true,
