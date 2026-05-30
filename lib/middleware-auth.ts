@@ -81,6 +81,7 @@ export async function handleAuth(request: NextRequest) {
     '/docs',
     '/status',
     '/blocked',
+    '/link',
     '/api/auth/login',
     '/api/auth/register',
     '/api/auth/send-code',
@@ -102,6 +103,7 @@ export async function handleAuth(request: NextRequest) {
     '/api/push/debug',
     '/api/push/test',
     '/api/public/',
+    '/api/payment-links/', // Links de pagamento públicos
     '/api/admin/update-white-route',
     '/api/admin/all-routes',
     '/api/admin/update-routes-fees',
