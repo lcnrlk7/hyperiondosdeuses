@@ -10,6 +10,11 @@ interface AnimatedCounterProps {
   prefix?: string;
 }
 
+// Formatação manual para evitar hydration mismatch entre servidor e cliente
+function formatNumber(num: number): string {
+  return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+}
+
 export function AnimatedCounter({
   from,
   to,
@@ -18,8 +23,15 @@ export function AnimatedCounter({
   prefix = '',
 }: AnimatedCounterProps) {
   const [count, setCount] = useState(from);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!mounted) return;
+    
     const startTime = Date.now();
     const endTime = startTime + duration * 1000;
 
@@ -38,12 +50,23 @@ export function AnimatedCounter({
     };
 
     requestAnimationFrame(updateCounter);
-  }, [from, to, duration]);
+  }, [from, to, duration, mounted]);
+
+  // Renderizar valor inicial no servidor para evitar hydration mismatch
+  if (!mounted) {
+    return (
+      <span>
+        {prefix}
+        {formatNumber(from)}
+        {suffix}
+      </span>
+    );
+  }
 
   return (
     <span>
       {prefix}
-      {count.toLocaleString('pt-BR')}
+      {formatNumber(count)}
       {suffix}
     </span>
   );
