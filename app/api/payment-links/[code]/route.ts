@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sql } from "@/lib/db";
+import { MedusaPayments } from "@/lib/acquirers/medusa";
+import { getSystemFeesForUser } from "@/lib/acquirers";
 
 // GET - Buscar payment link por codigo (publico)
 export async function GET(
@@ -160,103 +162,147 @@ export async function POST(
       return NextResponse.json({ error: "CPF e obrigatorio" }, { status: 400 });
     }
 
-    // Buscar configuracao do usuario para taxas
+    // Buscar profile do dono do link com adquirente
     const [profile] = await sql`
       SELECT 
         p.*,
-        COALESCE(p.custom_fee_percentage, 
-          COALESCE((SELECT value::numeric FROM system_settings WHERE key = 'pix_percentage_fee'), 2.99)
-        ) as fee_percentage,
-        COALESCE(p.custom_fixed_fee, 
-          COALESCE((SELECT value::numeric FROM system_settings WHERE key = 'pix_fixed_fee'), 0)
-        ) as fixed_fee
-      FROM profiles p WHERE p.id = ${link.user_id}
+        a.id as acquirer_id,
+        a.code as acquirer_code,
+        a.api_key as acquirer_api_key,
+        a.api_secret as acquirer_api_secret,
+        a.is_active as acquirer_active
+      FROM profiles p
+      LEFT JOIN acquirers a ON a.id = p.acquirer_id
+      WHERE p.id = ${link.user_id}
     `;
 
-    const feePercentage = Number(profile.fee_percentage);
-    const fixedFee = Number(profile.fixed_fee);
-    const fee = (finalAmount * feePercentage / 100) + fixedFee;
+    if (!profile) {
+      return NextResponse.json(
+        { error: "Vendedor nao encontrado" },
+        { status: 404 }
+      );
+    }
+
+    // Verificar se tem adquirente configurado
+    if (!profile.acquirer_id || !profile.acquirer_active) {
+      return NextResponse.json(
+        { error: "Rota de pagamento nao configurada" },
+        { status: 500 }
+      );
+    }
+
+    // Buscar taxas do usuario
+    const userFees = await getSystemFeesForUser(profile.id);
+    const feePercentage = userFees.pixPercentageFee;
+    const fixedFee = userFees.pixFixedFee;
+    const fee = (finalAmount * (feePercentage / 100)) + fixedFee;
     const netAmount = finalAmount - fee;
 
     // Criar transacao pendente
+    const txId = crypto.randomUUID();
+    const transactionId = `pl_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+
     const [transaction] = await sql`
       INSERT INTO transactions (
-        user_id, type, status, amount, fee, net_amount,
-        payer_name, payer_email, payer_cpf,
-        description, payment_link_id
+        id, user_id, type, status, amount, fee, net_amount,
+        payer_name, payer_email, payer_document,
+        description, external_id, metadata
       ) VALUES (
-        ${link.user_id}, 'pix_in', 'pending', ${finalAmount}, ${fee}, ${netAmount},
+        ${txId}, ${link.user_id}, 'pix_in', 'pending', ${finalAmount}, ${fee}, ${netAmount},
         ${payer_name || null}, ${payer_email || null}, ${payer_cpf || null},
-        ${`Pagamento via link: ${link.title}`}, ${link.id}
+        ${`Pagamento via link: ${link.title}`}, ${transactionId},
+        ${JSON.stringify({ payment_link_id: link.id, payment_link_code: link.code })}
       )
       RETURNING *
     `;
 
-    // Gerar PIX via Medusa ou adquirente
-    const medusaUrl = process.env.MEDUSA_API_URL || "https://api.medusa.com.br";
-    const medusaSecret = process.env.MEDUSA_SECRET_KEY || process.env.MEDUSA_API_KEY;
+    // Gerar PIX via Medusa (mesmo padrao do /api/pix/create)
+    let pixResult: { success: boolean; data?: { qrCode?: string; transactionId?: string }; error?: string };
 
-    if (!medusaSecret) {
-      console.error("Medusa API key not configured");
+    if (profile.acquirer_code === 'medusa' || profile.acquirer_code === 'medusa_white') {
+      try {
+        const medusa = new MedusaPayments({
+          secretKey: profile.acquirer_api_key,
+          licenseKey: profile.acquirer_api_secret || undefined,
+        });
+        
+        const amountInCents = Math.round(finalAmount * 100);
+        const customerName = payer_name || "Cliente";
+        const customerDocument = payer_cpf ? payer_cpf.replace(/\D/g, "") : "36009722004";
+        const customerEmail = payer_email || "cliente@hyperionpay.com";
+        const medusaWebhookUrl = "https://www.hyperionpay.com.br/api/webhooks/medusa";
+        
+        const medusaResult = await medusa.createSimplePixPayment(
+          amountInCents,
+          customerName,
+          customerDocument,
+          customerEmail,
+          `Pagamento: ${link.title}`,
+          medusaWebhookUrl
+        );
+        
+        if (!medusaResult.pix?.qrcode) {
+          pixResult = {
+            success: false,
+            error: "Medusa nao retornou o codigo PIX"
+          };
+        } else {
+          pixResult = {
+            success: true,
+            data: {
+              qrCode: medusaResult.pix.qrcode,
+              transactionId: String(medusaResult.id),
+            }
+          };
+        }
+      } catch (error) {
+        console.error("Medusa error:", error);
+        pixResult = {
+          success: false,
+          error: error instanceof Error ? error.message : "Erro ao criar cobranca PIX"
+        };
+      }
+    } else {
+      pixResult = {
+        success: false,
+        error: `Adquirente nao suportada: ${profile.acquirer_code}`
+      };
+    }
+
+    if (!pixResult.success || !pixResult.data) {
+      // Marcar transacao como falha
+      await sql`UPDATE transactions SET status = 'failed' WHERE id = ${txId}`;
       return NextResponse.json(
-        { error: "Erro de configuracao do sistema" },
+        { error: pixResult.error || "Erro ao gerar PIX" },
         { status: 500 }
       );
     }
-
-    // Gerar CPF valido se nao fornecido
-    const cpfToUse = payer_cpf || "00000000000";
-
-    const medusaPayload = {
-      value: Math.round(finalAmount * 100), // Em centavos
-      externalId: transaction.id,
-      customer: {
-        name: payer_name || "Cliente",
-        document: cpfToUse.replace(/\D/g, ""),
-        email: payer_email || "cliente@email.com",
-      },
-      description: `Pagamento: ${link.title}`,
-    };
-
-    const medusaResponse = await fetch(`${medusaUrl}/v1/invoices`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${medusaSecret}`,
-      },
-      body: JSON.stringify(medusaPayload),
-    });
-
-    if (!medusaResponse.ok) {
-      const errorText = await medusaResponse.text();
-      console.error("Medusa error:", errorText);
-      
-      // Atualizar transacao como falhou
-      await sql`UPDATE transactions SET status = 'failed' WHERE id = ${transaction.id}`;
-      
-      return NextResponse.json(
-        { error: "Erro ao gerar PIX" },
-        { status: 500 }
-      );
-    }
-
-    const medusaData = await medusaResponse.json();
 
     // Atualizar transacao com dados do PIX
     await sql`
       UPDATE transactions SET
-        external_id = ${medusaData.id || medusaData.invoiceId},
-        pix_code = ${medusaData.emvqrcps || medusaData.pixCode || medusaData.qrcode},
-        qr_code = ${medusaData.qrCodeImage || medusaData.qrcodeBase64 || null}
-      WHERE id = ${transaction.id}
+        acquirer_transaction_id = ${pixResult.data.transactionId},
+        metadata = metadata || ${JSON.stringify({ 
+          qr_code: pixResult.data.qrCode,
+          copy_paste: pixResult.data.qrCode 
+        })}::jsonb
+      WHERE id = ${txId}
+    `;
+
+    // Incrementar contador de usos do link
+    await sql`
+      UPDATE payment_links 
+      SET current_uses = current_uses + 1, updated_at = NOW()
+      WHERE id = ${link.id}
     `;
 
     return NextResponse.json({
-      transaction_id: transaction.id,
+      success: true,
+      transaction_id: txId,
       amount: finalAmount,
-      pix_code: medusaData.emvqrcps || medusaData.pixCode || medusaData.qrcode,
-      qr_code: medusaData.qrCodeImage || medusaData.qrcodeBase64,
-      expires_at: medusaData.expiresAt,
+      pix_code: pixResult.data.qrCode,
+      qr_code: pixResult.data.qrCode,
+      expires_at: new Date(Date.now() + 30 * 60 * 1000).toISOString(), // 30 min
     });
   } catch (error) {
     console.error("Error creating payment:", error);

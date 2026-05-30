@@ -19,6 +19,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import QRCode from "qrcode";
 
 interface PaymentLink {
   id: string;
@@ -59,6 +60,7 @@ export default function PayLinkPage({ params }: { params: Promise<{ code: string
   const [processing, setProcessing] = useState(false);
   const [copied, setCopied] = useState(false);
   const [checkingPayment, setCheckingPayment] = useState(false);
+  const [qrCodeImage, setQrCodeImage] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     amount: "",
@@ -83,6 +85,22 @@ export default function PayLinkPage({ params }: { params: Promise<{ code: string
       if (interval) clearInterval(interval);
     };
   }, [step, paymentData]);
+
+  // Gerar QR Code quando paymentData mudar
+  useEffect(() => {
+    if (paymentData?.pix_code) {
+      QRCode.toDataURL(paymentData.pix_code, {
+        width: 256,
+        margin: 2,
+        color: {
+          dark: "#000000",
+          light: "#ffffff",
+        },
+      })
+        .then((url) => setQrCodeImage(url))
+        .catch((err) => console.error("Erro ao gerar QR Code:", err));
+    }
+  }, [paymentData?.pix_code]);
 
   async function loadLink() {
     try {
@@ -436,17 +454,18 @@ export default function PayLinkPage({ params }: { params: Promise<{ code: string
               </div>
 
               {/* QR Code */}
-              {paymentData.qr_code && (
+              {qrCodeImage && (
                 <div className="bg-white rounded-2xl p-4 mx-auto w-fit">
                   <img
-                    src={
-                      paymentData.qr_code.startsWith("data:")
-                        ? paymentData.qr_code
-                        : `data:image/png;base64,${paymentData.qr_code}`
-                    }
+                    src={qrCodeImage}
                     alt="QR Code PIX"
                     className="w-48 h-48"
                   />
+                </div>
+              )}
+              {!qrCodeImage && paymentData.pix_code && (
+                <div className="bg-white rounded-2xl p-4 mx-auto w-fit flex items-center justify-center w-48 h-48">
+                  <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
                 </div>
               )}
 
