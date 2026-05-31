@@ -70,7 +70,7 @@ export default function WalletPage() {
   } | null>(null);
   const [savedPixKeys, setSavedPixKeys] = useState<PixKey[]>([]);
   const [systemSettings, setSystemSettings] = useState({
-    minDeposit: 5,
+    minDeposit: 1,
     maxDeposit: 100000,
     minWithdrawal: 25, // Minimo R$ 25 para rota black
     maxWithdrawal: 50000,

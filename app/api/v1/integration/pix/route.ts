@@ -148,8 +148,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Valor mínimo depende da rota: black = R$ 5,00 | white = R$ 1,00
-    const minAmount = profile.route_type === 'black' ? 5 : 1;
+    // Valor mínimo: R$ 1,00
+    const minAmount = 1;
     if (amount < minAmount) {
       return NextResponse.json(
         { success: false, error: `Valor mínimo é R$ ${minAmount.toFixed(2).replace('.', ',')}`, code: "MIN_AMOUNT" },

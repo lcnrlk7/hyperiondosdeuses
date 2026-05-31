@@ -1733,7 +1733,7 @@ console.log("Status:", status.data.status);`}
 }`}
                     </code>
                     <div className="mt-2 text-xs text-muted-foreground space-y-1">
-                      <p><strong>amount</strong> - Valor em reais (obrigatorio, minimo R$ 10)</p>
+                      <p><strong>amount</strong> - Valor em reais (obrigatorio, minimo R$ 1)</p>
                       <p><strong>pix_key</strong> - Chave PIX do destinatario (obrigatorio)</p>
                       <p><strong>pix_key_type</strong> - Tipo da chave: cpf, cnpj, email, phone, random (obrigatorio)</p>
                       <p><strong>external_id</strong> - Seu ID interno para rastrear (opcional)</p>
