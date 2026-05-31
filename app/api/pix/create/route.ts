@@ -90,7 +90,7 @@ export async function POST(request: NextRequest) {
       SELECT key, value FROM system_settings WHERE key IN ('min_deposit', 'max_deposit')
     `;
 
-    const settings: Record<string, number> = { min_deposit: 5, max_deposit: 100000 };
+    const settings: Record<string, number> = { min_deposit: 1, max_deposit: 100000 };
     settingsResult.forEach((s: { key: string; value: string }) => {
       settings[s.key] = parseFloat(s.value) || settings[s.key];
     });

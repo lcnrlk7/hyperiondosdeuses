@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { sql, isDatabaseConfigured } from "@/lib/db";
 
 const DEFAULT_SETTINGS = {
-  min_deposit: "5.00",
+  min_deposit: "1.00",
   max_deposit: "100000.00",
   min_withdrawal: "5.00",
   max_withdrawal: "50000.00",
@@ -19,7 +19,7 @@ export async function GET() {
     if (!isDatabaseConfigured()) {
       return NextResponse.json({
         settings: {
-          minDeposit: 5,
+          minDeposit: 1,
           maxDeposit: 100000,
           minWithdrawal: 5,
           maxWithdrawal: 50000,
@@ -45,7 +45,7 @@ export async function GET() {
 
     return NextResponse.json({
       settings: {
-        minDeposit: parseFloat(settingsMap.min_deposit) || 5,
+        minDeposit: parseFloat(settingsMap.min_deposit) || 1,
         maxDeposit: parseFloat(settingsMap.max_deposit) || 100000,
         minWithdrawal: parseFloat(settingsMap.min_withdrawal) || 5,
         maxWithdrawal: parseFloat(settingsMap.max_withdrawal) || 50000,
@@ -61,7 +61,7 @@ export async function GET() {
     console.error("[v0] Error in settings API:", error);
     return NextResponse.json({
       settings: {
-        minDeposit: 5,
+        minDeposit: 1,
         maxDeposit: 100000,
         minWithdrawal: 5,
         maxWithdrawal: 50000,

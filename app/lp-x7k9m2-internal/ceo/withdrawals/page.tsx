@@ -300,24 +300,24 @@ export default function WithdrawalsPage() {
   }
 
   return (
-    <div className="p-6 lg:p-8 space-y-6">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-white mb-2">Saques</h1>
-          <p className="text-muted-foreground">
-            Gerencie as solicitações de saque
-          </p>
-        </div>
-        <div className="flex items-center gap-3 flex-wrap">
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div>
+            <h1 className="text-xl sm:text-2xl font-bold text-white mb-1">Saques</h1>
+            <p className="text-sm text-muted-foreground">
+              Gerencie as solicitacoes de saque
+            </p>
+          </div>
           {/* Toggle Modo de Saque */}
-          <div className="flex items-center gap-3 px-4 py-2.5 bg-secondary border border-border rounded-xl">
+          <div className="flex items-center gap-2 px-3 py-2 bg-secondary border border-border rounded-xl">
             <Settings className="w-4 h-4 text-muted-foreground" />
-            <span className="text-sm text-muted-foreground">Modo:</span>
+            <span className="text-xs sm:text-sm text-muted-foreground">Modo:</span>
             <button
               onClick={toggleWithdrawalMode}
               disabled={savingMode}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+              className={`flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs sm:text-sm font-medium transition-all ${
                 withdrawalMode === "automatic"
                   ? "bg-green-500/20 text-green-400"
                   : "bg-yellow-500/20 text-yellow-400"
@@ -326,70 +326,60 @@ export default function WithdrawalsPage() {
               {savingMode ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
               ) : withdrawalMode === "automatic" ? (
-                <ToggleRight className="w-5 h-5" />
+                <ToggleRight className="w-4 h-4" />
               ) : (
-                <ToggleLeft className="w-5 h-5" />
+                <ToggleLeft className="w-4 h-4" />
               )}
-              {withdrawalMode === "automatic" ? "Automatico" : "Manual"}
+              <span className="hidden sm:inline">{withdrawalMode === "automatic" ? "Automatico" : "Manual"}</span>
             </button>
           </div>
-          <div className="relative">
+        </div>
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+          <div className="relative flex-1 sm:flex-none">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
             <input
               type="text"
               placeholder="Buscar..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 pr-4 py-2.5 bg-secondary border border-border rounded-xl text-white placeholder:text-muted-foreground focus:outline-none focus:border-primary/50 w-48"
+              className="w-full sm:w-48 pl-10 pr-4 py-2.5 bg-secondary border border-border rounded-xl text-white placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
             />
           </div>
           <select
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
-            className="px-4 py-2.5 bg-secondary border border-border rounded-xl text-white focus:outline-none focus:border-primary/50"
+            className="px-3 py-2.5 bg-secondary border border-border rounded-xl text-white text-sm focus:outline-none focus:border-primary/50"
           >
-            <option value="all" className="bg-card">
-              Todos
-            </option>
-            <option value="pending" className="bg-card">
-              Pendentes
-            </option>
-            <option value="processing" className="bg-card">
-              Processando
-            </option>
-            <option value="completed" className="bg-card">
-              Concluidos
-            </option>
-            <option value="cancelled" className="bg-card">
-              Cancelados
-            </option>
-            <option value="failed" className="bg-card">
-              Falhou
-            </option>
+            <option value="all" className="bg-card">Todos</option>
+            <option value="pending" className="bg-card">Pendentes</option>
+            <option value="processing" className="bg-card">Processando</option>
+            <option value="completed" className="bg-card">Concluidos</option>
+            <option value="cancelled" className="bg-card">Cancelados</option>
+            <option value="failed" className="bg-card">Falhou</option>
           </select>
         </div>
       </div>
 
       {/* Info do Modo */}
-      <div className={`p-4 rounded-xl border ${
+      <div className={`p-3 sm:p-4 rounded-xl border ${
         withdrawalMode === "automatic" 
           ? "bg-green-500/5 border-green-500/20" 
           : "bg-yellow-500/5 border-yellow-500/20"
       }`}>
-        <div className="flex items-center gap-3">
+        <div className="flex items-start sm:items-center gap-3">
           {withdrawalMode === "automatic" ? (
-            <CheckCircle className="w-5 h-5 text-green-400" />
+            <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0" />
           ) : (
-            <Clock className="w-5 h-5 text-yellow-400" />
+            <Clock className="w-5 h-5 text-yellow-400 flex-shrink-0" />
           )}
           <div>
-            <p className={`font-medium ${withdrawalMode === "automatic" ? "text-green-400" : "text-yellow-400"}`}>
-              Modo {withdrawalMode === "automatic" ? "Automatico" : "Manual"} Ativo
+            <p className={`font-medium text-sm sm:text-base ${withdrawalMode === "automatic" ? "text-green-400" : "text-yellow-400"}`}>
+              Modo {withdrawalMode === "automatic" ? "Automatico" : "Manual"}
             </p>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-xs sm:text-sm text-muted-foreground">
               {withdrawalMode === "automatic" 
-                ? "Saques ate R$ 400 sao processados automaticamente. Acima disso, requerem aprovacao."
-                : "TODOS os saques requerem aprovacao manual de um administrador antes de serem processados."
+                ? "Saques ate R$ 400 sao automaticos."
+                : "Todos os saques requerem aprovacao."
               }
             </p>
           </div>
@@ -397,36 +387,36 @@ export default function WithdrawalsPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-        <div className="glass rounded-xl p-4">
-          <p className="text-2xl font-bold text-yellow-400">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+        <div className="glass rounded-xl p-3 sm:p-4">
+          <p className="text-xl sm:text-2xl font-bold text-yellow-400">
             {withdrawals.filter((w) => w.status === "pending").length}
           </p>
-          <p className="text-sm text-muted-foreground">Pendentes</p>
+          <p className="text-xs sm:text-sm text-muted-foreground">Pendentes</p>
         </div>
-        <div className="glass rounded-xl p-4">
-          <p className="text-2xl font-bold text-blue-400">
+        <div className="glass rounded-xl p-3 sm:p-4">
+          <p className="text-xl sm:text-2xl font-bold text-blue-400">
             {withdrawals.filter((w) => w.status === "processing").length}
           </p>
-          <p className="text-sm text-muted-foreground">Processando</p>
+          <p className="text-xs sm:text-sm text-muted-foreground">Processando</p>
         </div>
-        <div className="glass rounded-xl p-4">
-          <p className="text-2xl font-bold text-primary">
+        <div className="glass rounded-xl p-3 sm:p-4">
+          <p className="text-xl sm:text-2xl font-bold text-primary">
             {formatCurrency(totalPending)}
           </p>
-          <p className="text-sm text-muted-foreground">Total Pendente</p>
+          <p className="text-xs sm:text-sm text-muted-foreground">Total Pend.</p>
         </div>
-        <div className="glass rounded-xl p-4">
-          <p className="text-2xl font-bold text-green-400">
+        <div className="glass rounded-xl p-3 sm:p-4">
+          <p className="text-xl sm:text-2xl font-bold text-green-400">
             {withdrawals.filter((w) => w.status === "completed").length}
           </p>
-          <p className="text-sm text-muted-foreground">Concluidos</p>
+          <p className="text-xs sm:text-sm text-muted-foreground">Concluidos</p>
         </div>
-        <div className="glass rounded-xl p-4">
-          <p className="text-2xl font-bold text-red-400">
+        <div className="glass rounded-xl p-3 sm:p-4 col-span-2 sm:col-span-1">
+          <p className="text-xl sm:text-2xl font-bold text-red-400">
             {withdrawals.filter((w) => w.status === "cancelled" || w.status === "failed").length}
           </p>
-          <p className="text-sm text-muted-foreground">Cancelados</p>
+          <p className="text-xs sm:text-sm text-muted-foreground">Cancelados</p>
         </div>
       </div>
 
@@ -441,40 +431,39 @@ export default function WithdrawalsPage() {
             filteredWithdrawals.map((withdrawal) => (
               <div
                 key={withdrawal.id}
-                className="p-4 flex items-center justify-between hover:bg-secondary transition-colors cursor-pointer"
+                className="p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-secondary transition-colors cursor-pointer"
                 onClick={() => {
                   setSelectedWithdrawal(withdrawal);
                   setShowModal(true);
                 }}
               >
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                    <Wallet className="w-6 h-6 text-primary" />
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <Wallet className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
                   </div>
-                  <div>
-                    <p className="font-medium text-white">
+                  <div className="min-w-0">
+                    <p className="font-medium text-white text-sm sm:text-base truncate">
                       {withdrawal.user_name || withdrawal.user_email || "Usuario"}
                     </p>
-                    <p className="text-sm text-muted-foreground">
-                      {getPixKeyTypeLabel(withdrawal.pix_key_type)}:{" "}
-                      {withdrawal.pix_key}
+                    <p className="text-xs sm:text-sm text-muted-foreground truncate">
+                      {getPixKeyTypeLabel(withdrawal.pix_key_type)}: {withdrawal.pix_key}
                     </p>
                     <p className="text-xs text-muted-foreground">
                       {formatDate(withdrawal.created_at)}
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-4">
-                  <div className="text-right">
-                    <p className="font-semibold text-white">
+                <div className="flex items-center justify-between sm:justify-end gap-3 sm:gap-4">
+                  <div className="text-left sm:text-right">
+                    <p className="font-semibold text-white text-sm sm:text-base">
                       {formatCurrency(withdrawal.amount)}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      Líquido: {formatCurrency(withdrawal.net_amount)}
+                      Liq: {formatCurrency(withdrawal.net_amount)}
                     </p>
                   </div>
                   <span
-                    className={`px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1 ${
+                    className={`px-2 sm:px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1 whitespace-nowrap ${
                       withdrawal.status === "completed"
                         ? "bg-green-400/10 text-green-400"
                         : withdrawal.status === "processing"
@@ -488,13 +477,13 @@ export default function WithdrawalsPage() {
                       <RefreshCw className="w-3 h-3 animate-spin" />
                     )}
                     {withdrawal.status === "completed"
-                      ? "Concluido"
+                      ? "OK"
                       : withdrawal.status === "processing"
-                      ? "Processando"
+                      ? "Proc"
                       : withdrawal.status === "pending"
-                      ? "Pendente"
+                      ? "Pend"
                       : withdrawal.status === "cancelled"
-                      ? "Cancelado"
+                      ? "Canc"
                       : withdrawal.status === "failed"
                       ? "Falhou"
                       : withdrawal.status}

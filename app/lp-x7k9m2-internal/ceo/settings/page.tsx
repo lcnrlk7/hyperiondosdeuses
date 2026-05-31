@@ -37,7 +37,7 @@ export default function SettingsPage() {
     withdrawal_fee_white: "7.00",
     withdrawal_fee_black: "7.00",
     // Limites de Deposito
-    min_deposit: "3.00",
+    min_deposit: "1.00",
     max_deposit: "100000.00",
     // Limites de Saque
     min_withdrawal: "20.00",

@@ -186,33 +186,33 @@ export default function CEODashboard() {
   }
 
   return (
-    <div className="p-6 lg:p-8 space-y-8">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-white mb-2">Dashboard CEO</h1>
-        <p className="text-muted-foreground">
+        <h1 className="text-xl sm:text-2xl font-bold text-white mb-1">Dashboard CEO</h1>
+        <p className="text-sm text-muted-foreground">
           Visao geral do sistema Hyperion Pay
         </p>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {statCards.map((stat, index) => (
           <motion.div
             key={stat.label}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1 }}
-            className="bg-card border border-border rounded-lg p-5"
+            className="bg-card border border-border rounded-lg p-3 sm:p-5"
           >
             <div className="flex items-start justify-between">
-              <div>
-                <p className={`text-2xl font-bold mb-1 ${stat.color}`}>{stat.value}</p>
-                <p className="text-sm font-medium text-foreground">{stat.label}</p>
-                <p className="text-xs text-muted-foreground mt-1">{stat.description}</p>
+              <div className="min-w-0">
+                <p className={`text-lg sm:text-2xl font-bold mb-1 ${stat.color} truncate`}>{stat.value}</p>
+                <p className="text-xs sm:text-sm font-medium text-foreground">{stat.label}</p>
+                <p className="text-[10px] sm:text-xs text-muted-foreground mt-1 hidden sm:block">{stat.description}</p>
               </div>
-              <div className={`p-2.5 rounded-full ${stat.bgColor}`}>
-                <stat.icon className={`w-5 h-5 ${stat.color}`} />
+              <div className={`p-2 sm:p-2.5 rounded-full ${stat.bgColor} flex-shrink-0`}>
+                <stat.icon className={`w-4 h-4 sm:w-5 sm:h-5 ${stat.color}`} />
               </div>
             </div>
           </motion.div>
@@ -220,7 +220,7 @@ export default function CEODashboard() {
       </div>
 
       {/* Pending Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
         {pendingCards.map((card, index) => (
           <motion.a
             key={card.label}
@@ -228,15 +228,15 @@ export default function CEODashboard() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 + index * 0.1 }}
-            className="bg-card border border-border rounded-lg p-5 flex items-center justify-between group"
+            className="bg-card border border-border rounded-lg p-4 sm:p-5 flex items-center justify-between group"
           >
             <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-full bg-primary/15">
-                <card.icon className="w-5 h-5 text-primary" />
+              <div className="p-2 sm:p-2.5 rounded-full bg-primary/15">
+                <card.icon className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
               </div>
               <div>
-                <p className="text-lg font-semibold text-foreground">{card.value}</p>
-                <p className="text-sm text-muted-foreground">{card.label}</p>
+                <p className="text-base sm:text-lg font-semibold text-foreground">{card.value}</p>
+                <p className="text-xs sm:text-sm text-muted-foreground">{card.label}</p>
               </div>
             </div>
             <ArrowUpRight className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
@@ -251,61 +251,61 @@ export default function CEODashboard() {
         transition={{ delay: 0.6 }}
         className="bg-card border border-border rounded-lg overflow-hidden"
       >
-        <div className="p-5 border-b border-border">
-          <h2 className="text-base font-semibold text-foreground">
+        <div className="p-4 sm:p-5 border-b border-border">
+          <h2 className="text-sm sm:text-base font-semibold text-foreground">
             Transacoes Recentes
           </h2>
         </div>
         <div className="divide-y divide-border">
           {recentTransactions.length === 0 ? (
-            <div className="p-8 text-center text-muted-foreground">
-              Nenhuma transação encontrada
+            <div className="p-6 sm:p-8 text-center text-muted-foreground text-sm">
+              Nenhuma transacao encontrada
             </div>
           ) : (
             recentTransactions.map((transaction) => {
               const isDeposit = transaction.type === "deposit" || transaction.type === "pix_in" || transaction.type === "transfer_in";
-              const userName = transaction.user_name || transaction.payer_name || "Usuário";
+              const userName = transaction.user_name || transaction.payer_name || "Usuario";
               const userEmail = transaction.user_email || "";
               const typeLabel = transaction.type === "pix_in" ? "PIX In" 
-                : transaction.type === "deposit" ? "Depósito"
+                : transaction.type === "deposit" ? "Deposito"
                 : transaction.type === "withdrawal" ? "Saque"
                 : transaction.type === "pix_out" ? "PIX Out"
-                : transaction.type === "transfer_in" ? "Recebimento"
-                : "Transferência";
+                : transaction.type === "transfer_in" ? "Receb"
+                : "Transfer";
               
               return (
                 <div
                   key={transaction.id}
-                  className="p-4 flex items-center justify-between hover:bg-secondary transition-colors"
+                  className="p-3 sm:p-4 flex items-center justify-between hover:bg-secondary transition-colors"
                 >
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-3">
                     <div
-                      className={`p-2 rounded-lg ${
+                      className={`p-1.5 sm:p-2 rounded-lg ${
                         isDeposit ? "bg-green-400/10" : "bg-red-400/10"
                       }`}
                     >
                       {isDeposit ? (
-                        <ArrowDownRight className="w-5 h-5 text-green-400" />
+                        <ArrowDownRight className="w-4 h-4 sm:w-5 sm:h-5 text-green-400" />
                       ) : (
-                        <ArrowUpRight className="w-5 h-5 text-red-400" />
+                        <ArrowUpRight className="w-4 h-4 sm:w-5 sm:h-5 text-red-400" />
                       )}
                     </div>
-                    <div>
-                      <p className="font-medium text-white">{userName}</p>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs text-muted-foreground">{userEmail}</span>
-                        <span className="text-xs px-1.5 py-0.5 rounded bg-white/5 text-muted-foreground">
+                    <div className="min-w-0">
+                      <p className="font-medium text-white text-sm sm:text-base truncate max-w-[120px] sm:max-w-none">{userName}</p>
+                      <div className="flex items-center gap-1 sm:gap-2">
+                        <span className="text-[10px] sm:text-xs text-muted-foreground truncate max-w-[80px] sm:max-w-none">{userEmail}</span>
+                        <span className="text-[10px] sm:text-xs px-1 sm:px-1.5 py-0.5 rounded bg-white/5 text-muted-foreground">
                           {typeLabel}
                         </span>
                       </div>
-                      <p className="text-xs text-muted-foreground mt-0.5">
+                      <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5">
                         {formatDate(transaction.created_at)}
                       </p>
                     </div>
                   </div>
-                  <div className="text-right">
+                  <div className="text-right flex-shrink-0">
                     <p
-                      className={`font-semibold ${
+                      className={`font-semibold text-sm sm:text-base ${
                         isDeposit ? "text-green-400" : "text-red-400"
                       }`}
                     >
@@ -313,12 +313,12 @@ export default function CEODashboard() {
                       {formatCurrency(Number(transaction.amount))}
                     </p>
                     {transaction.fee > 0 && (
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-[10px] sm:text-xs text-muted-foreground">
                         Taxa: {formatCurrency(Number(transaction.fee))}
                       </p>
                     )}
                     <span
-                      className={`text-xs px-2 py-1 rounded-full ${
+                      className={`text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full ${
                         transaction.status === "completed"
                           ? "bg-green-400/10 text-green-400"
                           : transaction.status === "pending"
@@ -327,9 +327,9 @@ export default function CEODashboard() {
                       }`}
                     >
                       {transaction.status === "completed"
-                        ? "Concluído"
+                        ? "OK"
                         : transaction.status === "pending"
-                        ? "Pendente"
+                        ? "Pend"
                         : "Falhou"}
                     </span>
                   </div>
