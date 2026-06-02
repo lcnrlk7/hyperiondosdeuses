@@ -19,6 +19,7 @@ import { StatsCards } from "./stats-cards";
 import { GoalsRoadmap } from "./goals-roadmap";
 import { BannerCarousel } from "./banner-carousel";
 import { CustomizableWidgets } from "./customizable-widgets";
+import { MobileDashboard } from "./mobile-dashboard";
 import { useProfile } from "@/components/profile-provider";
 
 export interface Profile {
@@ -248,7 +249,12 @@ export function DashboardContent({
   }, [transactions, periodFilter]);
 
   return (
-    <div data-onboarding="dashboard" className="space-y-4 sm:space-y-6 lg:space-y-8 overflow-x-hidden">
+    <>
+      {/* Mobile Dashboard */}
+      <MobileDashboard profile={profile} transactions={transactions} />
+      
+      {/* Desktop Dashboard */}
+      <div data-onboarding="dashboard" className="hidden lg:block space-y-4 sm:space-y-6 lg:space-y-8 overflow-x-hidden">
       {/* Welcome */}
       <div>
         <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-foreground">
@@ -404,5 +410,6 @@ export function DashboardContent({
         )}
       </motion.div>
     </div>
+    </>
   );
 }

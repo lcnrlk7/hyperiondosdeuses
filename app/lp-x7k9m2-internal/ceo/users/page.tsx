@@ -17,6 +17,7 @@ import {
   Minus,
   ShieldX,
   KeyRound,
+  Trash2,
 } from "lucide-react";
 import Image from "next/image";
 
@@ -82,6 +83,7 @@ export default function UsersPage() {
   const [isUpdatingBalance, setIsUpdatingBalance] = useState(false);
   const [blockingIp, setBlockingIp] = useState<string | null>(null);
   const [disabling2FA, setDisabling2FA] = useState<string | null>(null);
+  const [deletingUser, setDeletingUser] = useState<string | null>(null);
   const [editForm, setEditForm] = useState({
     daily_limit: 0,
     fee_percentage: "",
@@ -324,6 +326,41 @@ async function updateUser() {
       alert("Erro ao desativar 2FA");
     } finally {
       setDisabling2FA(null);
+    }
+  }
+
+  async function deleteUser(user: UserProfile) {
+    const confirmText = prompt(
+      `ATENCAO: Esta acao ira DELETAR PERMANENTEMENTE o usuario ${user.email} e TODOS os seus dados.\n\n` +
+      `Isso inclui:\n- Todas as transacoes\n- Todos os saques\n- Integracoes\n- Tickets\n- Historico completo\n\n` +
+      `Digite o email do usuario para confirmar:`
+    );
+    
+    if (confirmText !== user.email) {
+      if (confirmText !== null) {
+        alert("Email incorreto. Operacao cancelada.");
+      }
+      return;
+    }
+    
+    setDeletingUser(user.id);
+    try {
+      const response = await fetch(`/api/admin/users/${user.id}/delete`, {
+        method: "DELETE",
+      });
+      
+      if (response.ok) {
+        alert(`Usuario ${user.email} deletado com sucesso!`);
+        loadUsers();
+      } else {
+        const data = await response.json();
+        alert(data.error || "Erro ao deletar usuario");
+      }
+    } catch (error) {
+      console.error("Erro ao deletar usuario:", error);
+      alert("Erro ao deletar usuario");
+    } finally {
+      setDeletingUser(null);
     }
   }
 
@@ -879,6 +916,18 @@ const openEditModal = (user: UserProfile) => {
   )}
   </button>
   )}
+  <button
+    onClick={() => deleteUser(user)}
+    disabled={deletingUser === user.id}
+    className="p-2 rounded-lg transition-colors hover:bg-red-500/10 text-muted-foreground hover:text-red-500 disabled:opacity-50"
+    title="Deletar Usuario"
+  >
+    {deletingUser === user.id ? (
+      <Loader2 className="w-4 h-4 animate-spin" />
+    ) : (
+      <Trash2 className="w-4 h-4" />
+    )}
+  </button>
   </div>
   </td>
   </tr>
