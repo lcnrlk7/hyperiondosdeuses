@@ -116,8 +116,8 @@ export function HyperionAssistant() {
           setIsMinimized(false)
         }}
         className={cn(
-          "fixed bottom-6 right-6 z-50 group",
-          "w-16 h-16 rounded-full",
+          "fixed bottom-24 right-4 lg:bottom-6 lg:right-6 z-50 group",
+          "w-14 h-14 lg:w-16 lg:h-16 rounded-full",
           "bg-gradient-to-br from-emerald-500 via-emerald-600 to-teal-600",
           "shadow-lg shadow-emerald-500/30 hover:shadow-xl hover:shadow-emerald-500/40",
           "transition-all duration-300 hover:scale-110",
@@ -127,7 +127,7 @@ export function HyperionAssistant() {
         )}
         title="Assistente Hyperion"
       >
-        <div className="relative w-12 h-12 rounded-full overflow-hidden">
+        <div className="relative w-10 h-10 lg:w-12 lg:h-12 rounded-full overflow-hidden">
           <Image
             src="/mascote.png"
             alt="Hyperion Mascote"
