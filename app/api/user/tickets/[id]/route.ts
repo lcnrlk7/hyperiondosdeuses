@@ -162,3 +162,38 @@ export async function PATCH(
     return NextResponse.json({ error: "Erro interno" }, { status: 500 });
   }
 }
+
+// DELETE - Deletar ticket e todas as mensagens
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const session = await getSession();
+    if (!session) {
+      return NextResponse.json({ error: "Nao autorizado" }, { status: 401 });
+    }
+
+    const { id } = await params;
+
+    // Verificar se ticket pertence ao usuario
+    const ticket = await sql`
+      SELECT * FROM support_tickets WHERE id = ${id} AND user_id = ${session.userId}
+    `;
+
+    if (ticket.length === 0) {
+      return NextResponse.json({ error: "Ticket nao encontrado" }, { status: 404 });
+    }
+
+    // Deletar mensagens primeiro (foreign key)
+    await sql`DELETE FROM ticket_messages WHERE ticket_id = ${id}`;
+
+    // Deletar ticket
+    await sql`DELETE FROM support_tickets WHERE id = ${id} AND user_id = ${session.userId}`;
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Erro ao deletar ticket:", error);
+    return NextResponse.json({ error: "Erro interno" }, { status: 500 });
+  }
+}
