@@ -177,7 +177,7 @@ export function MobileDashboard({ profile: serverProfile, transactions }: Mobile
     { id: "deposit", label: "DEPOSITAR", icon: Wallet, href: "/dashboard/wallet", color: "bg-primary/10 text-primary" },
     { id: "extract", label: "EXTRATO", icon: FileText, href: "/dashboard/transactions", color: "bg-blue-500/10 text-blue-400" },
     { id: "transfer", label: "TRANSFERIR", icon: ArrowLeftRight, href: "/dashboard/transfer", color: "bg-purple-500/10 text-purple-400" },
-    { id: "affiliates", label: "AFILIADOS", icon: Users, href: "/dashboard/referrals", badge: "NOVO", color: "bg-cyan-500/10 text-cyan-400" },
+    { id: "affiliates", label: "AFILIADOS", icon: Users, href: "/dashboard/affiliates", badge: "NOVO", color: "bg-cyan-500/10 text-cyan-400" },
   ];
 
   return (
