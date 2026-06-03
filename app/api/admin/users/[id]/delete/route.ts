@@ -1,6 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sql } from "@/lib/db";
-import { getSession } from "@/lib/auth";
+import { verifyToken } from "@/lib/auth";
+import { cookies } from "next/headers";
+
+async function getSession() {
+  const cookieStore = await cookies();
+  const token = cookieStore.get("auth_token")?.value;
+  if (!token) return null;
+  return await verifyToken(token);
+}
 
 export async function DELETE(
   request: NextRequest,
@@ -8,16 +16,8 @@ export async function DELETE(
 ) {
   try {
     const session = await getSession();
-    if (!session) {
+    if (!session || (session.role !== "admin" && session.role !== "ceo")) {
       return NextResponse.json({ error: "Nao autorizado" }, { status: 401 });
-    }
-
-    // Verificar se é admin
-    const adminCheck = await sql`
-      SELECT role FROM profiles WHERE id = ${session.userId}
-    `;
-    if (adminCheck.length === 0 || adminCheck[0].role !== "admin") {
-      return NextResponse.json({ error: "Acesso negado" }, { status: 403 });
     }
 
     const { id: userId } = await params;
