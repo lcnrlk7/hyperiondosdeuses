@@ -117,6 +117,7 @@ export default function AdminTicketsPage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [ticketToDelete, setTicketToDelete] = useState<Ticket | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [prevMessagesLength, setPrevMessagesLength] = useState(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -130,9 +131,13 @@ export default function AdminTicketsPage() {
     return () => clearInterval(interval);
   }, [selectedTicket]);
 
+  // Scroll apenas quando novas mensagens chegam (nao no polling)
   useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+    if (messages.length > prevMessagesLength) {
+      scrollToBottom();
+    }
+    setPrevMessagesLength(messages.length);
+  }, [messages.length, prevMessagesLength]);
 
   function scrollToBottom() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
