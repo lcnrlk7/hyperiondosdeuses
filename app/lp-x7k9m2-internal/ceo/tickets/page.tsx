@@ -118,7 +118,9 @@ export default function AdminTicketsPage() {
   const [ticketToDelete, setTicketToDelete] = useState<Ticket | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [prevMessagesLength, setPrevMessagesLength] = useState(0);
+  const [userScrolled, setUserScrolled] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -131,13 +133,27 @@ export default function AdminTicketsPage() {
     return () => clearInterval(interval);
   }, [selectedTicket]);
 
-  // Scroll apenas quando novas mensagens chegam (nao no polling)
+  // Scroll apenas quando novas mensagens chegam E usuario nao scrollou manualmente
   useEffect(() => {
-    if (messages.length > prevMessagesLength) {
+    if (messages.length > prevMessagesLength && !userScrolled) {
       scrollToBottom();
     }
     setPrevMessagesLength(messages.length);
-  }, [messages.length, prevMessagesLength]);
+  }, [messages.length, prevMessagesLength, userScrolled]);
+
+  // Detectar scroll manual do usuario
+  function handleScroll() {
+    if (!messagesContainerRef.current) return;
+    const { scrollTop, scrollHeight, clientHeight } = messagesContainerRef.current;
+    const isAtBottom = scrollHeight - scrollTop - clientHeight < 50;
+    setUserScrolled(!isAtBottom);
+  }
+
+  // Reset userScrolled quando trocar de ticket
+  useEffect(() => {
+    setUserScrolled(false);
+    setPrevMessagesLength(0);
+  }, [selectedTicket?.id]);
 
   function scrollToBottom() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -471,7 +487,11 @@ export default function AdminTicketsPage() {
                       </div>
                     </div>
                   </div>
-                  <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                  <div 
+                    ref={messagesContainerRef}
+                    onScroll={handleScroll}
+                    className="flex-1 overflow-y-auto p-4 space-y-4"
+                  >
                     {loadingMessages ? (
                       <div className="flex items-center justify-center h-32"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
                     ) : (
