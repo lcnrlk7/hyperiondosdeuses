@@ -118,8 +118,26 @@ export default function TransactionsPage() {
     return type === "deposit" || type === "pix_in" || type === "transfer_in";
   };
 
-  const totalVolume = transactions.reduce((acc, t) => acc + Number(t.amount), 0);
-  const totalFees = transactions.reduce((acc, t) => acc + Number(t.fee || 0), 0);
+  // Estatisticas baseadas nas transacoes FILTRADAS
+  const stats = {
+    total: filteredTransactions.length,
+    totalAll: transactions.length,
+    volume: filteredTransactions
+      .filter(t => t.status === "completed")
+      .reduce((acc, t) => acc + Number(t.amount), 0),
+    fees: filteredTransactions
+      .filter(t => t.status === "completed")
+      .reduce((acc, t) => acc + Number(t.fee || 0), 0),
+    pending: filteredTransactions.filter(t => t.status === "pending").length,
+    pixInCount: filteredTransactions.filter(t => t.type === "pix_in" || t.type === "deposit").length,
+    pixOutCount: filteredTransactions.filter(t => t.type === "pix_out" || t.type === "withdrawal").length,
+    pixInVolume: filteredTransactions
+      .filter(t => (t.type === "pix_in" || t.type === "deposit") && t.status === "completed")
+      .reduce((acc, t) => acc + Number(t.amount), 0),
+    pixOutVolume: filteredTransactions
+      .filter(t => (t.type === "pix_out" || t.type === "withdrawal") && t.status === "completed")
+      .reduce((acc, t) => acc + Number(t.amount), 0),
+  };
 
   async function confirmTransaction(transactionId: string, forceReprocess = false) {
     const message = forceReprocess 
@@ -246,24 +264,37 @@ export default function TransactionsPage() {
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="glass rounded-xl p-4">
-          <p className="text-2xl font-bold text-white">{transactions.length}</p>
-          <p className="text-sm text-muted-foreground">Total</p>
+          <p className="text-2xl font-bold text-white">{stats.total}</p>
+          <p className="text-sm text-muted-foreground">
+            {typeFilter === "all" ? "Total" : typeFilter === "pix_in" ? "PIX In" : "PIX Out"}
+            {filter !== "all" && ` (${filter})`}
+          </p>
+          {typeFilter === "all" && (
+            <p className="text-xs text-muted-foreground mt-1">
+              {stats.pixInCount} in / {stats.pixOutCount} out
+            </p>
+          )}
         </div>
         <div className="glass rounded-xl p-4">
           <p className="text-2xl font-bold text-primary">
-            {formatCurrency(totalVolume)}
+            {formatCurrency(stats.volume)}
           </p>
-          <p className="text-sm text-muted-foreground">Volume Total</p>
+          <p className="text-sm text-muted-foreground">Volume (Concluido)</p>
+          {typeFilter === "all" && (
+            <p className="text-xs text-muted-foreground mt-1">
+              In: {formatCurrency(stats.pixInVolume)} / Out: {formatCurrency(stats.pixOutVolume)}
+            </p>
+          )}
         </div>
         <div className="glass rounded-xl p-4">
           <p className="text-2xl font-bold text-green-400">
-            {formatCurrency(totalFees)}
+            {formatCurrency(stats.fees)}
           </p>
-          <p className="text-sm text-muted-foreground">Taxas Coletadas</p>
+          <p className="text-sm text-muted-foreground">Taxas (Concluido)</p>
         </div>
         <div className="glass rounded-xl p-4">
           <p className="text-2xl font-bold text-yellow-400">
-            {transactions.filter((t) => t.status === "pending").length}
+            {stats.pending}
           </p>
           <p className="text-sm text-muted-foreground">Pendentes</p>
         </div>
