@@ -16,8 +16,6 @@ import {
   Clock,
   CheckCircle,
   XCircle,
-  Bell,
-  Settings,
   ChevronRight,
 } from "lucide-react";
 import Link from "next/link";
@@ -359,42 +357,6 @@ export function MobileDashboard({ profile: serverProfile, transactions }: Mobile
             ))}
           </div>
         )}
-      </div>
-
-      {/* Bottom Navigation (Fixed) */}
-      <div className="fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-xl border-t border-border px-4 py-2 z-40">
-        <div className="flex items-center justify-around max-w-md mx-auto">
-          <Link href="/dashboard" className="flex flex-col items-center gap-1 py-1.5 px-3 text-primary">
-            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M4 4h4v4H4V4zm6 0h4v4h-4V4zm6 0h4v4h-4V4zM4 10h4v4H4v-4zm6 0h4v4h-4v-4zm6 0h4v4h-4v-4zM4 16h4v4H4v-4zm6 0h4v4h-4v-4zm6 0h4v4h-4v-4z"/>
-            </svg>
-            <span className="text-[10px] font-medium">Inicio</span>
-          </Link>
-          
-          <Link href="/dashboard/transactions" className="flex flex-col items-center gap-1 py-1.5 px-3 text-muted-foreground">
-            <FileText className="w-5 h-5" />
-            <span className="text-[10px]">Extrato</span>
-          </Link>
-          
-          {/* Botao Central */}
-          <Link href="/dashboard/wallet" className="relative -mt-6">
-            <div className="w-14 h-14 rounded-full bg-primary flex items-center justify-center shadow-lg shadow-primary/30">
-              <ArrowUpRight className="w-6 h-6 text-primary-foreground" />
-            </div>
-          </Link>
-          
-          <Link href="/dashboard/integration" className="flex flex-col items-center gap-1 py-1.5 px-3 text-muted-foreground">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-            </svg>
-            <span className="text-[10px]">Integracoes</span>
-          </Link>
-          
-          <Link href="/dashboard/profile" className="flex flex-col items-center gap-1 py-1.5 px-3 text-muted-foreground">
-            <Settings className="w-5 h-5" />
-            <span className="text-[10px]">Ajustes</span>
-          </Link>
-        </div>
       </div>
     </div>
   );

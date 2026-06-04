@@ -9,6 +9,7 @@ import { DashboardSidebar } from "@/components/dashboard/sidebar";
 import { DashboardHeader } from "@/components/dashboard/header";
 import { KYCBlocker } from "@/components/dashboard/kyc-blocker";
 import { NotificationListener } from "@/components/notification-listener";
+import { MobileBottomNav } from "@/components/dashboard/mobile-bottom-nav";
 
 function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
   const { user, token, isLoading: authLoading } = useAuth();
@@ -54,8 +55,9 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
       <DashboardSidebar user={userForComponents} profile={profile} />
       <div className="flex-1 flex flex-col min-w-0 pt-14 lg:pt-0 lg:ml-[var(--sidebar-width,256px)] transition-all duration-300">
         <DashboardHeader user={userForComponents} profile={profile} />
-        <main className="flex-1 p-3 sm:p-4 lg:p-8 pb-24 sm:pb-4 overflow-x-hidden">{children}</main>
+        <main className="flex-1 p-3 sm:p-4 lg:p-8 pb-24 lg:pb-8 overflow-x-hidden">{children}</main>
       </div>
+      <MobileBottomNav />
     </div>
   );
 }
