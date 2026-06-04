@@ -25,7 +25,6 @@ import {
   Percent,
   FileBarChart,
   UsersRound,
-  Webhook,
   Clock,
   DollarSign,
   Database,
@@ -40,56 +39,55 @@ import {
 const menuCategories = [
   {
     title: "Visao Geral",
-    color: "primary", // Laranja
+    color: "primary",
     items: [
       { label: "Dashboard", href: "/lp-x7k9m2-internal/ceo", icon: LayoutDashboard },
+      { label: "Financeiro", href: "/lp-x7k9m2-internal/ceo/financial", icon: DollarSign },
       { label: "Relatorios", href: "/lp-x7k9m2-internal/ceo/reports", icon: FileBarChart },
     ],
   },
   {
-    title: "Usuarios & Equipe",
-    color: "blue", // Azul
+    title: "Usuarios",
+    color: "blue",
     items: [
-      { label: "Usuarios", href: "/lp-x7k9m2-internal/ceo/users", icon: Users },
-      { label: "Equipe", href: "/lp-x7k9m2-internal/ceo/team", icon: UserCog },
-      { label: "KYC", href: "/lp-x7k9m2-internal/ceo/kyc", icon: FileCheck },
+      { label: "Todos Usuarios", href: "/lp-x7k9m2-internal/ceo/users", icon: Users },
+      { label: "Verificacao KYC", href: "/lp-x7k9m2-internal/ceo/kyc", icon: FileCheck },
       { label: "Afiliados", href: "/lp-x7k9m2-internal/ceo/affiliates", icon: UsersRound },
+      { label: "Equipe Admin", href: "/lp-x7k9m2-internal/ceo/team", icon: UserCog },
     ],
   },
   {
     title: "Financeiro",
-    color: "emerald", // Verde
+    color: "emerald",
     items: [
-      { label: "Dashboard", href: "/lp-x7k9m2-internal/ceo/financial", icon: DollarSign },
       { label: "Transacoes", href: "/lp-x7k9m2-internal/ceo/transactions", icon: ArrowLeftRight },
       { label: "Saques", href: "/lp-x7k9m2-internal/ceo/withdrawals", icon: Wallet },
       { label: "Taxas", href: "/lp-x7k9m2-internal/ceo/fees", icon: Percent },
+      { label: "Adquirentes", href: "/lp-x7k9m2-internal/ceo/acquirers", icon: Server },
     ],
   },
   {
-    title: "Engajamento",
-    color: "cyan", // Ciano
+    title: "Suporte",
+    color: "cyan",
     items: [
       { label: "Tickets", href: "/lp-x7k9m2-internal/ceo/tickets", icon: Headphones },
-      { label: "Premiacoes", href: "/lp-x7k9m2-internal/ceo/rewards", icon: Gift },
       { label: "Notificacoes", href: "/lp-x7k9m2-internal/ceo/notifications", icon: Bell },
-      { label: "Push", href: "/lp-x7k9m2-internal/ceo/push", icon: BellRing },
+      { label: "Push Global", href: "/lp-x7k9m2-internal/ceo/push", icon: BellRing },
+      { label: "Premiacoes", href: "/lp-x7k9m2-internal/ceo/rewards", icon: Gift },
     ],
   },
   {
     title: "Sistema",
-    color: "purple", // Roxo
+    color: "purple",
     items: [
-      { label: "White Label", href: "/lp-x7k9m2-internal/ceo/white-label", icon: Globe },
-      { label: "Telegram", href: "/lp-x7k9m2-internal/ceo/telegram", icon: Bot },
-      { label: "Webhooks", href: "/lp-x7k9m2-internal/ceo/webhooks", icon: Webhook },
-      { label: "Logs", href: "/lp-x7k9m2-internal/ceo/logs", icon: Activity },
-      { label: "Ataques", href: "/lp-x7k9m2-internal/ceo/attacks", icon: Shield },
-      { label: "Blacklist", href: "/lp-x7k9m2-internal/ceo/blacklist", icon: Ban },
       { label: "Status", href: "/lp-x7k9m2-internal/ceo/status", icon: Gauge },
-      { label: "Adquirentes", href: "/lp-x7k9m2-internal/ceo/acquirers", icon: Server },
+      { label: "Logs", href: "/lp-x7k9m2-internal/ceo/logs", icon: Activity },
+      { label: "Seguranca", href: "/lp-x7k9m2-internal/ceo/attacks", icon: Shield },
+      { label: "Blacklist", href: "/lp-x7k9m2-internal/ceo/blacklist", icon: Ban },
+      { label: "Telegram Bot", href: "/lp-x7k9m2-internal/ceo/telegram", icon: Bot },
+      { label: "White Label", href: "/lp-x7k9m2-internal/ceo/white-label", icon: Globe },
       { label: "Backup", href: "/lp-x7k9m2-internal/ceo/backup", icon: Database },
-      { label: "Config", href: "/lp-x7k9m2-internal/ceo/settings", icon: Settings },
+      { label: "Configuracoes", href: "/lp-x7k9m2-internal/ceo/settings", icon: Settings },
     ],
   },
 ];
