@@ -34,7 +34,7 @@ export async function DELETE(
       return NextResponse.json({ error: "Nao e possivel deletar um administrador" }, { status: 403 });
     }
 
-    console.log(`[ADMIN] Deletando usuario ${user[0].email} (${userId}) por ${session.userId}`);
+    console.log(`[ADMIN] Deletando usuario ${user[0].email} (${userId}) por admin ${session.email}`);
 
     // Deletar em ordem para respeitar foreign keys
     

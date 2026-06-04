@@ -16,9 +16,9 @@ const REQUIRED_CHANNELS = [
 
 const BOT_NAME = "Hyperion Pay";
 const SITE_URL = "https://www.hyperionpay.com.br";
-const DISCORD_LINK = "https://discord.gg/sGmMSYjdnA";
 const WHATSAPP = "(34) 99935-3187";
 const WHATSAPP_LINK = "https://wa.me/5534999353187";
+const WHATSAPP_COMMUNITY = "https://chat.whatsapp.com/IoqNR193nOW9UodggrGSQC";
 const SALES_CHANNEL = "https://t.me/hyperionpaybot";
 const SALES_CHANNEL_ID = "@hyperionpaybot";
 const ANNOUNCEMENTS_CHANNEL = "https://t.me/hyperionpayavisos";
@@ -244,7 +244,7 @@ const MENU_PRINCIPAL = {
       { text: "📣 Canal Avisos", url: ANNOUNCEMENTS_CHANNEL },
     ],
     [
-      { text: "💬 Discord", url: DISCORD_LINK },
+      { text: "💬 Comunidade WhatsApp", url: WHATSAPP_COMMUNITY },
       { text: "📱 WhatsApp", url: WHATSAPP_LINK },
     ],
   ],
@@ -465,9 +465,9 @@ function msgAjuda(): string {
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
          📞 <b>SUPORTE 24H</b>
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━�����
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-   ����� Discord: ${DISCORD_LINK}
+   🌐 Site: ${SITE_URL}/dashboard/support
    📱 WhatsApp: ${WHATSAPP}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -785,7 +785,7 @@ async function processDeposit(chatId: number, telegramId: number, amount: number
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
       📞 <b>SUPORTE 24H</b>
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   💬 Discord: ${DISCORD_LINK}
+   🌐 Site: ${SITE_URL}/dashboard/support
    📱 WhatsApp: ${WHATSAPP}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 `, { reply_markup: VOLTAR_MENU });
@@ -937,7 +937,7 @@ async function processWithdrawal(chatId: number, telegramId: number, amount: num
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
       📞 <b>SUPORTE</b>
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   💬 ${DISCORD_LINK}
+   🌐 ${SITE_URL}/dashboard/support
    📱 ${WHATSAPP}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 `, { reply_markup: VOLTAR_MENU });

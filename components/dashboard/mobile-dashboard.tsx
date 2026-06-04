@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useProfile } from "@/components/profile-provider";
+import { SupportAnnouncement } from "./support-announcement";
 
 interface Transaction {
   id: string;
@@ -182,6 +183,9 @@ export function MobileDashboard({ profile: serverProfile, transactions }: Mobile
 
   return (
     <div className="lg:hidden space-y-4 pb-24">
+      {/* Aviso de Suporte */}
+      <SupportAnnouncement />
+      
       {/* Header com saudacao e periodo */}
       <div className="flex items-start justify-between">
         <div>

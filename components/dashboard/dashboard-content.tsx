@@ -20,6 +20,7 @@ import { GoalsRoadmap } from "./goals-roadmap";
 import { BannerCarousel } from "./banner-carousel";
 import { CustomizableWidgets } from "./customizable-widgets";
 import { MobileDashboard } from "./mobile-dashboard";
+import { SupportAnnouncement } from "./support-announcement";
 import { useProfile } from "@/components/profile-provider";
 
 export interface Profile {
@@ -255,6 +256,9 @@ export function DashboardContent({
       
       {/* Desktop Dashboard */}
       <div data-onboarding="dashboard" className="hidden lg:block space-y-4 sm:space-y-6 lg:space-y-8 overflow-x-hidden">
+      {/* Aviso de Suporte */}
+      <SupportAnnouncement />
+      
       {/* Welcome */}
       <div>
         <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-foreground">
