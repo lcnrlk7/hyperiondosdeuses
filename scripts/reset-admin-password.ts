@@ -5,7 +5,7 @@ const DATABASE_URL = process.env.DATABASE_URL || 'postgresql://neondb_owner:npg_
 const sql = neon(DATABASE_URL);
 
 const email = 'elicecontadodiscord@gmail.com';
-const newPassword = 'Admin@123456';
+const newPassword = 'Hyp3r10n@C30#2024!Sec';
 
 async function run() {
   const users = await sql`SELECT id, email, name, is_admin FROM profiles WHERE email = ${email}`;
