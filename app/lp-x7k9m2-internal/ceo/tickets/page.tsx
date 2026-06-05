@@ -332,10 +332,10 @@ export default function AdminTicketsPage() {
   );
 
   return (
-    <div className="min-h-screen bg-background p-4 lg:p-6">
-      <div className="max-w-7xl mx-auto">
+    <div className="h-[calc(100vh-80px)] bg-background p-4 lg:p-6 flex flex-col overflow-hidden">
+      <div className="max-w-7xl mx-auto w-full flex flex-col flex-1 overflow-hidden">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4 flex-shrink-0">
           <div>
             <h1 className="text-2xl font-bold text-foreground">Central de Tickets</h1>
             <p className="text-sm text-muted-foreground">Gerencie os chamados de suporte</p>
@@ -347,7 +347,7 @@ export default function AdminTicketsPage() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4 flex-shrink-0">
           <div className="glass rounded-xl p-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-green-500/20 flex items-center justify-center">
@@ -394,9 +394,9 @@ export default function AdminTicketsPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-320px)]">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 flex-1 min-h-0 overflow-hidden">
           {/* Lista de Tickets */}
-          <div className={`lg:col-span-1 bg-card border border-border rounded-2xl overflow-hidden flex flex-col ${selectedTicket ? "hidden lg:flex" : "flex"}`}>
+          <div className={`lg:col-span-1 bg-card border border-border rounded-2xl overflow-hidden flex flex-col min-h-0 ${selectedTicket ? "hidden lg:flex" : "flex"}`}>
             <div className="p-4 border-b border-border space-y-3">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -469,9 +469,9 @@ export default function AdminTicketsPage() {
           </div>
 
           {/* Chat + Detalhes */}
-          <div className={`lg:col-span-2 flex gap-4 ${!selectedTicket ? "hidden lg:flex" : "flex"}`}>
+          <div className={`lg:col-span-2 flex gap-4 min-h-0 ${!selectedTicket ? "hidden lg:flex" : "flex flex-col lg:flex-row"}`}>
             {/* Chat */}
-            <div className="flex-1 bg-card border border-border rounded-2xl overflow-hidden flex flex-col">
+            <div className="flex-1 bg-card border border-border rounded-2xl overflow-hidden flex flex-col min-h-0">
               {selectedTicket ? (
                 <>
                   <div className="p-4 border-b border-border flex items-center justify-between">
