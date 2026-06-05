@@ -219,6 +219,7 @@ export default function CEOLayout({ children }: { children: React.ReactNode }) {
     // Permitir acesso para qualquer role valido (ceo, manager, support, finance, tech)
     const validRoles = ["ceo", "manager", "support", "finance", "tech"];
     
+    // Verificar se tem token (qualquer valor) e role valido
     if (!token || !user || !role || !validRoles.includes(role)) {
       router.push("/lp-x7k9m2-internal");
     } else {
