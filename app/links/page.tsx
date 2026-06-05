@@ -126,13 +126,13 @@ export default function LinksPage() {
         ))}
       </div>
 
-      <div className="relative z-10 max-w-md mx-auto px-4 py-6 sm:py-10">
+      <div className="relative z-10 max-w-lg mx-auto px-4 py-6 sm:py-10">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="text-center mb-6"
+          className="text-center sm:text-left mb-6 relative"
         >
           {/* Badge */}
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-blue-500/30 bg-blue-500/10 mb-4">
@@ -142,54 +142,61 @@ export default function LinksPage() {
             </span>
           </div>
 
-          {/* Logo */}
-          <div className="flex justify-center items-center gap-3 mb-4">
+          {/* Mascot no header - mobile */}
+          <div className="flex justify-center mb-4 sm:hidden">
             <div className="relative">
               <Image
-                src="/images/logo-hyperion.png"
-                alt="Hyperion Pay"
-                width={60}
-                height={60}
-                className="relative z-10"
+                src="/mascot-hyperion.png"
+                alt="Hyperion Pay Mascot"
+                width={160}
+                height={160}
+                className="relative z-10 drop-shadow-2xl"
               />
-              <div className="absolute inset-0 bg-primary/40 blur-2xl rounded-full scale-150" />
+              <div className="absolute inset-0 bg-blue-500/20 blur-3xl rounded-full" />
             </div>
           </div>
 
-          {/* Title */}
-          <h1 className="text-2xl sm:text-3xl font-black text-white mb-1 tracking-tight">
-            BEM-VINDO A
-          </h1>
-          <h2 className="text-2xl sm:text-3xl font-black mb-1">
-            <span className="bg-gradient-to-r from-primary via-orange-400 to-yellow-400 bg-clip-text text-transparent">
-              MELHOR GATEWAY
-            </span>
-          </h2>
-          <h3 className="text-2xl sm:text-3xl font-black text-white mb-3">
-            DO MOMENTO!
-          </h3>
+          {/* Title - with mascot on desktop */}
+          <div className="sm:flex sm:items-start sm:justify-between sm:gap-4">
+            <div className="sm:max-w-[260px]">
+              <h1 className="text-2xl sm:text-3xl font-black text-white mb-1 tracking-tight">
+                BEM-VINDO A
+              </h1>
+              <h2 className="text-2xl sm:text-3xl font-black mb-1">
+                <span className="bg-gradient-to-r from-primary via-orange-400 to-yellow-400 bg-clip-text text-transparent">
+                  MELHOR GATEWAY
+                </span>
+              </h2>
+              <h3 className="text-2xl sm:text-3xl font-black text-white mb-3">
+                DO MOMENTO!
+              </h3>
 
-          {/* Description */}
-          <p className="text-xs sm:text-sm text-gray-400 max-w-xs mx-auto leading-relaxed">
-            Taxas baixas, aprovacao alta e a tecnologia mais avancada para
-            impulsionar o seu negocio.
-          </p>
-        </motion.div>
+              {/* Description */}
+              <p className="text-xs sm:text-sm text-gray-400 leading-relaxed sm:pr-4">
+                Taxas baixas, aprovacao alta e a tecnologia mais avancada para
+                impulsionar o seu negocio.
+              </p>
+            </div>
 
-        {/* Mascot - positioned to the right */}
-        <motion.div
-          initial={{ opacity: 0, x: 50 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.8, delay: 0.2 }}
-          className="absolute top-16 sm:top-20 right-0 sm:right-4 w-32 sm:w-44 pointer-events-none hidden sm:block"
-        >
-          <Image
-            src="/mascot.png"
-            alt="Mascot"
-            width={180}
-            height={180}
-            className="drop-shadow-2xl"
-          />
+            {/* Mascot desktop */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="hidden sm:block flex-shrink-0"
+            >
+              <div className="relative">
+                <Image
+                  src="/mascot-hyperion.png"
+                  alt="Mascot"
+                  width={180}
+                  height={180}
+                  className="drop-shadow-2xl"
+                />
+                <div className="absolute inset-0 bg-blue-500/20 blur-3xl rounded-full scale-75" />
+              </div>
+            </motion.div>
+          </div>
         </motion.div>
 
         {/* Links */}
@@ -278,10 +285,10 @@ export default function LinksPage() {
           {/* Logo Footer */}
           <div className="flex items-center justify-center gap-2 mb-2">
             <Image
-              src="/images/logo-hyperion.png"
+              src="/mascot-hyperion.png"
               alt="Hyperion Pay"
-              width={28}
-              height={28}
+              width={36}
+              height={36}
             />
             <div className="flex flex-col items-start leading-none">
               <span className="text-base font-black tracking-widest text-white">
