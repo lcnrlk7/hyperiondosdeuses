@@ -35,6 +35,8 @@ async function ensureTablesExist() {
         blocked_by VARCHAR(100),
         user_id UUID,
         is_active BOOLEAN DEFAULT true,
+        hits INTEGER DEFAULT 0,
+        last_hit_at TIMESTAMP WITH TIME ZONE,
         created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
         updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
         expires_at TIMESTAMP WITH TIME ZONE,

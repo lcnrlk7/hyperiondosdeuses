@@ -168,6 +168,8 @@ export default function BlacklistPage() {
         expires_at: string | null;
         is_active: boolean;
         notes: string | null;
+        hits?: number;
+        last_hit_at?: string | null;
       }) => ({
         id: block.id,
         type: block.type,
@@ -177,8 +179,8 @@ export default function BlacklistPage() {
         created_at: block.created_at,
         expires_at: block.expires_at,
         is_permanent: !block.expires_at,
-        hits: 0,
-        last_hit_at: null,
+        hits: block.hits || 0,
+        last_hit_at: block.last_hit_at || null,
         notes: block.notes,
       }));
 
@@ -346,6 +348,39 @@ export default function BlacklistPage() {
     }
   }
 
+  // Exportar blacklist para CSV
+  function handleExport() {
+    if (entries.length === 0) {
+      alert("Nenhum dado para exportar");
+      return;
+    }
+    
+    const headers = ["Tipo", "Valor", "Motivo", "Status", "Hits", "Criado em", "Expira em", "Notas"];
+    const rows = entries.map(entry => [
+      TYPE_CONFIG[entry.type].label,
+      entry.value,
+      entry.reason,
+      entry.is_permanent ? "Permanente" : `Expira em ${entry.expires_at ? new Date(entry.expires_at).toLocaleDateString("pt-BR") : "N/A"}`,
+      entry.hits.toString(),
+      new Date(entry.created_at).toLocaleDateString("pt-BR"),
+      entry.expires_at ? new Date(entry.expires_at).toLocaleDateString("pt-BR") : "Permanente",
+      entry.notes || ""
+    ]);
+    
+    const csvContent = [
+      headers.join(","),
+      ...rows.map(row => row.map(cell => `"${cell.replace(/"/g, '""')}"`).join(","))
+    ].join("\n");
+    
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `blacklist_${new Date().toISOString().split("T")[0]}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+
   const filteredEntries = entries.filter(entry => {
     const matchesSearch = entry.value.toLowerCase().includes(searchTerm.toLowerCase()) ||
       entry.reason.toLowerCase().includes(searchTerm.toLowerCase());
@@ -403,6 +438,8 @@ export default function BlacklistPage() {
           <Button
             variant="outline"
             size="sm"
+            onClick={handleExport}
+            disabled={entries.length === 0}
           >
             <Download className="w-4 h-4 mr-2" />
             Exportar

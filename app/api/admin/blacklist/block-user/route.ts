@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
     
     const searchPattern = `%${search}%`
     
-    // Tabela e profiles, nao users
+    // Buscar usuarios - campos opcionais podem nao existir
     const users = await sql`
       SELECT 
         id,
@@ -35,13 +35,13 @@ export async function GET(request: NextRequest) {
         cpf_cnpj as cpf,
         phone,
         created_at,
-        last_ip,
-        device_id,
-        is_blocked
+        COALESCE(last_ip, NULL) as last_ip,
+        COALESCE(device_id, NULL) as device_id,
+        COALESCE(is_blocked, false) as is_blocked
       FROM profiles
       WHERE 
-        name ILIKE ${searchPattern}
-        OR email ILIKE ${searchPattern}
+        email ILIKE ${searchPattern}
+        OR name ILIKE ${searchPattern}
         OR cpf_cnpj ILIKE ${searchPattern}
         OR phone ILIKE ${searchPattern}
       ORDER BY created_at DESC
@@ -51,7 +51,38 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ users })
   } catch (error) {
     console.error("Erro ao buscar usuarios:", error)
-    return NextResponse.json({ error: "Erro ao buscar usuarios" }, { status: 500 })
+    
+    // Tentar busca simplificada se os campos nao existirem
+    try {
+      const sql = getDb()
+      const searchPattern = `%${search}%`
+      
+      const users = await sql`
+        SELECT 
+          id,
+          name,
+          email,
+          cpf_cnpj as cpf,
+          phone,
+          created_at,
+          NULL as last_ip,
+          NULL as device_id,
+          false as is_blocked
+        FROM profiles
+        WHERE 
+          email ILIKE ${searchPattern}
+          OR name ILIKE ${searchPattern}
+          OR cpf_cnpj ILIKE ${searchPattern}
+          OR phone ILIKE ${searchPattern}
+        ORDER BY created_at DESC
+        LIMIT 20
+      `
+      
+      return NextResponse.json({ users })
+    } catch (fallbackError) {
+      console.error("Erro na busca simplificada:", fallbackError)
+      return NextResponse.json({ error: "Erro ao buscar usuarios", users: [] }, { status: 500 })
+    }
   }
 }
 
