@@ -309,6 +309,24 @@ export default function TransactionsPage() {
         ) : (
           filteredTransactions.map((transaction) => (
             <div key={transaction.id} className="glass rounded-xl p-4">
+              {/* ID da transacao */}
+              <div className="flex items-center justify-between mb-3 pb-2 border-b border-border">
+                <span className="text-[10px] text-muted-foreground font-mono truncate max-w-[200px]">
+                  ID: {transaction.id}
+                </span>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(transaction.id);
+                  }}
+                  className="p-1 hover:bg-white/10 rounded transition-colors"
+                  title="Copiar ID"
+                >
+                  <svg className="w-3 h-3 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>
+                    <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
+                  </svg>
+                </button>
+              </div>
               <div className="flex items-start justify-between mb-3">
                 <div className="flex items-center gap-3">
                   <div className={`p-2 rounded-lg ${isIncoming(transaction.type) ? "bg-green-400/10" : "bg-red-400/10"}`}>
@@ -375,6 +393,9 @@ export default function TransactionsPage() {
             <thead>
               <tr className="border-b border-border">
                 <th className="text-left p-4 text-sm font-medium text-muted-foreground">
+                  ID
+                </th>
+                <th className="text-left p-4 text-sm font-medium text-muted-foreground">
                   Tipo
                 </th>
                 <th className="text-left p-4 text-sm font-medium text-muted-foreground">
@@ -400,7 +421,7 @@ export default function TransactionsPage() {
             <tbody className="divide-y divide-white/5">
               {filteredTransactions.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="p-8 text-center text-muted-foreground">
+                  <td colSpan={8} className="p-8 text-center text-muted-foreground">
                     Nenhuma transação encontrada
                   </td>
                 </tr>
@@ -410,6 +431,25 @@ export default function TransactionsPage() {
                     key={transaction.id}
                     className="hover:bg-secondary transition-colors"
                   >
+                    <td className="p-4">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-muted-foreground font-mono truncate max-w-[180px]">
+                          {transaction.id}
+                        </span>
+                        <button
+                          onClick={() => {
+                            navigator.clipboard.writeText(transaction.id);
+                          }}
+                          className="p-1 hover:bg-white/10 rounded transition-colors"
+                          title="Copiar ID"
+                        >
+                          <svg className="w-3 h-3 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>
+                            <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
+                          </svg>
+                        </button>
+                      </div>
+                    </td>
                     <td className="p-4">
                       <div className="flex items-center gap-3">
 <div

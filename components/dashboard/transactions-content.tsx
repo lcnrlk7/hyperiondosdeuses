@@ -333,6 +333,24 @@ export function TransactionsContent({ transactions }: TransactionsContentProps) 
                 animate={{ opacity: 1, y: 0 }}
                 className="bg-card border border-border rounded-xl p-4"
               >
+                {/* ID da transacao */}
+                <div className="flex items-center justify-between mb-3 pb-2 border-b border-border">
+                  <span className="text-[10px] text-muted-foreground font-mono truncate max-w-[200px]">
+                    ID: {transaction.id}
+                  </span>
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(transaction.id);
+                    }}
+                    className="p-1 hover:bg-secondary rounded transition-colors"
+                    title="Copiar ID"
+                  >
+                    <svg className="w-3 h-3 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>
+                      <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
+                    </svg>
+                  </button>
+                </div>
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-center gap-3">
                     <div
@@ -397,6 +415,9 @@ export function TransactionsContent({ transactions }: TransactionsContentProps) 
                 <thead className="bg-secondary/50">
                   <tr>
                     <th className="text-left text-sm font-medium text-muted-foreground px-6 py-4">
+                      ID
+                    </th>
+                    <th className="text-left text-sm font-medium text-muted-foreground px-6 py-4">
                       Tipo
                     </th>
                     <th className="text-left text-sm font-medium text-muted-foreground px-6 py-4">
@@ -420,6 +441,25 @@ export function TransactionsContent({ transactions }: TransactionsContentProps) 
                       className="hover:bg-secondary/30 transition-colors"
                     >
                       <td className="px-6 py-4">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-muted-foreground font-mono truncate max-w-[160px]">
+                            {transaction.id}
+                          </span>
+                          <button
+                            onClick={() => {
+                              navigator.clipboard.writeText(transaction.id);
+                            }}
+                            className="p-1 hover:bg-secondary rounded transition-colors flex-shrink-0"
+                            title="Copiar ID"
+                          >
+                            <svg className="w-3 h-3 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>
+                              <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
+                            </svg>
+                          </button>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
                           <div
                             className={`w-10 h-10 rounded-xl flex items-center justify-center ${
@@ -434,14 +474,9 @@ export function TransactionsContent({ transactions }: TransactionsContentProps) 
                               <ArrowUpRight className="w-5 h-5 text-red-500" />
                             )}
                           </div>
-                          <div>
-                            <p className="font-medium text-foreground">
-                              {getTypeLabel(transaction.type)}
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              {transaction.id.slice(0, 8)}...
-                            </p>
-                          </div>
+                          <p className="font-medium text-foreground">
+                            {getTypeLabel(transaction.type)}
+                          </p>
                         </div>
                       </td>
                       <td className="px-6 py-4">
