@@ -368,7 +368,7 @@ function DashboardTab({
           icon={TrendingUp}
           label="Crescimento"
           value={`+${growth.toFixed(1)}%`}
-          sub="Mar/25 a Mai/26"
+          sub="Mar a Jun/26"
           accent="amber"
           delay={0.15}
         />

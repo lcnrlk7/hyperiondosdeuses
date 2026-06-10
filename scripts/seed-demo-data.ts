@@ -50,23 +50,13 @@ function randomPhone() {
   return `(${randInt(11, 99)}) 9${randInt(1000, 9999)}-${randInt(1000, 9999)}`
 }
 
-// Distribuicao mensal de volume (crescimento visual) - mar/2025 ate jun/2026
+// Distribuicao mensal de volume (espelha a Hyperion Reports) - mar/2026 ate jun/2026
+// Total ~R$210k, mes mais recente ~R$58k, volume diario ~R$1.9k
 const MESES_DEMO = [
-  { ano: 2025, mes: 2, alvo: 37000 },
-  { ano: 2025, mes: 3, alvo: 46000 },
-  { ano: 2025, mes: 4, alvo: 58000 },
-  { ano: 2025, mes: 5, alvo: 69000 },
-  { ano: 2025, mes: 6, alvo: 82000 },
-  { ano: 2025, mes: 7, alvo: 95000 },
-  { ano: 2025, mes: 8, alvo: 112000 },
-  { ano: 2025, mes: 9, alvo: 128000 },
-  { ano: 2025, mes: 10, alvo: 147000 },
-  { ano: 2025, mes: 11, alvo: 169000 },
-  { ano: 2026, mes: 0, alvo: 198000 },
-  { ano: 2026, mes: 1, alvo: 224000 },
-  { ano: 2026, mes: 2, alvo: 261000 },
-  { ano: 2026, mes: 3, alvo: 298000 },
-  { ano: 2026, mes: 4, alvo: 342000 },
+  { ano: 2026, mes: 2, alvo: 37000 },
+  { ano: 2026, mes: 3, alvo: 46000 },
+  { ano: 2026, mes: 4, alvo: 69000 },
+  { ano: 2026, mes: 5, alvo: 58400 },
 ]
 
 async function main() {
@@ -94,7 +84,7 @@ async function main() {
     const emailBase = nome.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z\s]/g, "").trim().replace(/\s+/g, ".")
     const email = `${emailBase}${randInt(10, 999)}@${pick(["gmail.com", "hotmail.com", "outlook.com"])}`
     const id = crypto.randomUUID()
-    const createdAt = new Date(2025, randInt(2, 11), randInt(1, 28), randInt(8, 22), randInt(0, 59))
+    const createdAt = new Date(2026, randInt(0, 5), randInt(1, 28), randInt(8, 22), randInt(0, 59))
     const balance = rand(0, 8500).toFixed(2)
     const feePct = pick([2.99, 3.49, 3.99, 4.49, 4.99])
     const kyc = pick(["approved", "approved", "approved", "pending", "rejected"])
@@ -115,14 +105,18 @@ async function main() {
   console.log(`[demo] ${NUM_USERS} usuarios demo criados.`)
 
   // 4. Criar transacoes demo distribuidas por mes (atingindo alvos de volume)
+  const hoje = new Date()
   let totalTx = 0
   for (const { ano, mes, alvo } of MESES_DEMO) {
+    // Para o mes corrente, so gera ate o dia de hoje (evita datas futuras)
+    const ehMesCorrente = ano === hoje.getFullYear() && mes === hoje.getMonth()
+    const diaMax = ehMesCorrente ? hoje.getDate() : 28
     let acumulado = 0
     while (acumulado < alvo) {
       const valor = Number(rand(15, 850).toFixed(2))
       acumulado += valor
       const userId = pick(userIds)
-      const dia = randInt(1, 28)
+      const dia = randInt(1, diaMax)
       const hora = randInt(8, 23)
       const createdAt = new Date(ano, mes, dia, hora, randInt(0, 59))
       const fee = Number((valor * 0.015 + 0.2).toFixed(2))
@@ -155,7 +149,7 @@ async function main() {
     const valor = Number(rand(50, 3500).toFixed(2))
     const fee = Number((valor * 0.01).toFixed(2))
     const net = Number((valor - fee).toFixed(2))
-    const createdAt = new Date(2025 + (Math.random() > 0.5 ? 1 : 0), randInt(2, 11), randInt(1, 28), randInt(8, 22), randInt(0, 59))
+    const createdAt = new Date(2026, randInt(2, 5), randInt(1, 28), randInt(8, 22), randInt(0, 59))
     const r = Math.random()
     const status = r < 0.7 ? "completed" : r < 0.85 ? "pending" : r < 0.95 ? "processing" : "rejected"
 
