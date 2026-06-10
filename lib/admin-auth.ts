@@ -31,11 +31,9 @@ export async function verifyAdmin(): Promise<AdminSession | null> {
     const cookieStore = await cookies();
     const teamToken = cookieStore.get(TEAM_COOKIE_NAME);
     
-    console.log("[v0] verifyAdmin - teamToken present:", !!teamToken?.value);
     if (teamToken?.value) {
       try {
         const { payload } = await jwtVerify(teamToken.value, JWT_SECRET);
-        console.log("[v0] verifyAdmin - JWT payload id:", payload.id);
 
         // Verificar se o membro ainda esta ativo na tabela team_members
         // (login feito via /api/auth/team/login usa esta tabela)
@@ -45,8 +43,6 @@ export async function verifyAdmin(): Promise<AdminSession | null> {
           WHERE id = ${payload.id as string} AND is_active = true
           AND LOWER(role) IN ('ceo', 'admin', 'superadmin', 'manager', 'finance', 'attendant', 'support', 'tech')
         `;
-
-        console.log("[v0] verifyAdmin - team_members check result:", memberCheck.length);
 
         if (memberCheck.length > 0) {
           return {
@@ -76,8 +72,7 @@ export async function verifyAdmin(): Promise<AdminSession | null> {
             isTeamMember: true
           };
         }
-      } catch (jwtError) {
-        console.log("[v0] verifyAdmin - JWT/query error:", jwtError instanceof Error ? jwtError.message : String(jwtError));
+      } catch {
         // Token invalido ou expirado, continuar para verificar auth-token
       }
     }
