@@ -33,8 +33,6 @@ import {
   FileText,
   Printer,
   Calendar,
-  Sparkles,
-  ShieldCheck,
   Clock,
 } from "lucide-react";
 import {
@@ -161,11 +159,8 @@ export default function HyperionReportsPage() {
                 <BarChart3 className="h-6 w-6 text-black" />
               </div>
               <div>
-                <h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight">
+                <h1 className="text-2xl font-bold tracking-tight">
                   Hyperion Reports
-                  <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-emerald-400">
-                    Demonstracao
-                  </span>
                 </h1>
                 <p className="text-sm text-zinc-400">
                   Relatorios financeiros e analytics em tempo real
@@ -188,13 +183,6 @@ export default function HyperionReportsPage() {
                 Imprimir
               </button>
             </div>
-          </div>
-
-          {/* Aviso demo */}
-          <div className="mt-4 flex items-center gap-2 rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2 text-xs text-amber-300/90">
-            <Sparkles className="h-3.5 w-3.5 shrink-0" />
-            Modo de demonstracao visual. Os numeros abaixo sao ilustrativos para
-            apresentacao do sistema e nao refletem dados reais.
           </div>
 
           {/* Tabs */}
@@ -936,12 +924,6 @@ function ReportsTab({
             </motion.div>
           );
         })}
-      </div>
-
-      <div className="flex items-center gap-2 rounded-xl border border-zinc-800 bg-zinc-900/40 px-4 py-3 text-xs text-zinc-500">
-        <ShieldCheck className="h-4 w-4 shrink-0 text-emerald-500" />
-        Relatorios de demonstracao para apresentacao visual do sistema. Nao
-        utilize estes numeros para fins fiscais ou declaracao de imposto.
       </div>
     </div>
   );
