@@ -218,9 +218,13 @@ export default function CEOLayout({ children }: { children: React.ReactNode }) {
 
     // Permitir acesso para qualquer role valido (ceo, manager, support, finance, tech)
     const validRoles = ["ceo", "manager", "support", "finance", "tech"];
-    
+
+    console.log("[v0] CEO layout auth check:", { token, user, role, valid: role ? validRoles.includes(role) : false });
+
     // Verificar se tem token (qualquer valor) e role valido
     if (!token || !user || !role || !validRoles.includes(role)) {
+      console.log("[v0] CEO layout REDIRECTING to login");
+      localStorage.setItem("lp_debug_redirect", JSON.stringify({ token, user, role, time: Date.now() }));
       router.push("/lp-x7k9m2-internal");
     } else {
       setIsAuthenticated(true);
