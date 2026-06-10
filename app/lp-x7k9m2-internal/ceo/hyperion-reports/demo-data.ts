@@ -13,7 +13,7 @@ export interface DemoTransaction {
   userName: string;
   amount: number;
   fee: number;
-  type: "PIX Cash-in" | "PIX Cash-out" | "Saque" | "Transferencia";
+  type: "PIX Cash-in" | "PIX Cash-out" | "Saque PIX";
   status: "Aprovado" | "Pendente" | "Cancelado" | "Chargeback" | "Em analise";
   date: string;
   ip: string;
@@ -52,8 +52,8 @@ const lastNames = [
   "Ferreira", "Rodrigues", "Gomes", "Martins", "Araujo", "Barbosa", "Ribeiro",
   "Carvalho", "Nascimento", "Cardoso", "Rocha", "Dias",
 ];
-const methods = ["PIX", "PIX QR Code", "PIX Copia e Cola", "TED", "Carteira"];
-const types: DemoTransaction["type"][] = ["PIX Cash-in", "PIX Cash-out", "Saque", "Transferencia"];
+const methods = ["PIX", "PIX QR Code", "PIX Copia e Cola", "PIX Chave Aleatoria"];
+const types: DemoTransaction["type"][] = ["PIX Cash-in", "PIX Cash-out", "Saque PIX"];
 
 // Pesos de status para parecer realista (maioria aprovada)
 const statusPool: DemoTransaction["status"][] = [

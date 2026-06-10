@@ -78,7 +78,13 @@ export default function AdminReportsPage() {
       const response = await fetch("/api/admin/reports");
       const data = await response.json();
       if (data.transactions) {
-        setTransactions(data.transactions);
+        const normalized = data.transactions.map((tx: any) => ({
+          ...tx,
+          amount: Number(tx.amount) || 0,
+          fee: Number(tx.fee) || 0,
+          net_amount: Number(tx.net_amount) || 0,
+        }));
+        setTransactions(normalized);
         setStats(data.stats);
       }
     } catch (error) {
@@ -271,135 +277,143 @@ export default function AdminReportsPage() {
         <title>Relatório Financeiro - Hyperion Pay</title>
         <style>
           * { margin: 0; padding: 0; box-sizing: border-box; }
+          html, body { background: #09090b; }
           body { 
             font-family: 'Segoe UI', Arial, sans-serif; 
-            padding: 20px; 
-            background: white; 
-            color: #1a1a1a;
+            padding: 32px; 
+            background: #09090b; 
+            color: #e4e4e7;
             font-size: 11px;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
           }
           .header { 
             display: flex; 
             justify-content: space-between; 
             align-items: flex-start;
-            border-bottom: 2px solid #1a1a1a; 
-            padding-bottom: 15px; 
-            margin-bottom: 20px; 
+            border-bottom: 1px solid #27272a; 
+            padding-bottom: 20px; 
+            margin-bottom: 28px; 
           }
           .logo { 
-            font-size: 24px; 
+            font-size: 26px; 
             font-weight: 800; 
-            color: #f97316;
+            color: #10b981;
             letter-spacing: 2px;
           }
-          .logo span { color: #1a1a1a; }
-          .header-info { text-align: right; font-size: 10px; color: #666; }
+          .logo span { color: #fafafa; }
+          .header-info { text-align: right; font-size: 10px; color: #71717a; line-height: 1.6; }
           .title { 
-            font-size: 16px; 
+            font-size: 18px; 
             font-weight: 700; 
-            margin-bottom: 5px;
-            color: #1a1a1a;
+            margin-bottom: 6px;
+            color: #fafafa;
+            letter-spacing: 0.5px;
           }
-          .subtitle { color: #666; font-size: 11px; margin-bottom: 20px; }
+          .subtitle { color: #a1a1aa; font-size: 11px; margin-bottom: 18px; }
           .period-badge {
             display: inline-block;
-            background: #f97316;
-            color: white;
-            padding: 4px 12px;
-            border-radius: 4px;
+            background: rgba(16, 185, 129, 0.12);
+            border: 1px solid rgba(16, 185, 129, 0.35);
+            color: #34d399;
+            padding: 5px 14px;
+            border-radius: 999px;
             font-size: 10px;
             font-weight: 600;
-            margin-bottom: 20px;
+            margin-bottom: 24px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
           }
           .summary-cards {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            gap: 15px;
-            margin-bottom: 25px;
+            gap: 14px;
+            margin-bottom: 28px;
           }
           .summary-card {
-            background: #f8f9fa;
-            border: 1px solid #e9ecef;
-            border-radius: 8px;
-            padding: 15px;
+            background: #18181b;
+            border: 1px solid #27272a;
+            border-radius: 12px;
+            padding: 16px;
           }
           .summary-card.highlight {
-            background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
-            color: white;
-            border: none;
+            background: linear-gradient(135deg, rgba(16,185,129,0.18) 0%, rgba(5,150,105,0.08) 100%);
+            border: 1px solid rgba(16, 185, 129, 0.4);
           }
-          .summary-card .label { font-size: 10px; text-transform: uppercase; opacity: 0.7; margin-bottom: 5px; }
-          .summary-card .value { font-size: 18px; font-weight: 700; }
-          .summary-card.highlight .label { color: rgba(255,255,255,0.8); }
+          .summary-card .label { font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px; color: #71717a; margin-bottom: 8px; }
+          .summary-card .value { font-size: 19px; font-weight: 700; color: #fafafa; }
+          .summary-card.highlight .value { color: #34d399; }
           table { 
             width: 100%; 
             border-collapse: collapse; 
             margin-top: 10px;
             font-size: 10px;
+            border: 1px solid #27272a;
+            border-radius: 12px;
+            overflow: hidden;
           }
           th { 
-            background: #1a1a1a; 
-            color: white; 
-            padding: 10px 8px; 
+            background: #18181b; 
+            color: #a1a1aa; 
+            padding: 11px 10px; 
             text-align: left;
             font-weight: 600;
             font-size: 9px;
             text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid #27272a;
           }
           th:nth-child(4), th:nth-child(5), th:nth-child(6) { text-align: right; }
           td { 
-            padding: 8px; 
-            border-bottom: 1px solid #eee;
+            padding: 9px 10px; 
+            border-bottom: 1px solid #1f1f23;
             vertical-align: middle;
+            color: #d4d4d8;
           }
           td:nth-child(4), td:nth-child(5), td:nth-child(6) { text-align: right; }
-          tr:hover { background: #f8f9fa; }
-          .user-cell { }
-          .user-name { font-weight: 600; color: #1a1a1a; }
-          .user-email { font-size: 9px; color: #666; }
+          tbody tr:nth-child(even) { background: #131316; }
+          .user-name { font-weight: 600; color: #fafafa; }
+          .user-email { font-size: 9px; color: #71717a; }
           .type-badge {
             display: inline-block;
-            padding: 2px 8px;
-            border-radius: 4px;
+            padding: 3px 9px;
+            border-radius: 999px;
             font-size: 9px;
             font-weight: 600;
           }
-          .type-pix_in { background: #dcfce7; color: #166534; }
-          .type-pix_out { background: #ffedd5; color: #9a3412; }
-          .type-withdrawal { background: #f3e8ff; color: #7c3aed; }
+          .type-pix_in, .type-deposit { background: rgba(16,185,129,0.15); color: #34d399; }
+          .type-pix_out { background: rgba(249,115,22,0.15); color: #fb923c; }
+          .type-withdrawal { background: rgba(59,130,246,0.15); color: #60a5fa; }
           .status-badge {
             display: inline-block;
-            padding: 2px 8px;
-            border-radius: 4px;
+            padding: 3px 9px;
+            border-radius: 999px;
             font-size: 9px;
             font-weight: 600;
           }
-          .status-completed { background: #dcfce7; color: #166534; }
-          .status-pending { background: #fef9c3; color: #854d0e; }
-          .status-cancelled, .status-failed { background: #fee2e2; color: #991b1b; }
+          .status-completed { background: rgba(16,185,129,0.15); color: #34d399; }
+          .status-pending { background: rgba(234,179,8,0.15); color: #facc15; }
+          .status-cancelled, .status-failed { background: rgba(239,68,68,0.15); color: #f87171; }
           .amount { font-weight: 600; }
-          .amount.positive { color: #166534; }
-          .amount.negative { color: #991b1b; }
-          .fee { color: #166534; font-weight: 600; }
+          .amount.positive { color: #34d399; }
+          .amount.negative { color: #f87171; }
+          .fee { color: #34d399; font-weight: 600; }
           .footer { 
-            margin-top: 30px; 
-            padding-top: 15px; 
-            border-top: 1px solid #eee;
+            margin-top: 32px; 
+            padding-top: 18px; 
+            border-top: 1px solid #27272a;
             text-align: center;
             font-size: 9px;
-            color: #999;
+            color: #52525b;
+            line-height: 1.7;
           }
           .totals-row {
-            background: #f8f9fa;
+            background: #18181b;
             font-weight: 700;
           }
-          .totals-row td { border-top: 2px solid #1a1a1a; }
+          .totals-row td { border-top: 1px solid #10b981; color: #fafafa; }
           @media print {
-            body { padding: 0; }
-            .summary-card.highlight { 
-              -webkit-print-color-adjust: exact; 
-              print-color-adjust: exact; 
-            }
+            body { padding: 16px; }
           }
         </style>
       </head>
