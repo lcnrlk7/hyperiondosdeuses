@@ -23,6 +23,7 @@ import {
   Gift,
   Percent,
   FileBarChart,
+  BarChart3,
   UsersRound,
   Clock,
   DollarSign,
@@ -57,6 +58,7 @@ const menuCategories: MenuCategory[] = [
       { label: "Dashboard", href: "/lp-x7k9m2-internal/ceo", icon: LayoutDashboard, permission: "view_dashboard" },
       { label: "Financeiro", href: "/lp-x7k9m2-internal/ceo/financial", icon: DollarSign, permission: "view_financial" },
       { label: "Relatorios", href: "/lp-x7k9m2-internal/ceo/reports", icon: FileBarChart, permission: "view_reports" },
+      { label: "Hyperion Reports", href: "/lp-x7k9m2-internal/ceo/hyperion-reports", icon: BarChart3, permission: "view_reports" },
     ],
   },
   {
