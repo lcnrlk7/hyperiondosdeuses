@@ -258,11 +258,11 @@ export default function AdminReportsPage() {
     const printWindow = window.open("", "_blank");
     if (!printWindow) return;
 
-    const now = new Date();
-    const dateStr = now.toLocaleDateString("pt-BR");
-    const timeStr = now.toLocaleTimeString("pt-BR");
-
     const completedTxs = filteredTransactions.filter(tx => tx.status === "completed");
+    // No PDF exibimos apenas transacoes aprovadas e canceladas
+    const printTransactions = filteredTransactions.filter(
+      tx => tx.status === "completed" || tx.status === "cancelled" || tx.status === "failed"
+    );
     const totalVolume = completedTxs
       .filter(tx => tx.type === "pix_in" || tx.type === "deposit")
       .reduce((acc, tx) => acc + tx.amount, 0);
@@ -423,7 +423,6 @@ export default function AdminReportsPage() {
             <div class="logo">HYPERION<span>PAY</span></div>
           </div>
           <div class="header-info">
-            <div>Gerado em: ${dateStr} às ${timeStr}</div>
             <div>Documento Oficial para fins de conferência</div>
           </div>
         </div>
@@ -454,7 +453,6 @@ export default function AdminReportsPage() {
         <table>
           <thead>
             <tr>
-              <th>Data/Hora</th>
               <th>Usuário</th>
               <th>Tipo</th>
               <th>Valor (R$)</th>
@@ -463,9 +461,8 @@ export default function AdminReportsPage() {
             </tr>
           </thead>
           <tbody>
-            ${filteredTransactions.slice(0, 500).map(tx => `
+            ${printTransactions.slice(0, 500).map(tx => `
               <tr>
-                <td>${formatDate(tx.created_at)}</td>
                 <td class="user-cell">
                   <div class="user-name">${tx.user_name || tx.payer_name || "Não informado"}</div>
                   <div class="user-email">${tx.user_email || "-"}</div>
@@ -479,7 +476,7 @@ export default function AdminReportsPage() {
               </tr>
             `).join("")}
             <tr class="totals-row">
-              <td colspan="3"><strong>TOTAIS (${completedTxs.length} transações aprovadas)</strong></td>
+              <td colspan="2"><strong>TOTAIS (${completedTxs.length} transações aprovadas)</strong></td>
               <td class="amount positive"><strong>${formatCurrency(totalVolume)}</strong></td>
               <td class="fee"><strong>+${formatCurrency(totalFees)}</strong></td>
               <td></td>
