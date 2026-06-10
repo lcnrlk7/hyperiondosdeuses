@@ -91,7 +91,8 @@ async function main() {
 
   for (let i = 0; i < NUM_USERS; i++) {
     const nome = `${pick(PRIMEIROS_NOMES)} ${pick(SOBRENOMES)}`
-    const email = `demo.${nome.toLowerCase().replace(/\s+/g, ".")}.${i}@exemplo.com`
+    const emailBase = nome.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z\s]/g, "").trim().replace(/\s+/g, ".")
+    const email = `${emailBase}${randInt(10, 999)}@${pick(["gmail.com", "hotmail.com", "outlook.com"])}`
     const id = crypto.randomUUID()
     const createdAt = new Date(2025, randInt(2, 11), randInt(1, 28), randInt(8, 22), randInt(0, 59))
     const balance = rand(0, 8500).toFixed(2)
