@@ -34,7 +34,6 @@ export async function verifyAdmin(): Promise<AdminSession | null> {
     if (teamToken?.value) {
       try {
         const { payload } = await jwtVerify(teamToken.value, JWT_SECRET);
-        console.log("[v0] verifyAdmin - JWT payload id:", payload.id);
 
         // Verificar se o membro ainda esta ativo na tabela team_members
         // (login feito via /api/auth/team/login usa esta tabela)
@@ -44,8 +43,6 @@ export async function verifyAdmin(): Promise<AdminSession | null> {
           WHERE id = ${payload.id as string} AND is_active = true
           AND LOWER(role) IN ('ceo', 'admin', 'superadmin', 'manager', 'finance', 'attendant', 'support', 'tech')
         `;
-
-        console.log("[v0] verifyAdmin - team_members check result:", memberCheck.length);
 
         if (memberCheck.length > 0) {
           return {
