@@ -29,17 +29,31 @@ export interface MonthlyData {
   transactions: number;
 }
 
-// Distribuicao de movimentacao mensal (valores de demonstracao)
+// Distribuicao de movimentacao mensal.
+// IMPORTANTE: estes valores SAO um espelho dos dados demo gravados no banco
+// (is_demo = true), para que Dashboard, Taxas, Relatorios, Transacoes e a
+// Hyperion Reports exibam exatamente os mesmos numeros e nao haja divergencia.
 export const monthlyData: MonthlyData[] = [
-  { month: "Mar", volume: 37000, profit: 3145, users: 420, transactions: 1840 },
-  { month: "Abr", volume: 46000, profit: 3910, users: 760, transactions: 2380 },
-  { month: "Mai", volume: 69000, profit: 5865, users: 1280, transactions: 3420 },
-  { month: "Jun", volume: 58400, profit: 4964, users: 1900, transactions: 2980 },
+  { month: "Mar/25", volume: 31770, profit: 491, users: 180, transactions: 73 },
+  { month: "Abr/25", volume: 40560, profit: 626, users: 180, transactions: 89 },
+  { month: "Mai/25", volume: 48094, profit: 745, users: 180, transactions: 117 },
+  { month: "Jun/25", volume: 61925, profit: 957, users: 180, transactions: 142 },
+  { month: "Jul/25", volume: 73593, profit: 1138, users: 180, transactions: 172 },
+  { month: "Ago/25", volume: 85133, profit: 1317, users: 180, transactions: 200 },
+  { month: "Set/25", volume: 98580, profit: 1528, users: 180, transactions: 247 },
+  { month: "Out/25", volume: 112262, profit: 1738, users: 180, transactions: 270 },
+  { month: "Nov/25", volume: 132067, profit: 2042, users: 180, transactions: 305 },
+  { month: "Dez/25", volume: 150599, profit: 2333, users: 180, transactions: 371 },
+  { month: "Jan/26", volume: 170121, profit: 2628, users: 180, transactions: 382 },
+  { month: "Fev/26", volume: 195316, profit: 3019, users: 180, transactions: 446 },
+  { month: "Mar/26", volume: 225365, profit: 3484, users: 180, transactions: 518 },
+  { month: "Abr/26", volume: 268638, profit: 4154, users: 180, transactions: 623 },
+  { month: "Mai/26", volume: 299700, profit: 4633, users: 180, transactions: 685 },
 ];
 
-export const TOTAL_USERS = 1908;
-export const ACTIVE_TODAY = 1247;
-export const AVG_FEE_PERCENT = 8.5;
+export const TOTAL_USERS = 180;
+export const ACTIVE_TODAY = 142;
+export const AVG_FEE_PERCENT = 1.55;
 
 const firstNames = [
   "Lucas", "Maria", "Joao", "Ana", "Pedro", "Carla", "Rafael", "Juliana",
@@ -93,8 +107,8 @@ export function generateTransactions(count = 240): DemoTransaction[] {
   const span = now.getTime() - start;
 
   for (let i = 0; i < count; i++) {
-    const amount = Math.round((rng() * 1480 + 20) * 100) / 100;
-    const fee = Math.round(amount * (AVG_FEE_PERCENT / 100) * 100) / 100;
+    const amount = Math.round((rng() * 835 + 15) * 100) / 100;
+    const fee = Math.round((amount * (AVG_FEE_PERCENT / 100) + 0.2) * 100) / 100;
     const d = new Date(start + rng() * span);
     const name = `${pick(firstNames, rng)} ${pick(lastNames, rng)}`;
     txs.push({

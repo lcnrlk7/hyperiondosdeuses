@@ -75,7 +75,8 @@ export default function HyperionReportsPage() {
   const monthVolume = monthlyData[monthlyData.length - 1].volume;
   const dayVolume = Math.round(monthVolume / 30);
   const growth =
-    ((monthlyData[2].volume - monthlyData[0].volume) / monthlyData[0].volume) *
+    ((monthlyData[monthlyData.length - 1].volume - monthlyData[0].volume) /
+      monthlyData[0].volume) *
     100;
 
   const statusBreakdown = useMemo(() => {
@@ -367,7 +368,7 @@ function DashboardTab({
           icon={TrendingUp}
           label="Crescimento"
           value={`+${growth.toFixed(1)}%`}
-          sub="Mar a Mai"
+          sub="Mar/25 a Mai/26"
           accent="amber"
           delay={0.15}
         />
