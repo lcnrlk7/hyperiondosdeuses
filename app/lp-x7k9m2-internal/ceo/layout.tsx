@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -19,80 +19,98 @@ import {
   Shield,
   UserCog,
   Bell,
-  BellRing,
   Activity,
   Gift,
   Percent,
   FileBarChart,
   UsersRound,
-  Webhook,
   Clock,
   DollarSign,
-  Database,
   Headphones,
   Bot,
   Ban,
   Gauge,
   Globe,
+  type LucideIcon,
 } from "lucide-react";
 
-// Menu organizado em categorias com cores
-const menuCategories = [
+// Tipo para item de menu
+interface MenuItem {
+  label: string;
+  href: string;
+  icon: LucideIcon;
+  permission?: string; // Permissao necessaria para ver este item
+}
+
+interface MenuCategory {
+  title: string;
+  color: string;
+  items: MenuItem[];
+}
+
+// Menu completo com permissoes
+const menuCategories: MenuCategory[] = [
   {
     title: "Visao Geral",
-    color: "primary", // Laranja
+    color: "primary",
     items: [
-      { label: "Dashboard", href: "/lp-x7k9m2-internal/ceo", icon: LayoutDashboard },
-      { label: "Relatorios", href: "/lp-x7k9m2-internal/ceo/reports", icon: FileBarChart },
+      { label: "Dashboard", href: "/lp-x7k9m2-internal/ceo", icon: LayoutDashboard, permission: "view_dashboard" },
+      { label: "Financeiro", href: "/lp-x7k9m2-internal/ceo/financial", icon: DollarSign, permission: "view_financial" },
+      { label: "Relatorios", href: "/lp-x7k9m2-internal/ceo/reports", icon: FileBarChart, permission: "view_reports" },
     ],
   },
   {
-    title: "Usuarios & Equipe",
-    color: "blue", // Azul
+    title: "Usuarios",
+    color: "blue",
     items: [
-      { label: "Usuarios", href: "/lp-x7k9m2-internal/ceo/users", icon: Users },
-      { label: "Equipe", href: "/lp-x7k9m2-internal/ceo/team", icon: UserCog },
-      { label: "KYC", href: "/lp-x7k9m2-internal/ceo/kyc", icon: FileCheck },
-      { label: "Afiliados", href: "/lp-x7k9m2-internal/ceo/affiliates", icon: UsersRound },
+      { label: "Todos Usuarios", href: "/lp-x7k9m2-internal/ceo/users", icon: Users, permission: "view_users" },
+      { label: "Verificacao KYC", href: "/lp-x7k9m2-internal/ceo/kyc", icon: FileCheck, permission: "view_kyc" },
+      { label: "Afiliados", href: "/lp-x7k9m2-internal/ceo/affiliates", icon: UsersRound, permission: "view_affiliates" },
+      { label: "Equipe Admin", href: "/lp-x7k9m2-internal/ceo/team", icon: UserCog, permission: "view_team" },
+      { label: "Blacklist", href: "/lp-x7k9m2-internal/ceo/blacklist", icon: Ban, permission: "view_blacklist" },
     ],
   },
   {
     title: "Financeiro",
-    color: "emerald", // Verde
+    color: "emerald",
     items: [
-      { label: "Dashboard", href: "/lp-x7k9m2-internal/ceo/financial", icon: DollarSign },
-      { label: "Transacoes", href: "/lp-x7k9m2-internal/ceo/transactions", icon: ArrowLeftRight },
-      { label: "Saques", href: "/lp-x7k9m2-internal/ceo/withdrawals", icon: Wallet },
-      { label: "Taxas", href: "/lp-x7k9m2-internal/ceo/fees", icon: Percent },
+      { label: "Transacoes", href: "/lp-x7k9m2-internal/ceo/transactions", icon: ArrowLeftRight, permission: "view_transactions" },
+      { label: "Saques", href: "/lp-x7k9m2-internal/ceo/withdrawals", icon: Wallet, permission: "view_withdrawals" },
+      { label: "Taxas", href: "/lp-x7k9m2-internal/ceo/fees", icon: Percent, permission: "view_fees" },
+      { label: "Adquirentes", href: "/lp-x7k9m2-internal/ceo/acquirers", icon: Server, permission: "view_acquirers" },
     ],
   },
   {
-    title: "Engajamento",
-    color: "cyan", // Ciano
+    title: "Suporte",
+    color: "cyan",
     items: [
-      { label: "Tickets", href: "/lp-x7k9m2-internal/ceo/tickets", icon: Headphones },
-      { label: "Premiacoes", href: "/lp-x7k9m2-internal/ceo/rewards", icon: Gift },
-      { label: "Notificacoes", href: "/lp-x7k9m2-internal/ceo/notifications", icon: Bell },
-      { label: "Push", href: "/lp-x7k9m2-internal/ceo/push", icon: BellRing },
+      { label: "Tickets", href: "/lp-x7k9m2-internal/ceo/tickets", icon: Headphones, permission: "view_tickets" },
+      { label: "Notificacoes", href: "/lp-x7k9m2-internal/ceo/notifications", icon: Bell, permission: "view_notifications" },
+      { label: "Premiacoes", href: "/lp-x7k9m2-internal/ceo/rewards", icon: Gift, permission: "view_rewards" },
     ],
   },
   {
     title: "Sistema",
-    color: "purple", // Roxo
+    color: "purple",
     items: [
-      { label: "White Label", href: "/lp-x7k9m2-internal/ceo/white-label", icon: Globe },
-      { label: "Telegram", href: "/lp-x7k9m2-internal/ceo/telegram", icon: Bot },
-      { label: "Webhooks", href: "/lp-x7k9m2-internal/ceo/webhooks", icon: Webhook },
-      { label: "Logs", href: "/lp-x7k9m2-internal/ceo/logs", icon: Activity },
-      { label: "Ataques", href: "/lp-x7k9m2-internal/ceo/attacks", icon: Shield },
-      { label: "Blacklist", href: "/lp-x7k9m2-internal/ceo/blacklist", icon: Ban },
-      { label: "Status", href: "/lp-x7k9m2-internal/ceo/status", icon: Gauge },
-      { label: "Adquirentes", href: "/lp-x7k9m2-internal/ceo/acquirers", icon: Server },
-      { label: "Backup", href: "/lp-x7k9m2-internal/ceo/backup", icon: Database },
-      { label: "Config", href: "/lp-x7k9m2-internal/ceo/settings", icon: Settings },
+      { label: "Status", href: "/lp-x7k9m2-internal/ceo/status", icon: Gauge, permission: "view_status" },
+      { label: "Logs", href: "/lp-x7k9m2-internal/ceo/logs", icon: Activity, permission: "view_logs" },
+      { label: "Seguranca", href: "/lp-x7k9m2-internal/ceo/attacks", icon: Shield, permission: "view_attacks" },
+      { label: "Telegram Bot", href: "/lp-x7k9m2-internal/ceo/telegram", icon: Bot, permission: "view_telegram" },
+      { label: "White Label", href: "/lp-x7k9m2-internal/ceo/white-label", icon: Globe, permission: "view_whitelabel" },
+      { label: "Configuracoes", href: "/lp-x7k9m2-internal/ceo/settings", icon: Settings, permission: "view_settings" },
     ],
   },
 ];
+
+// Labels dos cargos
+const roleLabels: Record<string, string> = {
+  ceo: "CEO",
+  manager: "Gerente",
+  support: "Suporte",
+  finance: "Financeiro",
+  tech: "Tecnico",
+};
 
 // Funcao para obter classes de cor
 const getColorClasses = (color: string, isActive: boolean) => {
@@ -136,10 +154,28 @@ export default function CEOLayout({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [adminUser, setAdminUser] = useState("");
+  const [adminRole, setAdminRole] = useState("");
+  const [permissions, setPermissions] = useState<Record<string, boolean>>({});
   const [sessionTimeLeft, setSessionTimeLeft] = useState<string>("");
   const [sessionExpired, setSessionExpired] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
+
+  // Filtrar menu baseado nas permissoes
+  const filteredMenuCategories = useMemo(() => {
+    // CEO ve tudo
+    if (adminRole === "ceo") return menuCategories;
+    
+    return menuCategories
+      .map(category => ({
+        ...category,
+        items: category.items.filter(item => {
+          if (!item.permission) return true;
+          return permissions[item.permission] === true;
+        })
+      }))
+      .filter(category => category.items.length > 0);
+  }, [adminRole, permissions]);
 
   // Funcao para calcular tempo restante da sessao
   const calculateTimeLeft = useCallback(() => {
@@ -178,12 +214,27 @@ export default function CEOLayout({ children }: { children: React.ReactNode }) {
     const token = localStorage.getItem("lp_admin_session");
     const user = localStorage.getItem("lp_admin_user");
     const role = localStorage.getItem("lp_admin_role");
+    const storedPermissions = localStorage.getItem("lp_admin_permissions");
 
-    if (!token || !user || role !== "ceo") {
+    // Permitir acesso para qualquer role valido (ceo, manager, support, finance, tech)
+    const validRoles = ["ceo", "manager", "support", "finance", "tech"];
+    
+    // Verificar se tem token (qualquer valor) e role valido
+    if (!token || !user || !role || !validRoles.includes(role)) {
       router.push("/lp-x7k9m2-internal");
     } else {
       setIsAuthenticated(true);
       setAdminUser(user);
+      setAdminRole(role);
+      
+      // Carregar permissoes
+      if (storedPermissions) {
+        try {
+          setPermissions(JSON.parse(storedPermissions));
+        } catch {
+          setPermissions({});
+        }
+      }
       
       // Salvar tempo de login se nao existir
       if (!localStorage.getItem("lp_admin_login_time")) {
@@ -218,6 +269,8 @@ export default function CEOLayout({ children }: { children: React.ReactNode }) {
     localStorage.removeItem("lp_admin_user");
     localStorage.removeItem("lp_admin_role");
     localStorage.removeItem("lp_admin_login_time");
+    localStorage.removeItem("lp_admin_permissions");
+    localStorage.removeItem("lp_admin_email");
     router.push("/lp-x7k9m2-internal");
   };
 
@@ -295,7 +348,7 @@ export default function CEOLayout({ children }: { children: React.ReactNode }) {
           </div>
 
           <nav className="flex-1 p-4 space-y-1 overflow-y-auto scrollbar-hide">
-            {menuCategories.map((category, categoryIndex) => {
+            {filteredMenuCategories.map((category, categoryIndex) => {
               const colorClasses = getColorClasses(category.color, false)
               return (
                 <div key={category.title} className={categoryIndex > 0 ? "pt-5" : "pt-2"}>
@@ -337,7 +390,7 @@ export default function CEOLayout({ children }: { children: React.ReactNode }) {
                 <p className="text-sm font-medium text-foreground capitalize">
                   {adminUser}
                 </p>
-                <p className="text-xs text-muted-foreground">CEO / Admin</p>
+                <p className="text-xs text-muted-foreground">{roleLabels[adminRole] || adminRole}</p>
               </div>
             </div>
             <button
@@ -398,7 +451,7 @@ export default function CEOLayout({ children }: { children: React.ReactNode }) {
                 </div>
 
                 <nav className="flex-1 p-4 space-y-1 overflow-y-auto scrollbar-hide">
-                  {menuCategories.map((category, categoryIndex) => {
+                  {filteredMenuCategories.map((category, categoryIndex) => {
                     const colorClasses = getColorClasses(category.color, false)
                     return (
                       <div key={category.title} className={categoryIndex > 0 ? "pt-5" : "pt-2"}>
@@ -438,10 +491,10 @@ export default function CEOLayout({ children }: { children: React.ReactNode }) {
                       <Shield className="w-5 h-5 text-primary" />
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-foreground capitalize">
-                        {adminUser}
-                      </p>
-                      <p className="text-xs text-muted-foreground">CEO / Admin</p>
+                    <p className="text-sm font-medium text-foreground capitalize">
+                      {adminUser}
+                    </p>
+                    <p className="text-xs text-muted-foreground">{roleLabels[adminRole] || adminRole}</p>
                     </div>
                   </div>
                   

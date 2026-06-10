@@ -2,8 +2,8 @@ import { sql } from "@/lib/db";
 
 // Constantes de links
 const SITE_URL = "https://www.hyperionpay.com.br";
-const DISCORD_LINK = "https://discord.gg/sGmMSYjdnA";
 const WHATSAPP_LINK = "https://wa.me/5534999353187";
+const WHATSAPP_COMMUNITY = "https://chat.whatsapp.com/IoqNR193nOW9UodggrGSQC";
 
 // Enviar mensagem para um chat/canal
 async function sendToChannel(chatId: string, message: string) {
@@ -222,7 +222,7 @@ Voce sera notificado quando for enviado.
 O valor foi devolvido ao seu saldo.
 
 📞 <b>Suporte:</b>
-💬 Discord: ${DISCORD_LINK}
+🌐 Site: ${SITE_URL}/dashboard/support
 📱 WhatsApp: (34) 99935-3187
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━

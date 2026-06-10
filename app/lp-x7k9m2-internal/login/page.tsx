@@ -34,6 +34,14 @@ export default function TeamLoginPage() {
         return;
       }
 
+      // Salvar dados no localStorage
+      localStorage.setItem("lp_admin_session", "active");
+      localStorage.setItem("lp_admin_user", data.member.name);
+      localStorage.setItem("lp_admin_email", data.member.email);
+      localStorage.setItem("lp_admin_role", data.member.role);
+      localStorage.setItem("lp_admin_permissions", JSON.stringify(data.member.permissions || {}));
+      localStorage.setItem("lp_admin_login_time", data.loginTime.toString());
+
       toast.success(`Bem-vindo, ${data.member.name}!`);
       router.push(data.redirectUrl);
     } catch (error) {

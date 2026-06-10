@@ -36,10 +36,11 @@ export default function SecretAdminLogin() {
       }
 
       // Salvar dados da sessao
-      localStorage.setItem("lp_admin_session", data.member.id);
+      localStorage.setItem("lp_admin_session", "active");
       localStorage.setItem("lp_admin_user", data.member.name);
       localStorage.setItem("lp_admin_role", data.member.role);
       localStorage.setItem("lp_admin_email", data.member.email);
+      localStorage.setItem("lp_admin_permissions", JSON.stringify(data.member.permissions || {}));
       localStorage.setItem("lp_admin_login_time", (data.loginTime || Date.now()).toString());
 
       // Redirecionar usando window.location para garantir que os cookies sejam aplicados

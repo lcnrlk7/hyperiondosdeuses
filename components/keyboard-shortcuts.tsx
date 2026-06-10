@@ -15,7 +15,6 @@ import {
   HelpCircle,
   Search,
   X,
-  LayoutDashboard,
   Users,
   ShoppingCart,
 } from "lucide-react";

@@ -18,15 +18,12 @@ import {
   Wallet,
   TrendingUp,
   FileText,
-  ArrowLeftRight,
-  Percent,
   User,
   UserCircle,
   Users,
   Code,
   Settings,
   ShieldCheck,
-  Shield,
   ShoppingCart,
   Package,
   Truck,
@@ -34,12 +31,8 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
-  FolderKanban,
   Send,
-  Bot,
-  Split,
   Activity,
-  Globe,
   Link2,
   type LucideIcon,
 } from "lucide-react"
@@ -76,7 +69,6 @@ const menuCategories = [
       { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
       { href: "/dashboard/wallet", icon: Wallet, label: "Carteira" },
       { href: "/dashboard/transfer", icon: Send, label: "Transferir" },
-      { href: "/dashboard/split-payment", icon: Split, label: "Pag. Dividido" },
       { href: "/dashboard/payment-links", icon: Link2, label: "Links de Pag." },
       { href: "/dashboard/transactions", icon: TrendingUp, label: "Transacoes" },
       { href: "/dashboard/reports", icon: FileText, label: "Relatorios" },
@@ -87,10 +79,7 @@ const menuCategories = [
     color: "emerald", // Verde
     items: [
       { href: "/dashboard/profile", icon: UserCircle, label: "Meu Perfil" },
-      { href: "/dashboard/pix-keys", icon: ArrowLeftRight, label: "Chaves PIX" },
-      { href: "/dashboard/fees", icon: Percent, label: "Taxas" },
       { href: "/dashboard/affiliates", icon: Users, label: "Afiliados" },
-      { href: "/dashboard/telegram", icon: Bot, label: "Bot Telegram" },
     ],
   },
   {
@@ -113,14 +102,11 @@ const menuCategories = [
     ],
   },
   {
-    title: "Configuracoes",
+    title: "Sistema",
     color: "purple", // Roxo
     items: [
-      { href: "/dashboard/management", icon: FolderKanban, label: "Gestao" },
       { href: "/dashboard/integration", icon: Code, label: "Integracao API" },
-      { href: "/dashboard/security", icon: Shield, label: "Seguranca" },
-      { href: "/dashboard/settings", icon: Settings, label: "Preferencias" },
-      { href: "/dashboard/white-label", icon: Globe, label: "White Label" },
+      { href: "/dashboard/settings", icon: Settings, label: "Configuracoes" },
     ],
   },
 ]

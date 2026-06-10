@@ -16,6 +16,7 @@ import {
   DollarSign,
   Copy,
   Check,
+  Code,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,7 +26,7 @@ interface TeamMember {
   id: string;
   name: string;
   email: string;
-  role: "ceo" | "manager" | "support" | "finance";
+  role: "ceo" | "manager" | "support" | "finance" | "tech";
   permissions: Record<string, boolean>;
   is_active: boolean;
   last_login: string | null;
@@ -37,6 +38,7 @@ const roleLabels: Record<string, string> = {
   manager: "Gerente",
   support: "Suporte",
   finance: "Financeiro",
+  tech: "Tecnico",
 };
 
 const roleColors: Record<string, string> = {
@@ -44,6 +46,7 @@ const roleColors: Record<string, string> = {
   manager: "bg-blue-500/10 text-blue-400 border-blue-500/20",
   support: "bg-green-500/10 text-green-400 border-green-500/20",
   finance: "bg-yellow-500/10 text-yellow-400 border-yellow-500/20",
+  tech: "bg-cyan-500/10 text-cyan-400 border-cyan-500/20",
 };
 
 const roleIcons: Record<string, React.ReactNode> = {
@@ -51,6 +54,7 @@ const roleIcons: Record<string, React.ReactNode> = {
   manager: <Users className="w-5 h-5" />,
   support: <Headphones className="w-5 h-5" />,
   finance: <DollarSign className="w-5 h-5" />,
+  tech: <Code className="w-5 h-5" />,
 };
 
 export default function TeamPage() {
@@ -68,7 +72,7 @@ export default function TeamPage() {
     name: "",
     email: "",
     password: "",
-    role: "support" as "ceo" | "manager" | "support" | "finance",
+    role: "support" as "ceo" | "manager" | "support" | "finance" | "tech",
   });
 
   useEffect(() => {
@@ -289,8 +293,8 @@ export default function TeamPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {(["ceo", "manager", "support", "finance"] as const).map((role) => {
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+        {(["ceo", "manager", "support", "finance", "tech"] as const).map((role) => {
           const count = members.filter(
             (m) => m.role === role && m.is_active
           ).length;
@@ -529,10 +533,11 @@ export default function TeamPage() {
                     }
                     className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-foreground"
                   >
-                    <option value="support">Suporte</option>
-                    <option value="finance">Financeiro</option>
-                    <option value="manager">Gerente</option>
-                    <option value="ceo">CEO</option>
+                    <option value="support">Suporte - Atendimento e tickets</option>
+                    <option value="finance">Financeiro - Transacoes e saques</option>
+                    <option value="tech">Tecnico - Sistema e logs</option>
+                    <option value="manager">Gerente - Acesso amplo</option>
+                    <option value="ceo">CEO - Acesso total</option>
                   </select>
                   <p className="text-xs text-muted-foreground mt-1">
                     Cada cargo tem permissoes diferentes no sistema

@@ -17,6 +17,7 @@ import {
   User,
   FileText,
   Search,
+  Trash2,
 } from "lucide-react";
 
 interface Ticket {
@@ -73,6 +74,8 @@ export default function SupportPage() {
   const [uploading, setUploading] = useState(false);
   const [statusFilter, setStatusFilter] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
+  const [deleting, setDeleting] = useState(false);
+  const [prevMessagesLength, setPrevMessagesLength] = useState(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -96,9 +99,13 @@ export default function SupportPage() {
     return () => clearInterval(interval);
   }, [selectedTicket]);
 
+  // Scroll apenas quando novas mensagens chegam (não no polling)
   useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+    if (messages.length > prevMessagesLength) {
+      scrollToBottom();
+    }
+    setPrevMessagesLength(messages.length);
+  }, [messages.length, prevMessagesLength]);
 
   function scrollToBottom() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -223,6 +230,26 @@ export default function SupportPage() {
       setSelectedTicket(null);
     } catch (error) {
       console.error("Erro ao fechar ticket:", error);
+    }
+  }
+
+  async function handleDeleteTicket() {
+    if (!selectedTicket || !confirm("Tem certeza que deseja DELETAR este chamado? Esta acao nao pode ser desfeita.")) return;
+    setDeleting(true);
+    try {
+      const response = await fetch(`/api/user/tickets/${selectedTicket.id}`, { method: "DELETE" });
+      if (response.ok) {
+        loadTickets();
+        setSelectedTicket(null);
+        setMessages([]);
+      } else {
+        const data = await response.json();
+        alert(data.error || "Erro ao deletar ticket");
+      }
+    } catch (error) {
+      console.error("Erro ao deletar ticket:", error);
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -377,12 +404,24 @@ export default function SupportPage() {
                       </div>
                     </div>
                   </div>
-                  {selectedTicket.status !== "closed" && (
-                    <Button variant="outline" size="sm" onClick={handleCloseTicket} className="text-muted-foreground">
-                      <CheckCircle className="w-4 h-4 mr-2" />
-                      Encerrar
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleDeleteTicket}
+                      disabled={deleting}
+                      className="text-red-400 hover:text-red-300 hover:bg-red-500/10 border-red-500/30"
+                    >
+                      {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                      <span className="ml-2 hidden sm:inline">Deletar</span>
                     </Button>
-                  )}
+                    {selectedTicket.status !== "closed" && (
+                      <Button variant="outline" size="sm" onClick={handleCloseTicket} className="text-muted-foreground">
+                        <CheckCircle className="w-4 h-4 mr-2" />
+                        <span className="hidden sm:inline">Encerrar</span>
+                      </Button>
+                    )}
+                  </div>
                 </div>
                 <div className="flex-1 overflow-y-auto p-4 space-y-4">
                   {loadingMessages ? (

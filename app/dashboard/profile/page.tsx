@@ -26,6 +26,8 @@ import {
   Mail,
   Phone,
   FileText,
+  Trash2,
+  AlertTriangle,
 } from "lucide-react";
 
 // Avatares padrão predefinidos
@@ -83,6 +85,9 @@ export default function ProfilePage() {
   const [rewards, setRewards] = useState<Reward[]>([]);
   const [stats, setStats] = useState<ProfileStats | null>(null);
   const [loadingRewards, setLoadingRewards] = useState(true);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteConfirmation, setDeleteConfirmation] = useState("");
+  const [deletingAccount, setDeletingAccount] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [form, setForm] = useState({
@@ -226,6 +231,32 @@ export default function ProfilePage() {
       month: "long",
       year: "numeric",
     });
+  }
+
+  async function handleDeleteAccount() {
+    if (deleteConfirmation !== "DELETAR MINHA CONTA") {
+      alert("Digite exatamente 'DELETAR MINHA CONTA' para confirmar");
+      return;
+    }
+    setDeletingAccount(true);
+    try {
+      const response = await fetch("/api/user/delete-account", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+      });
+      if (response.ok) {
+        // Redirecionar para logout
+        window.location.href = "/auth/login?deleted=true";
+      } else {
+        const data = await response.json();
+        alert(data.error || "Erro ao deletar conta");
+      }
+    } catch (error) {
+      console.error("Erro ao deletar conta:", error);
+      alert("Erro ao deletar conta. Tente novamente.");
+    } finally {
+      setDeletingAccount(false);
+    }
   }
 
   const avatarUrl = profile?.avatar_url as string | undefined;
@@ -407,6 +438,26 @@ export default function ProfilePage() {
                   </div>
                 </div>
               )}
+            </div>
+
+            {/* Zona de Perigo */}
+            <div className="mt-6 pt-6 border-t border-red-500/20">
+              <div className="flex items-center gap-2 mb-3">
+                <AlertTriangle className="w-4 h-4 text-red-400" />
+                <h3 className="text-sm font-medium text-red-400">Zona de Perigo</h3>
+              </div>
+              <p className="text-xs text-muted-foreground mb-3">
+                Deletar sua conta remove permanentemente todos os seus dados, transacoes, saques e historico.
+              </p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowDeleteModal(true)}
+                className="w-full text-red-400 border-red-500/30 hover:bg-red-500/10 hover:text-red-300"
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Deletar Minha Conta
+              </Button>
             </div>
           </div>
         </motion.div>
@@ -687,6 +738,89 @@ export default function ProfilePage() {
                     </button>
                   ))}
                 </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Modal Deletar Conta */}
+      <AnimatePresence>
+        {showDeleteModal && (
+          <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-card border border-red-500/30 rounded-2xl p-6 w-full max-w-md"
+            >
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-12 h-12 rounded-full bg-red-500/10 flex items-center justify-center">
+                  <AlertTriangle className="w-6 h-6 text-red-400" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-semibold text-foreground">Deletar Conta</h2>
+                  <p className="text-sm text-red-400">Esta acao nao pode ser desfeita</p>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div className="p-4 bg-red-500/5 border border-red-500/20 rounded-xl">
+                  <p className="text-sm text-muted-foreground">
+                    Ao deletar sua conta, voce perdera permanentemente:
+                  </p>
+                  <ul className="mt-2 space-y-1 text-sm text-red-400">
+                    <li>• Todas as suas transacoes</li>
+                    <li>• Historico de saques</li>
+                    <li>• Saldo disponivel (R$ {formatCurrency(Number(profile?.balance) || 0).replace("R$", "").trim()})</li>
+                    <li>• Dados de integracao e APIs</li>
+                    <li>• Tickets de suporte</li>
+                    <li>• Todos os dados pessoais</li>
+                  </ul>
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium text-foreground block mb-2">
+                    Digite <span className="text-red-400 font-bold">DELETAR MINHA CONTA</span> para confirmar:
+                  </label>
+                  <input
+                    type="text"
+                    value={deleteConfirmation}
+                    onChange={(e) => setDeleteConfirmation(e.target.value)}
+                    placeholder="DELETAR MINHA CONTA"
+                    className="w-full px-4 py-3 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-red-500/50"
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-3 mt-6">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowDeleteModal(false);
+                    setDeleteConfirmation("");
+                  }}
+                  className="flex-1"
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  onClick={handleDeleteAccount}
+                  disabled={deletingAccount || deleteConfirmation !== "DELETAR MINHA CONTA"}
+                  className="flex-1 bg-red-500 hover:bg-red-600 text-white"
+                >
+                  {deletingAccount ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Deletando...
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Deletar Permanentemente
+                    </>
+                  )}
+                </Button>
               </div>
             </motion.div>
           </div>
