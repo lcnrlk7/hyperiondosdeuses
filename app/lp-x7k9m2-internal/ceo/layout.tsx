@@ -19,6 +19,7 @@ import {
   Shield,
   UserCog,
   Bell,
+  Mail,
   Activity,
   Gift,
   Percent,
@@ -86,6 +87,7 @@ const menuCategories: MenuCategory[] = [
     items: [
       { label: "Tickets", href: "/lp-x7k9m2-internal/ceo/tickets", icon: Headphones, permission: "view_tickets" },
       { label: "Notificacoes", href: "/lp-x7k9m2-internal/ceo/notifications", icon: Bell, permission: "view_notifications" },
+      { label: "Disparo de E-mail", href: "/lp-x7k9m2-internal/ceo/email-campaign", icon: Mail, permission: "view_notifications" },
       { label: "Premiacoes", href: "/lp-x7k9m2-internal/ceo/rewards", icon: Gift, permission: "view_rewards" },
     ],
   },
