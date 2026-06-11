@@ -59,6 +59,14 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { message, testPhone } = body;
 
+    // Intervalo entre mensagens (em segundos) com variacao aleatoria para
+    // reduzir o risco de bloqueio por spam. Limites de seguranca aplicados.
+    const minDelaySec = Math.min(Math.max(Number(body.minDelay) || 3, 1), 120);
+    const maxDelaySec = Math.min(
+      Math.max(Number(body.maxDelay) || minDelaySec, minDelaySec),
+      300
+    );
+
     if (!message || typeof message !== "string" || message.trim().length < 3) {
       return NextResponse.json(
         { error: "A mensagem e obrigatoria" },
@@ -102,15 +110,22 @@ export async function POST(request: NextRequest) {
     const log: { phone: string; name: string | null; ok: boolean }[] = [];
 
     // WhatsApp e mais sensivel a flood: enviamos um a um com intervalo
-    for (const r of recipients as { name: string | null; phone: string }[]) {
+    // aleatorio entre minDelaySec e maxDelaySec para simular comportamento humano.
+    for (let i = 0; i < recipients.length; i++) {
+      const r = recipients[i] as { name: string | null; phone: string };
       const result = await sendWhatsappText(
         r.phone,
         personalize(message, r.name)
       );
       result.ok ? sent++ : failed++;
       log.push({ phone: r.phone, name: r.name, ok: result.ok });
-      // intervalo entre mensagens para reduzir risco de bloqueio
-      await new Promise((resolve) => setTimeout(resolve, 1200));
+
+      // intervalo aleatorio entre mensagens (nao espera apos a ultima)
+      if (i < recipients.length - 1) {
+        const delayMs =
+          (minDelaySec + Math.random() * (maxDelaySec - minDelaySec)) * 1000;
+        await new Promise((resolve) => setTimeout(resolve, delayMs));
+      }
     }
 
     // Registrar no historico (best-effort)

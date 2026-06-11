@@ -14,6 +14,7 @@ import {
   LayoutTemplate,
   Search,
   AlertTriangle,
+  Timer,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,6 +33,14 @@ interface SendResult {
 
 const DEFAULT_MESSAGE = WHATSAPP_PRESETS[0].message;
 
+// Opcoes de intervalo entre os envios (anti-spam). Valores em segundos.
+const DELAY_PRESETS = [
+  { label: "Rapido", min: 2, max: 5 },
+  { label: "Seguro", min: 3, max: 8 },
+  { label: "Cauteloso", min: 8, max: 15 },
+  { label: "Lento", min: 20, max: 40 },
+];
+
 export default function WhatsappCampaignPage() {
   const [totalRecipients, setTotalRecipients] = useState<number | null>(null);
   const [configured, setConfigured] = useState<boolean | null>(null);
@@ -45,6 +54,8 @@ export default function WhatsappCampaignPage() {
     WHATSAPP_PRESETS[0].id
   );
   const [message, setMessage] = useState(DEFAULT_MESSAGE);
+  // Intervalo (timer) entre cada mensagem, em segundos [min, max]
+  const [delayRange, setDelayRange] = useState<[number, number]>([3, 8]);
 
   const categories = useMemo(
     () => Array.from(new Set(WHATSAPP_PRESETS.map((p) => p.category))),
@@ -103,9 +114,13 @@ export default function WhatsappCampaignPage() {
   }
 
   async function handleSend() {
+    const [minD, maxD] = delayRange;
+    const estimateMin = totalRecipients
+      ? Math.round((totalRecipients * ((minD + maxD) / 2)) / 60)
+      : 0;
     if (
       !confirm(
-        `Confirma o disparo desta mensagem para todos os ${totalRecipients ?? ""} numeros cadastrados?`
+        `Confirma o disparo desta mensagem para todos os ${totalRecipients ?? ""} numeros cadastrados?\n\nIntervalo entre envios: ${minD}-${maxD}s (tempo estimado: ~${estimateMin} min).`
       )
     ) {
       return;
@@ -116,7 +131,7 @@ export default function WhatsappCampaignPage() {
       const res = await fetch("/api/admin/whatsapp-campaign", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message }),
+        body: JSON.stringify({ message, minDelay: minD, maxDelay: maxD }),
       });
       const data = await res.json();
       setResult(data);
@@ -297,6 +312,57 @@ export default function WhatsappCampaignPage() {
                 )}
               </Button>
             </div>
+          </div>
+
+          <div className="rounded-xl border border-border bg-secondary/40 p-4 space-y-3">
+            <div className="flex items-center gap-2">
+              <Timer className="w-4 h-4 text-primary" />
+              <span className="text-sm font-semibold text-white">
+                Intervalo entre envios (anti-spam)
+              </span>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Espacar os disparos reduz o risco do numero cair por spam. Quanto
+              maior o intervalo, mais seguro.
+            </p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              {DELAY_PRESETS.map((opt) => {
+                const active =
+                  delayRange[0] === opt.min && delayRange[1] === opt.max;
+                return (
+                  <button
+                    key={opt.label}
+                    type="button"
+                    onClick={() => setDelayRange([opt.min, opt.max])}
+                    className={`rounded-lg border px-3 py-2 text-left transition ${
+                      active
+                        ? "border-primary bg-primary/10"
+                        : "border-border bg-background/40 hover:border-primary/50"
+                    }`}
+                  >
+                    <span className="block text-sm font-medium text-white">
+                      {opt.label}
+                    </span>
+                    <span className="block text-xs text-muted-foreground">
+                      {opt.min}-{opt.max}s
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+            {totalRecipients ? (
+              <p className="text-xs text-muted-foreground">
+                Tempo estimado para {totalRecipients} numeros: ~
+                {Math.max(
+                  1,
+                  Math.round(
+                    (totalRecipients * ((delayRange[0] + delayRange[1]) / 2)) /
+                      60
+                  )
+                )}{" "}
+                min
+              </p>
+            ) : null}
           </div>
 
           <Button
