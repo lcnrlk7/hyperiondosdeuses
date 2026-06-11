@@ -443,4 +443,21 @@ export const CAMPAIGN_PRESETS: CampaignPreset[] = [
     secondaryText: "Falar no WhatsApp",
     secondaryUrl: WHATSAPP_URL,
   },
+  {
+    id: "indique-e-ganhe",
+    category: "Incentivo",
+    name: "Indique e ganhe",
+    subject: "Indique a Hyperion Pay e ganhe beneficios",
+    heading: "Indique amigos e seja recompensado",
+    bodyHtml: p([
+      "Conhece alguem que precisa de uma gateway com taxas baixas e pagamentos rapidos? Indique a Hyperion Pay!",
+      "A cada indicacao aprovada, voce ganha beneficios exclusivos na sua conta. Quanto mais indicar, mais vantagens recebe.",
+    ]),
+    highlight: "Indique",
+    highlightLabel: "Programa de indicacao",
+    ctaText: "Quero indicar",
+    ctaUrl: SUPPORT_URL,
+    secondaryText: "Falar no WhatsApp",
+    secondaryUrl: WHATSAPP_URL,
+  },
 ];
