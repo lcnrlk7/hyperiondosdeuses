@@ -46,7 +46,7 @@ export default function EmailCampaignPage() {
     ctaText: "Abrir ticket",
     ctaUrl: "https://app.hyperionpay.com.br/dashboard/support",
     secondaryText: "Falar no WhatsApp",
-    secondaryUrl: "https://wa.me/5500000000000",
+    secondaryUrl: "https://wa.me/5534999353187",
   });
 
   useEffect(() => {
