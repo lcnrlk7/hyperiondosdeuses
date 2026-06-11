@@ -441,6 +441,105 @@ export async function sendPasswordResetEmail(
 }
 
 // ============================================================
+// 8. Email de campanha / disparo em massa (marketing)
+// ============================================================
+export interface CampaignEmailParams {
+  to: string;
+  name?: string;
+  subject: string;
+  heading: string;
+  bodyHtml: string; // paragrafos ja em HTML
+  highlight?: string; // destaque grande (ex: "Ate 3%")
+  highlightLabel?: string; // label acima do destaque
+  ctaText?: string;
+  ctaUrl?: string;
+  secondaryText?: string;
+  secondaryUrl?: string;
+}
+
+export function buildCampaignHtml(params: CampaignEmailParams): string {
+  const {
+    name,
+    heading,
+    bodyHtml,
+    highlight,
+    highlightLabel,
+    ctaText,
+    ctaUrl,
+    secondaryText,
+    secondaryUrl,
+  } = params;
+
+  const greeting = name
+    ? `<tr><td bgcolor="${C.cardBg}" style="background-color:${C.cardBg};padding:24px 36px 0;text-align:center;">
+        <p style="margin:0;color:${C.textMuted};font-size:14px;">Ola <strong style="color:${C.text};">${name}</strong>,</p>
+      </td></tr>`
+    : "";
+
+  const highlightBlock = highlight
+    ? `<tr><td bgcolor="${C.cardBg}" style="background-color:${C.cardBg};padding:16px 36px;">
+        <table width="100%" cellpadding="0" cellspacing="0"><tr>
+          <td bgcolor="${C.innerBg}" style="background-color:${C.innerBg};border:2px solid ${C.green};border-radius:16px;padding:24px;text-align:center;">
+            ${highlightLabel ? `<p style="margin:0 0 8px;color:${C.textMuted};font-size:10px;text-transform:uppercase;letter-spacing:3px;font-weight:700;">${highlightLabel}</p>` : ""}
+            <span style="font-size:40px;font-weight:800;color:${C.green};">${highlight}</span>
+          </td>
+        </tr></table>
+      </td></tr>`
+    : "";
+
+  const primaryCta = ctaText && ctaUrl ? ctaButton(ctaText, ctaUrl) : "";
+
+  const secondaryCta =
+    secondaryText && secondaryUrl
+      ? `<tr><td bgcolor="${C.cardBg}" style="background-color:${C.cardBg};padding:0 36px 32px;text-align:center;">
+          <a href="${secondaryUrl}" style="display:inline-block;background-color:${C.innerBg};color:${C.textSoft};text-decoration:none;font-size:13px;font-weight:600;padding:12px 32px;border-radius:12px;border:1px solid ${C.innerBorder};">${secondaryText}</a>
+        </td></tr>`
+      : "";
+
+  const content = `
+    ${greeting}
+    <tr><td bgcolor="${C.cardBg}" style="background-color:${C.cardBg};padding:24px 36px 8px;text-align:center;">
+      <h2 style="margin:0;color:${C.text};font-size:22px;font-weight:700;line-height:1.3;">${heading}</h2>
+    </td></tr>
+
+    <tr><td bgcolor="${C.cardBg}" style="background-color:${C.cardBg};padding:16px 36px;">
+      <table width="100%" cellpadding="0" cellspacing="0"><tr>
+        <td bgcolor="${C.innerBg}" style="background-color:${C.innerBg};border-radius:14px;border:1px solid ${C.innerBorder};padding:22px 24px;">
+          <div style="color:${C.textSoft};font-size:14px;line-height:1.7;">${bodyHtml}</div>
+        </td>
+      </tr></table>
+    </td></tr>
+
+    ${highlightBlock}
+    ${primaryCta}
+    ${secondaryCta}
+  `;
+
+  return emailWrapper(content, false);
+}
+
+export async function sendCampaignEmail(
+  params: CampaignEmailParams
+): Promise<boolean> {
+  try {
+    const { error } = await getResend().emails.send({
+      from: FROM_EMAIL,
+      to: params.to,
+      subject: params.subject,
+      html: buildCampaignHtml(params),
+    });
+    if (error) {
+      console.error("[Email] Erro ao enviar campanha:", error);
+      return false;
+    }
+    return true;
+  } catch (error) {
+    console.error("[Email] Erro ao enviar campanha:", error);
+    return false;
+  }
+}
+
+// ============================================================
 // 7. Alerta de novo login
 // ============================================================
 export async function sendNewLoginAlert(

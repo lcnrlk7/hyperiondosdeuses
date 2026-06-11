@@ -238,6 +238,11 @@ export async function middleware(request: NextRequest) {
   if (pathname.startsWith('/api/telegram') || pathname.startsWith('/api/webhooks/telegram-pix')) {
     return NextResponse.next()
   }
+
+  // Ignorar webhook do WhatsApp (Evolution API) - protegido por secret na query
+  if (pathname.startsWith('/api/whatsapp/webhook')) {
+    return NextResponse.next()
+  }
   
   // Verificar se esta bloqueado (IP, email, CPF, device, usuario)
   const blockCheck = await isBlocked(request)

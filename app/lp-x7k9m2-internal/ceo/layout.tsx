@@ -19,6 +19,9 @@ import {
   Shield,
   UserCog,
   Bell,
+  Mail,
+  MessageCircle,
+  MessagesSquare,
   Activity,
   Gift,
   Percent,
@@ -86,6 +89,9 @@ const menuCategories: MenuCategory[] = [
     items: [
       { label: "Tickets", href: "/lp-x7k9m2-internal/ceo/tickets", icon: Headphones, permission: "view_tickets" },
       { label: "Notificacoes", href: "/lp-x7k9m2-internal/ceo/notifications", icon: Bell, permission: "view_notifications" },
+      { label: "Disparo de E-mail", href: "/lp-x7k9m2-internal/ceo/email-campaign", icon: Mail, permission: "view_notifications" },
+      { label: "Disparo de WhatsApp", href: "/lp-x7k9m2-internal/ceo/whatsapp-campaign", icon: MessageCircle, permission: "view_notifications" },
+      { label: "Atendimento WhatsApp", href: "/lp-x7k9m2-internal/ceo/whatsapp-inbox", icon: MessagesSquare, permission: "view_tickets" },
       { label: "Premiacoes", href: "/lp-x7k9m2-internal/ceo/rewards", icon: Gift, permission: "view_rewards" },
     ],
   },
@@ -218,7 +224,7 @@ export default function CEOLayout({ children }: { children: React.ReactNode }) {
 
     // Permitir acesso para qualquer role valido (ceo, manager, support, finance, tech)
     const validRoles = ["ceo", "manager", "support", "finance", "tech"];
-    
+
     // Verificar se tem token (qualquer valor) e role valido
     if (!token || !user || !role || !validRoles.includes(role)) {
       router.push("/lp-x7k9m2-internal");
