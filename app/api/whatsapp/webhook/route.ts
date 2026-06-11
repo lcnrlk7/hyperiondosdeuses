@@ -60,10 +60,17 @@ export async function POST(request: NextRequest) {
     // IMPORTANTE: precisa de await. Em ambiente serverless, qualquer trabalho
     // assincrono nao aguardado e descartado assim que a resposta e enviada,
     // o que faria o bot nunca responder. O try/catch evita derrubar o webhook.
-    try {
-      await handleIncomingForBot(conversation, incoming.text);
-    } catch (e) {
-      console.error("[WhatsAppWebhook] Erro no bot:", e);
+    //
+    // O bot pode ser desligado a qualquer momento definindo a variavel de
+    // ambiente WHATSAPP_BOT_DISABLED=true. Nesse caso as mensagens continuam
+    // sendo recebidas e aparecendo no painel, mas o bot nao responde.
+    const botDisabled = process.env.WHATSAPP_BOT_DISABLED === "true";
+    if (!botDisabled) {
+      try {
+        await handleIncomingForBot(conversation, incoming.text);
+      } catch (e) {
+        console.error("[WhatsAppWebhook] Erro no bot:", e);
+      }
     }
 
     return NextResponse.json({ ok: true });
