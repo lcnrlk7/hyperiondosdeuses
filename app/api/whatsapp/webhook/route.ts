@@ -56,16 +56,14 @@ export async function POST(request: NextRequest) {
       incrementUnread: true,
     });
 
-    // Encaminha para o bot decidir se responde automaticamente.
-    // IMPORTANTE: precisa de await. Em ambiente serverless, qualquer trabalho
-    // assincrono nao aguardado e descartado assim que a resposta e enviada,
-    // o que faria o bot nunca responder. O try/catch evita derrubar o webhook.
-    //
-    // O bot pode ser desligado a qualquer momento definindo a variavel de
-    // ambiente WHATSAPP_BOT_DISABLED=true. Nesse caso as mensagens continuam
-    // sendo recebidas e aparecendo no painel, mas o bot nao responde.
-    const botDisabled = process.env.WHATSAPP_BOT_DISABLED === "true";
-    if (!botDisabled) {
+    // BOT DESATIVADO POR ENQUANTO.
+    // As mensagens continuam sendo recebidas e aparecem no painel em tempo real,
+    // mas o bot NAO responde automaticamente. Para reativar no futuro, defina a
+    // variavel de ambiente WHATSAPP_BOT_ENABLED=true.
+    const botEnabled = process.env.WHATSAPP_BOT_ENABLED === "true";
+    if (botEnabled) {
+      // Precisa de await: em ambiente serverless, trabalho assincrono nao
+      // aguardado e descartado assim que a resposta e enviada.
       try {
         await handleIncomingForBot(conversation, incoming.text);
       } catch (e) {
