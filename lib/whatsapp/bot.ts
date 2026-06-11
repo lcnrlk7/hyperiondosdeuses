@@ -111,8 +111,13 @@ CONTEXTO: Este e o PRIMEIRO contato deste cliente. Comece com uma saudacao calor
     replyText = text.trim();
   } catch (error) {
     console.error("[WhatsAppBot] Erro ao gerar resposta:", error);
-    // Em caso de falha da IA, escala para humano para nao deixar o cliente sem resposta.
-    await escalateToHuman(conversation);
+    // Falha temporaria da IA: NAO escala para humano (senao a conversa ficaria
+    // travada em "humano" para sempre). Apenas avisa de forma leve, sem mudar
+    // o handled_by, para que o bot volte a responder assim que a IA normalizar.
+    await sendBotMessage(
+      conversation,
+      "Estou com uma instabilidade momentanea por aqui. Pode repetir sua mensagem em instantes? Se preferir, e so pedir que te transfiro para um atendente da nossa equipe."
+    );
     return;
   }
 
