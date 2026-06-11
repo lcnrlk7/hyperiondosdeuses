@@ -76,6 +76,14 @@ export const WHATSAPP_PRESETS: WhatsappPreset[] = [
       "Sentimos sua falta, {nome}! 💙\n\nFaz um tempo que voce nao movimenta na Hyperion Pay. Que tal voltar com taxas especiais? Responda esta mensagem e a gente prepara uma condicao para voce.",
   },
   {
+    id: "volta-com-novidades-taxas",
+    category: "Incentivo",
+    name: "Reativacao + novidades e taxas",
+    message:
+      "Ola {nome}! 👋\n\nNotamos que voce ficou um tempo sem entrar na *Hyperion Pay* e queremos te trazer de volta. Ja viu as novidades do nosso painel? Relatorios em tempo real, saques mais rapidos e uma experiencia muito mais completa. 🚀\n\nE tem mais: agora conseguimos *abaixar as suas taxas*, incluindo a *Rota Black* e a *MED*, deixando suas vendas ainda mais lucrativas. 💰\n\nEntre e confira tudo: https://app.hyperionpay.com.br/dashboard\n\nQuer ativar as taxas reduzidas? Responda esta mensagem ou abra um ticket: " +
+      TICKET,
+  },
+  {
     id: "indique-e-ganhe",
     category: "Incentivo",
     name: "Indique e ganhe",
