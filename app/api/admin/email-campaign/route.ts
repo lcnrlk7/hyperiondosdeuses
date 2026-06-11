@@ -88,6 +88,7 @@ export async function POST(request: NextRequest) {
 
     let sent = 0;
     let failed = 0;
+    const log: { email: string; name: string | null; ok: boolean }[] = [];
 
     // Enviar em lotes para respeitar limites de taxa do provedor
     const BATCH_SIZE = 10;
@@ -110,7 +111,10 @@ export async function POST(request: NextRequest) {
           })
         )
       );
-      results.forEach((ok) => (ok ? sent++ : failed++));
+      results.forEach((ok, idx) => {
+        ok ? sent++ : failed++;
+        log.push({ email: batch[idx].email, name: batch[idx].name, ok });
+      });
       // Pequena pausa entre lotes
       if (i + BATCH_SIZE < recipients.length) {
         await new Promise((resolve) => setTimeout(resolve, 600));
@@ -133,6 +137,7 @@ export async function POST(request: NextRequest) {
       sent,
       failed,
       total: recipients.length,
+      log,
     });
   } catch (error) {
     console.error("[EmailCampaign] Erro ao disparar campanha:", error);
