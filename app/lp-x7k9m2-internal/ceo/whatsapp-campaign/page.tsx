@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { motion } from "framer-motion";
 import {
   MessageCircle,
@@ -56,6 +56,14 @@ export default function WhatsappCampaignPage() {
   const [message, setMessage] = useState(DEFAULT_MESSAGE);
   // Intervalo (timer) entre cada mensagem, em segundos [min, max]
   const [delayRange, setDelayRange] = useState<[number, number]>([3, 8]);
+  // Progresso do disparo em lotes
+  const [progress, setProgress] = useState<{
+    sent: number;
+    failed: number;
+    total: number;
+  } | null>(null);
+  // Flag para abortar o disparo em andamento
+  const cancelRef = useRef(false);
 
   const categories = useMemo(
     () => Array.from(new Set(WHATSAPP_PRESETS.map((p) => p.category))),
@@ -116,30 +124,92 @@ export default function WhatsappCampaignPage() {
   async function handleSend() {
     const [minD, maxD] = delayRange;
     const estimateMin = totalRecipients
-      ? Math.round((totalRecipients * ((minD + maxD) / 2)) / 60)
+      ? Math.max(1, Math.round((totalRecipients * ((minD + maxD) / 2)) / 60))
       : 0;
     if (
       !confirm(
-        `Confirma o disparo desta mensagem para todos os ${totalRecipients ?? ""} numeros cadastrados?\n\nIntervalo entre envios: ${minD}-${maxD}s (tempo estimado: ~${estimateMin} min).`
+        `Confirma o disparo desta mensagem para todos os ${totalRecipients ?? ""} numeros cadastrados?\n\nIntervalo entre envios: ${minD}-${maxD}s (tempo estimado: ~${estimateMin} min).\n\nMantenha esta aba aberta ate o final.`
       )
     ) {
       return;
     }
+    cancelRef.current = false;
     setIsSending(true);
     setResult(null);
+    setProgress({ sent: 0, failed: 0, total: totalRecipients ?? 0 });
+
+    const accLog: SendResult["log"] = [];
+    let sent = 0;
+    let failed = 0;
+    let offset = 0;
+    let total = totalRecipients ?? 0;
+    const batchSize = 5;
+
     try {
-      const res = await fetch("/api/admin/whatsapp-campaign", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message, minDelay: minD, maxDelay: maxD }),
+      // Itera lote a lote ate cobrir todos os destinatarios. Cada chamada
+      // processa poucos numeros e retorna rapido, evitando o limite de tempo.
+      // eslint-disable-next-line no-constant-condition
+      while (true) {
+        if (cancelRef.current) break;
+
+        const res = await fetch("/api/admin/whatsapp-campaign", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            message,
+            minDelay: minD,
+            maxDelay: maxD,
+            offset,
+            limit: batchSize,
+          }),
+        });
+
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.error || "Falha em um dos lotes");
+        }
+
+        const data = await res.json();
+        sent += data.sent ?? 0;
+        failed += data.failed ?? 0;
+        total = data.total ?? total;
+        if (Array.isArray(data.log)) accLog.push(...data.log);
+
+        setProgress({ sent, failed, total });
+
+        if (data.done || !data.nextOffset || data.nextOffset <= offset) break;
+        offset = data.nextOffset;
+      }
+
+      setResult({
+        success: sent > 0,
+        message: cancelRef.current
+          ? `Disparo interrompido. ${sent} de ${total} enviados.`
+          : `Campanha enviada para ${sent} de ${total} numeros`,
+        sent,
+        failed,
+        total,
+        log: accLog,
       });
-      const data = await res.json();
-      setResult(data);
-    } catch {
-      alert("Erro ao disparar a campanha");
+    } catch (e) {
+      setResult({
+        success: sent > 0,
+        error:
+          (e instanceof Error ? e.message : "Erro ao disparar a campanha") +
+          ` (parou em ${sent} de ${total})`,
+        sent,
+        failed,
+        total,
+        log: accLog,
+      });
     } finally {
       setIsSending(false);
+      setProgress(null);
     }
+  }
+
+  function handleCancelSend() {
+    cancelRef.current = true;
   }
 
   // Renderiza a mensagem com {nome} substituido e *negrito* do WhatsApp
@@ -377,6 +447,55 @@ export default function WhatsappCampaignPage() {
             )}
             Disparar para todos ({totalRecipients ?? 0})
           </Button>
+
+          {/* Barra de progresso do disparo em lotes */}
+          {isSending && progress && (
+            <div className="rounded-xl border border-border bg-secondary/40 p-4 space-y-3">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-white font-medium">
+                  Enviando... {progress.sent + progress.failed} de{" "}
+                  {progress.total}
+                </span>
+                <span className="text-muted-foreground">
+                  {progress.total
+                    ? Math.round(
+                        ((progress.sent + progress.failed) / progress.total) *
+                          100
+                      )
+                    : 0}
+                  %
+                </span>
+              </div>
+              <div className="h-2 w-full rounded-full bg-background overflow-hidden">
+                <div
+                  className="h-full bg-primary transition-all duration-300"
+                  style={{
+                    width: `${
+                      progress.total
+                        ? ((progress.sent + progress.failed) / progress.total) *
+                          100
+                        : 0
+                    }%`,
+                  }}
+                />
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-muted-foreground">
+                  {progress.sent} enviados &middot; {progress.failed} falhas
+                </span>
+                <button
+                  type="button"
+                  onClick={handleCancelSend}
+                  className="text-xs font-medium text-red-400 hover:text-red-300"
+                >
+                  Interromper
+                </button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Mantenha esta aba aberta ate concluir.
+              </p>
+            </div>
+          )}
 
           {result && (
             <motion.div

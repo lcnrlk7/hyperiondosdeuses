@@ -94,3 +94,57 @@ export async function sendWhatsappText(
     return { ok: false, error: (error as Error).message };
   }
 }
+
+/**
+ * Extrai os dados relevantes de um evento "messages.upsert" da Evolution API.
+ * Retorna null se nao for uma mensagem de texto recebida de um cliente.
+ */
+export interface IncomingMessage {
+  phone: string; // somente digitos, com DDI (ex: 5563992032973)
+  remoteJid: string;
+  pushName: string | null;
+  text: string;
+  externalId: string | null;
+  fromMe: boolean;
+}
+
+export function parseIncomingMessage(payload: any): IncomingMessage | null {
+  try {
+    const data = payload?.data ?? payload;
+    const key = data?.key ?? {};
+    const remoteJid: string = key?.remoteJid ?? "";
+
+    // Ignora grupos e status/broadcast
+    if (!remoteJid || remoteJid.includes("@g.us") || remoteJid.includes("broadcast")) {
+      return null;
+    }
+
+    const fromMe = Boolean(key?.fromMe);
+
+    // Extrai o texto de diferentes formatos de mensagem
+    const msg = data?.message ?? {};
+    const text: string =
+      msg?.conversation ??
+      msg?.extendedTextMessage?.text ??
+      msg?.imageMessage?.caption ??
+      msg?.videoMessage?.caption ??
+      "";
+
+    if (!text || typeof text !== "string") return null;
+
+    const phone = remoteJid.split("@")[0].replace(/\D/g, "");
+    if (!phone) return null;
+
+    return {
+      phone,
+      remoteJid,
+      pushName: data?.pushName ?? null,
+      text: text.trim(),
+      externalId: key?.id ?? null,
+      fromMe,
+    };
+  } catch (error) {
+    console.error("[WhatsApp] Erro ao interpretar webhook:", error);
+    return null;
+  }
+}

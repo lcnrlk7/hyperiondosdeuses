@@ -6,7 +6,7 @@ import {
   isEvolutionConfigured,
 } from "@/lib/whatsapp/evolution";
 
-export const maxDuration = 300;
+export const maxDuration = 60;
 
 // GET - estatisticas de destinatarios disponiveis + status da configuracao
 export async function GET() {
@@ -41,6 +41,11 @@ function personalize(message: string, name: string | null): string {
 }
 
 // POST - dispara a campanha de WhatsApp
+// Modos:
+//  - { testPhone, message }        -> envia teste para 1 numero
+//  - { message, offset, limit }    -> processa UM lote (para disparo em massa
+//                                     controlado pelo navegador, sem estourar
+//                                     o tempo limite do servidor)
 export async function POST(request: NextRequest) {
   const admin = await verifyAdmin();
   if (!admin) return accessDeniedResponse();
@@ -59,6 +64,13 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { message, testPhone } = body;
 
+    if (!message || typeof message !== "string" || message.trim().length < 3) {
+      return NextResponse.json(
+        { error: "A mensagem e obrigatoria" },
+        { status: 400 }
+      );
+    }
+
     // Intervalo entre mensagens (em segundos) com variacao aleatoria para
     // reduzir o risco de bloqueio por spam. Limites de seguranca aplicados.
     const minDelaySec = Math.min(Math.max(Number(body.minDelay) || 3, 1), 120);
@@ -67,14 +79,7 @@ export async function POST(request: NextRequest) {
       300
     );
 
-    if (!message || typeof message !== "string" || message.trim().length < 3) {
-      return NextResponse.json(
-        { error: "A mensagem e obrigatoria" },
-        { status: 400 }
-      );
-    }
-
-    // Envio de teste para um unico numero
+    // ---- Envio de teste para um unico numero ----
     if (testPhone) {
       const result = await sendWhatsappText(
         testPhone,
@@ -88,29 +93,47 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Buscar todos os telefones cadastrados (exclui contas demo)
-    const recipients = await sql`
-      SELECT name, phone
+    // ---- Disparo em massa, processado em lotes ----
+    // O total e contado uma vez; o navegador chama esta rota repetidamente
+    // avancando o offset ate cobrir todos os destinatarios.
+    const totalRow = await sql`
+      SELECT COUNT(*)::int AS n
       FROM profiles
       WHERE phone IS NOT NULL AND phone <> ''
         AND (is_demo = false OR is_demo IS NULL)
     `;
+    const total = totalRow[0]?.n ?? 0;
 
-    if (recipients.length === 0) {
+    if (total === 0) {
       return NextResponse.json({
         success: false,
         error: "Nenhum telefone cadastrado",
         sent: 0,
         failed: 0,
+        total: 0,
+        done: true,
+        nextOffset: 0,
       });
     }
+
+    const offset = Math.max(0, Number(body.offset) || 0);
+    // Lote pequeno o suficiente para terminar bem antes do limite de tempo,
+    // mesmo no intervalo mais lento selecionado.
+    const limit = Math.min(Math.max(Number(body.limit) || 5, 1), 20);
+
+    const recipients = await sql`
+      SELECT name, phone
+      FROM profiles
+      WHERE phone IS NOT NULL AND phone <> ''
+        AND (is_demo = false OR is_demo IS NULL)
+      ORDER BY created_at ASC NULLS LAST, id ASC
+      LIMIT ${limit} OFFSET ${offset}
+    `;
 
     let sent = 0;
     let failed = 0;
     const log: { phone: string; name: string | null; ok: boolean }[] = [];
 
-    // WhatsApp e mais sensivel a flood: enviamos um a um com intervalo
-    // aleatorio entre minDelaySec e maxDelaySec para simular comportamento humano.
     for (let i = 0; i < recipients.length; i++) {
       const r = recipients[i] as { name: string | null; phone: string };
       const result = await sendWhatsappText(
@@ -120,7 +143,7 @@ export async function POST(request: NextRequest) {
       result.ok ? sent++ : failed++;
       log.push({ phone: r.phone, name: r.name, ok: result.ok });
 
-      // intervalo aleatorio entre mensagens (nao espera apos a ultima)
+      // intervalo aleatorio entre mensagens dentro do lote (nao espera apos a ultima)
       if (i < recipients.length - 1) {
         const delayMs =
           (minDelaySec + Math.random() * (maxDelaySec - minDelaySec)) * 1000;
@@ -128,22 +151,32 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Registrar no historico (best-effort)
-    try {
-      await sql`
-        INSERT INTO admin_notifications (title, body, type, sent_at, sent_count, created_by)
-        VALUES ('Campanha WhatsApp', ${message.slice(0, 200)}, 'whatsapp_campaign', NOW(), ${sent}, ${admin.userId})
-      `;
-    } catch (logErr) {
-      console.error("[WhatsappCampaign] Falha ao registrar historico:", logErr);
+    const nextOffset = offset + recipients.length;
+    const done = nextOffset >= total || recipients.length === 0;
+
+    // Ao terminar o ultimo lote, registra no historico (best-effort)
+    if (done) {
+      try {
+        await sql`
+          INSERT INTO admin_notifications (title, body, type, sent_at, sent_count, created_by)
+          VALUES ('Campanha WhatsApp', ${message.slice(0, 200)}, 'whatsapp_campaign', NOW(), ${nextOffset}, ${admin.userId})
+        `;
+      } catch (logErr) {
+        console.error(
+          "[WhatsappCampaign] Falha ao registrar historico:",
+          logErr
+        );
+      }
     }
 
     return NextResponse.json({
-      success: sent > 0,
-      message: `Campanha enviada para ${sent} de ${recipients.length} numeros`,
+      success: true,
       sent,
       failed,
-      total: recipients.length,
+      total,
+      offset,
+      nextOffset,
+      done,
       log,
     });
   } catch (error) {
