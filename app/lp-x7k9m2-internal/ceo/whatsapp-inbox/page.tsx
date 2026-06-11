@@ -63,6 +63,9 @@ export default function WhatsAppInboxPage() {
   const [loadingList, setLoadingList] = useState(true);
   const [loadingThread, setLoadingThread] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const prevMsgCountRef = useRef(0);
+  const prevActiveIdRef = useRef<number | null>(null);
 
   const loadConversations = useCallback(async () => {
     try {
@@ -110,10 +113,27 @@ export default function WhatsAppInboxPage() {
     return () => clearInterval(t);
   }, [activeId, loadMessages]);
 
-  // Auto-scroll para a ultima mensagem
+  // Auto-scroll controlado: nao "puxa" a tela sozinho durante o polling.
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+    const container = scrollContainerRef.current;
+    const justSwitched = prevActiveIdRef.current !== activeId;
+    const hasNewMessage = messages.length > prevMsgCountRef.current;
+
+    if (justSwitched) {
+      // Abriu/trocou de conversa: vai direto pro final, sem animacao.
+      messagesEndRef.current?.scrollIntoView({ block: "end" });
+    } else if (hasNewMessage && container) {
+      // Chegou mensagem nova: so rola se o atendente ja estiver perto do final.
+      const distanceFromBottom =
+        container.scrollHeight - container.scrollTop - container.clientHeight;
+      if (distanceFromBottom < 120) {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+      }
+    }
+
+    prevActiveIdRef.current = activeId;
+    prevMsgCountRef.current = messages.length;
+  }, [messages, activeId]);
 
   async function handleSend() {
     if (!input.trim() || activeId == null) return;
@@ -311,7 +331,10 @@ export default function WhatsAppInboxPage() {
               </div>
 
               {/* Mensagens */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-background/30">
+              <div
+                ref={scrollContainerRef}
+                className="flex-1 overflow-y-auto p-4 space-y-3 bg-background/30"
+              >
                 {loadingThread && messages.length === 0 ? (
                   <div className="flex items-center justify-center p-8 text-muted-foreground">
                     <Loader2 className="w-5 h-5 animate-spin" />
