@@ -57,10 +57,14 @@ export async function POST(request: NextRequest) {
     });
 
     // Encaminha para o bot decidir se responde automaticamente.
-    // (Nao falha o webhook se o bot der erro.)
-    handleIncomingForBot(conversation, incoming.text).catch((e) =>
-      console.error("[WhatsAppWebhook] Erro no bot:", e)
-    );
+    // IMPORTANTE: precisa de await. Em ambiente serverless, qualquer trabalho
+    // assincrono nao aguardado e descartado assim que a resposta e enviada,
+    // o que faria o bot nunca responder. O try/catch evita derrubar o webhook.
+    try {
+      await handleIncomingForBot(conversation, incoming.text);
+    } catch (e) {
+      console.error("[WhatsAppWebhook] Erro no bot:", e);
+    }
 
     return NextResponse.json({ ok: true });
   } catch (error) {

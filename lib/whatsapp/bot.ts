@@ -1,6 +1,5 @@
 import "server-only";
 import { generateText } from "ai";
-import { xai } from "@ai-sdk/xai";
 import { sendWhatsappText } from "@/lib/whatsapp/evolution";
 import {
   addMessage,
@@ -81,7 +80,7 @@ export async function handleIncomingForBot(
   let replyText = "";
   try {
     const { text } = await generateText({
-      model: xai("grok-3-fast"),
+      model: "xai/grok-4.1-fast-non-reasoning",
       system: BOT_SYSTEM_PROMPT,
       messages: modelMessages,
     });
