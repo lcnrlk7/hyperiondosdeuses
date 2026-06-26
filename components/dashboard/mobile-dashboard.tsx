@@ -10,7 +10,6 @@ import {
   ChevronDown,
   Wallet,
   FileText,
-  ArrowLeftRight,
   Users,
   TrendingUp,
   Clock,
@@ -172,11 +171,11 @@ export function MobileDashboard({ profile: serverProfile, transactions }: Mobile
     return groups;
   }, [stats.filteredTransactions]);
 
-  const quickActions = [
+  const quickActions: Array<{ id: string; label: string; icon: typeof Wallet; href: string; color: string; badge?: string }> = [
     { id: "deposit", label: "DEPOSITAR", icon: Wallet, href: "/dashboard/wallet", color: "bg-primary/10 text-primary" },
     { id: "extract", label: "EXTRATO", icon: FileText, href: "/dashboard/transactions", color: "bg-blue-500/10 text-blue-400" },
-    { id: "transfer", label: "TRANSFERIR", icon: ArrowLeftRight, href: "/dashboard/transfer", color: "bg-purple-500/10 text-purple-400" },
-    { id: "affiliates", label: "AFILIADOS", icon: Users, href: "/dashboard/affiliates", badge: "NOVO", color: "bg-cyan-500/10 text-cyan-400" },
+    { id: "reports", label: "RELATORIOS", icon: TrendingUp, href: "/dashboard/reports", color: "bg-emerald-500/10 text-emerald-400" },
+    { id: "manager", label: "GERENTE", icon: Users, href: "/dashboard/support", color: "bg-cyan-500/10 text-cyan-400" },
   ];
 
   return (

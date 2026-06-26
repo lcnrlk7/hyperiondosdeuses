@@ -20,21 +20,11 @@ import {
   FileText,
   User,
   UserCircle,
-  Users,
   Code,
-  Settings,
   ShieldCheck,
-  ShoppingCart,
-  Package,
-  Truck,
-  Tag,
-  ChevronDown,
   ChevronLeft,
   ChevronRight,
-  Send,
   Activity,
-  Link2,
-  type LucideIcon,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { NotificationCenter } from "./notification-center"
@@ -68,8 +58,6 @@ const menuCategories = [
     items: [
       { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
       { href: "/dashboard/wallet", icon: Wallet, label: "Carteira" },
-      { href: "/dashboard/transfer", icon: Send, label: "Transferir" },
-      { href: "/dashboard/payment-links", icon: Link2, label: "Links de Pag." },
       { href: "/dashboard/transactions", icon: TrendingUp, label: "Transacoes" },
       { href: "/dashboard/reports", icon: FileText, label: "Relatorios" },
     ],
@@ -79,25 +67,13 @@ const menuCategories = [
     color: "emerald", // Verde
     items: [
       { href: "/dashboard/profile", icon: UserCircle, label: "Meu Perfil" },
-      { href: "/dashboard/affiliates", icon: Users, label: "Afiliados" },
-    ],
-  },
-  {
-    title: "E-commerce",
-    color: "blue", // Azul
-    hasSubmenu: true,
-    items: [
-      { href: "/dashboard/checkout", icon: ShoppingCart, label: "Meus Checkouts" },
-      { href: "/dashboard/checkout/orders", icon: Truck, label: "Entregas" },
-      { href: "/dashboard/checkout/products", icon: Package, label: "Produtos" },
-      { href: "/dashboard/checkout/coupons", icon: Tag, label: "Cupons" },
     ],
   },
   {
     title: "Suporte",
     color: "cyan", // Ciano
     items: [
-      { href: "/dashboard/support", icon: MessageCircle, label: "Tickets" },
+      { href: "/dashboard/support", icon: MessageCircle, label: "Gerente" },
       { href: "/dashboard/status", icon: Activity, label: "Status" },
     ],
   },
@@ -105,8 +81,7 @@ const menuCategories = [
     title: "Sistema",
     color: "purple", // Roxo
     items: [
-      { href: "/dashboard/integration", icon: Code, label: "Integracao API" },
-      { href: "/dashboard/settings", icon: Settings, label: "Configuracoes" },
+      { href: "/dashboard/integration", icon: Code, label: "Integracao" },
     ],
   },
 ]
@@ -156,13 +131,9 @@ const getColorClasses = (color: string, isActive: boolean) => {
 
 export function DashboardSidebar({ user, profile }: SidebarProps) {
   const [isMobileOpen, setIsMobileOpen] = useState(false)
-  const [checkoutOpen, setCheckoutOpen] = useState(false)
   const [isCollapsed, setIsCollapsed] = useState(false)
   const pathname = usePathname()
   const router = useRouter()
-  
-  // Auto-expand checkout menu if on checkout page
-  const isCheckoutPage = pathname.startsWith("/dashboard/checkout")
 
   const handleLogout = async () => {
     await fetch("/api/auth/logout", { method: "POST" })
@@ -194,8 +165,7 @@ export function DashboardSidebar({ user, profile }: SidebarProps) {
       <nav className={`flex-1 ${collapsed ? "p-2" : "p-4"} space-y-1 overflow-y-auto scrollbar-hide`}>
         {menuCategories.map((category, categoryIndex) => {
           const colorClasses = getColorClasses(category.color, false)
-          const isEcommerce = category.title === "E-commerce"
-          
+
           return (
             <div key={category.title} className={categoryIndex > 0 ? "pt-4" : "pt-2"}>
               {/* Category Title */}
@@ -206,100 +176,33 @@ export function DashboardSidebar({ user, profile }: SidebarProps) {
                   </span>
                 </div>
               )}
-              
-              {/* E-commerce with submenu */}
-              {isEcommerce && !collapsed ? (
-                <div className="space-y-1">
-                  <button
-                    onClick={() => setCheckoutOpen(!checkoutOpen)}
-                    className={`w-full group flex items-center justify-between px-4 py-2.5 rounded-xl transition-all duration-200 ${
-                      isCheckoutPage
+
+              {/* Menu items */}
+              {category.items.map((item) => {
+                const isActive = pathname === item.href
+                const onboardingId =
+                  item.href === "/dashboard/wallet" ? "wallet-link" :
+                  item.href === "/dashboard/integration" ? "api-link" :
+                  item.href === "/dashboard/support" ? "support-link" :
+                  undefined
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => setIsMobileOpen(false)}
+                    data-onboarding={onboardingId}
+                    title={collapsed ? item.label : undefined}
+                    className={`group flex items-center ${collapsed ? "justify-center p-3" : "gap-3 px-4 py-2.5"} rounded-xl transition-all duration-200 ${
+                      isActive
                         ? colorClasses.active
                         : `text-muted-foreground ${colorClasses.hover}`
                     }`}
                   >
-                    <div className="flex items-center gap-3">
-                      <ShoppingCart className={`w-5 h-5 transition-transform duration-200 ${isCheckoutPage ? colorClasses.icon : "group-hover:scale-110"}`} />
-                      <span className="font-medium">Checkout</span>
-                    </div>
-                    <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${checkoutOpen || isCheckoutPage ? "rotate-180" : ""}`} />
-                  </button>
-                  
-                  <AnimatePresence>
-                    {(checkoutOpen || isCheckoutPage) && (
-                      <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: "auto", opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.2 }}
-                        className="overflow-hidden"
-                      >
-                        <div className="pl-4 space-y-0.5 pt-1">
-                          {category.items.map((item) => {
-                            const isActive = pathname === item.href
-                            return (
-                              <Link
-                                key={item.href}
-                                href={item.href}
-                                onClick={() => setIsMobileOpen(false)}
-                                className={`group flex items-center gap-3 px-4 py-2 rounded-lg transition-all duration-200 ${
-                                  isActive
-                                    ? colorClasses.active
-                                    : `text-muted-foreground ${colorClasses.hover}`
-                                }`}
-                              >
-                                <item.icon className={`w-4 h-4 transition-transform duration-200 ${isActive ? colorClasses.icon : "group-hover:scale-110"}`} />
-                                <span className="text-sm font-medium">{item.label}</span>
-                              </Link>
-                            )
-                          })}
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-              ) : isEcommerce && collapsed ? (
-                /* Collapsed E-commerce - only first item icon */
-                <Link
-                  href="/dashboard/checkout"
-                  onClick={() => setIsMobileOpen(false)}
-                  className={`group flex items-center justify-center p-3 rounded-xl transition-all duration-200 ${
-                    isCheckoutPage
-                      ? colorClasses.active
-                      : `text-muted-foreground ${colorClasses.hover}`
-                  }`}
-                  title="Checkout"
-                >
-                  <ShoppingCart className={`w-5 h-5 transition-transform duration-200 ${isCheckoutPage ? colorClasses.icon : "group-hover:scale-110"}`} />
-                </Link>
-              ) : (
-                /* Regular menu items */
-                category.items.map((item) => {
-                  const isActive = pathname === item.href
-                  const onboardingId = 
-                    item.href === "/dashboard/wallet" ? "wallet-link" :
-                    item.href === "/dashboard/integration" ? "api-link" :
-                    item.href === "/dashboard/support" ? "support-link" :
-                    undefined
-                  return (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      onClick={() => setIsMobileOpen(false)}
-                      data-onboarding={onboardingId}
-                      title={collapsed ? item.label : undefined}
-                      className={`group flex items-center ${collapsed ? "justify-center p-3" : "gap-3 px-4 py-2.5"} rounded-xl transition-all duration-200 ${
-                        isActive
-                          ? colorClasses.active
-                          : `text-muted-foreground ${colorClasses.hover}`
-                      }`}
-                    >
-                      <item.icon className={`w-5 h-5 transition-transform duration-200 ${isActive ? colorClasses.icon : "group-hover:scale-110"}`} />
-                      {!collapsed && <span className="font-medium">{item.label}</span>}
-                    </Link>
-                  )
-                })
-              )}
+                    <item.icon className={`w-5 h-5 transition-transform duration-200 ${isActive ? colorClasses.icon : "group-hover:scale-110"}`} />
+                    {!collapsed && <span className="font-medium">{item.label}</span>}
+                  </Link>
+                )
+              })}
             </div>
           )
         })}

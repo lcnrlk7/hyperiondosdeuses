@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { useProfile } from "@/components/profile-provider";
+import { SettingsContent } from "@/components/dashboard/settings-content";
 import Image from "next/image";
 import {
   User,
@@ -88,6 +89,7 @@ export default function ProfilePage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteConfirmation, setDeleteConfirmation] = useState("");
   const [deletingAccount, setDeletingAccount] = useState(false);
+  const [activeTab, setActiveTab] = useState<"perfil" | "config">("perfil");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [form, setForm] = useState({
@@ -269,10 +271,37 @@ export default function ProfilePage() {
           Meu Perfil
         </h1>
         <p className="text-muted-foreground mt-1">
-          Gerencie suas informacoes e acompanhe suas conquistas
+          Gerencie suas informacoes, conquistas e configuracoes da conta
         </p>
       </div>
 
+      {/* Tabs */}
+      <div className="flex items-center gap-1 p-1 bg-secondary/50 rounded-xl w-full sm:w-fit">
+        <button
+          onClick={() => setActiveTab("perfil")}
+          className={`flex-1 sm:flex-none px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            activeTab === "perfil"
+              ? "bg-primary text-primary-foreground"
+              : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          Perfil
+        </button>
+        <button
+          onClick={() => setActiveTab("config")}
+          className={`flex-1 sm:flex-none px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            activeTab === "config"
+              ? "bg-primary text-primary-foreground"
+              : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          Configuracoes
+        </button>
+      </div>
+
+      {activeTab === "config" && <SettingsContent />}
+
+      {activeTab === "perfil" && (
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Perfil Principal */}
         <motion.div
@@ -624,6 +653,7 @@ export default function ProfilePage() {
           </div>
         </motion.div>
       </div>
+      )}
 
       {/* Modal de Avatar */}
       <AnimatePresence>

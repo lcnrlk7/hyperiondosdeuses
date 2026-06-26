@@ -15,8 +15,6 @@ import {
   HelpCircle,
   Search,
   X,
-  Users,
-  ShoppingCart,
 } from "lucide-react";
 
 interface Shortcut {
@@ -66,22 +64,6 @@ export function KeyboardShortcuts() {
       description: "Ver relatorios",
       icon: FileText,
       action: () => router.push("/dashboard/reports"),
-      category: "navigation",
-    },
-    {
-      key: "g c",
-      label: "Checkout",
-      description: "Gerenciar checkouts",
-      icon: ShoppingCart,
-      action: () => router.push("/dashboard/checkout"),
-      category: "navigation",
-    },
-    {
-      key: "g a",
-      label: "Afiliados",
-      description: "Ver afiliados",
-      icon: Users,
-      action: () => router.push("/dashboard/affiliates"),
       category: "navigation",
     },
     {

@@ -30,12 +30,12 @@ const navItems = [
   {
     href: "/dashboard/integration",
     icon: <Code className="w-5 h-5" />,
-    label: "Integracoes",
+    label: "Integracao",
   },
   {
-    href: "/dashboard/settings",
+    href: "/dashboard/profile",
     icon: <Settings className="w-5 h-5" />,
-    label: "Ajustes",
+    label: "Perfil",
   },
 ];
 
