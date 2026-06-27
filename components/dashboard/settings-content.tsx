@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { User, Mail, Phone, Building, Loader2, Save, CheckCircle2, Shield, Lock, Eye, EyeOff, KeyRound, X, Monitor, Smartphone, Globe, Clock, LogOut, Trash2, AlertTriangle, Bell, BellRing, Send, Calendar, Moon, Sun, Palette, Camera, ImagePlus } from "lucide-react";
+import { User, Mail, Phone, Building, Loader2, Save, CheckCircle2, Shield, Lock, Eye, EyeOff, KeyRound, X, Monitor, Smartphone, Globe, Clock, LogOut, Trash2, AlertTriangle, Bell, BellRing, Send, Calendar, Moon, Sun, Palette, Camera, ImagePlus, ScanFace } from "lucide-react";
 import Image from "next/image";
 import { ThemeToggleWithLabel } from "@/components/theme-toggle";
 import { useRouter } from "next/navigation";
@@ -18,6 +18,7 @@ interface Profile {
   kyc_status: string;
   avatar_url: string | null;
   bio: string | null;
+  liveness_status: string;
 }
 
 export function SettingsContent() {
@@ -34,7 +35,12 @@ export function SettingsContent() {
     kyc_status: "pending",
     avatar_url: null,
     bio: null,
+    liveness_status: "not_started",
   });
+
+  // Liveness (prova de vida) states
+  const [livenessLoading, setLivenessLoading] = useState(false);
+  const [livenessError, setLivenessError] = useState<string | null>(null);
 
 
 
@@ -130,6 +136,7 @@ export function SettingsContent() {
           kyc_status: data.profile.kyc_status || "pending",
           avatar_url: data.profile.avatar_url || null,
           bio: data.profile.bio || null,
+          liveness_status: data.profile.liveness_status || "not_started",
         });
 
       }
@@ -139,6 +146,43 @@ export function SettingsContent() {
       setLoadingProfile(false);
     }
   }
+
+  async function startLiveness() {
+    setLivenessLoading(true);
+    setLivenessError(null);
+    try {
+      const response = await fetch("/api/verify/liveness", { method: "POST" });
+      const data = await response.json();
+
+      if (!response.ok || !data.url) {
+        setLivenessError(
+          data.error || "Não foi possível iniciar a verificação. Tente novamente.",
+        );
+        setLivenessLoading(false);
+        return;
+      }
+
+      // Redireciona para a pagina hospedada da Didit
+      window.location.href = data.url;
+    } catch (err) {
+      console.error("Erro ao iniciar liveness:", err);
+      setLivenessError("Erro de conexão. Tente novamente.");
+      setLivenessLoading(false);
+    }
+  }
+
+  // Detecta retorno da verificacao (callback) e recarrega o status
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("liveness") === "done") {
+      loadProfile();
+      // Limpa o parametro da URL
+      const url = new URL(window.location.href);
+      url.searchParams.delete("liveness");
+      window.history.replaceState({}, "", url.toString());
+    }
+  }, []);
 
   function formatCPF(cpf: string): string {
     const numbers = cpf.replace(/\D/g, "");
@@ -627,6 +671,131 @@ export function SettingsContent() {
             </Button>
           )}
         </div>
+      </motion.div>
+
+      {/* Verificacao de Prova de Vida (Didit) */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.06 }}
+        className="bg-card border border-border rounded-2xl p-6"
+      >
+        <h2 className="text-lg font-semibold text-foreground mb-2 flex items-center gap-2">
+          <ScanFace className="w-5 h-5" />
+          Verificação de Prova de Vida
+        </h2>
+        <p className="text-sm text-muted-foreground mb-6">
+          Confirme que é uma pessoa real com uma verificação biométrica rápida e segura.
+        </p>
+
+        {livenessError && (
+          <div className="mb-4 p-3 rounded-lg text-sm flex items-center gap-2 bg-destructive/10 border border-destructive/20 text-destructive">
+            <AlertTriangle className="w-4 h-4 shrink-0" />
+            {livenessError}
+          </div>
+        )}
+
+        {(() => {
+          const status = profile.liveness_status || "not_started";
+          const config: Record<
+            string,
+            { bg: string; text: string; label: string; desc: string }
+          > = {
+            approved: {
+              bg: "bg-green-500/10",
+              text: "text-green-500",
+              label: "Verificação Aprovada",
+              desc: "Sua prova de vida foi confirmada com sucesso",
+            },
+            in_review: {
+              bg: "bg-yellow-500/10",
+              text: "text-yellow-500",
+              label: "Em Análise",
+              desc: "Sua verificação está sendo analisada",
+            },
+            in_progress: {
+              bg: "bg-blue-500/10",
+              text: "text-blue-500",
+              label: "Verificação em Andamento",
+              desc: "Conclua a verificação iniciada ou comece novamente",
+            },
+            resubmitted: {
+              bg: "bg-blue-500/10",
+              text: "text-blue-500",
+              label: "Reenvio Necessário",
+              desc: "Precisamos que você refaça a verificação",
+            },
+            declined: {
+              bg: "bg-red-500/10",
+              text: "text-red-500",
+              label: "Verificação Recusada",
+              desc: "Não foi possível confirmar. Tente novamente",
+            },
+            expired: {
+              bg: "bg-red-500/10",
+              text: "text-red-500",
+              label: "Verificação Expirada",
+              desc: "Sua verificação expirou. Faça novamente",
+            },
+            abandoned: {
+              bg: "bg-muted/50",
+              text: "text-muted-foreground",
+              label: "Verificação Não Concluída",
+              desc: "Você não finalizou a verificação anterior",
+            },
+            not_started: {
+              bg: "bg-muted/50",
+              text: "text-muted-foreground",
+              label: "Não Verificado",
+              desc: "Faça a verificação de prova de vida para aumentar a segurança",
+            },
+          };
+          const c = config[status] || config.not_started;
+
+          return (
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-secondary/50 rounded-xl gap-3">
+              <div className="flex items-center gap-4">
+                <div className={`p-3 rounded-xl ${c.bg}`}>
+                  <ScanFace className={`w-6 h-6 ${c.text}`} />
+                </div>
+                <div>
+                  <p className="font-medium text-foreground">{c.label}</p>
+                  <p className="text-sm text-muted-foreground">{c.desc}</p>
+                </div>
+              </div>
+              {status === "approved" ? (
+                <div className="flex items-center gap-1.5 text-green-500 bg-green-500/10 px-3 py-1.5 rounded-full text-sm font-medium shrink-0">
+                  <CheckCircle2 className="w-4 h-4" />
+                  Aprovado
+                </div>
+              ) : status === "in_review" ? (
+                <div className="flex items-center gap-1.5 text-yellow-500 bg-yellow-500/10 px-3 py-1.5 rounded-full text-sm font-medium shrink-0">
+                  <Clock className="w-4 h-4" />
+                  Em análise
+                </div>
+              ) : (
+                <Button
+                  onClick={startLiveness}
+                  disabled={livenessLoading}
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground shrink-0"
+                >
+                  {livenessLoading ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <ScanFace className="w-4 h-4 mr-2" />
+                  )}
+                  {status === "in_progress" || status === "abandoned"
+                    ? "Continuar verificação"
+                    : status === "declined" ||
+                        status === "expired" ||
+                        status === "resubmitted"
+                      ? "Tentar novamente"
+                      : "Iniciar verificação"}
+                </Button>
+              )}
+            </div>
+          );
+        })()}
       </motion.div>
 
       {/* Notifications Settings */}
