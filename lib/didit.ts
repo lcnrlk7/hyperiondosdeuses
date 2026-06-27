@@ -24,14 +24,68 @@ export interface DiditSession {
   vendor_data?: string;
 }
 
+// Formata um telefone brasileiro para o padrao E.164 (+55...).
+function toE164BR(phone?: string | null): string | undefined {
+  if (!phone) return undefined;
+  const digits = phone.replace(/\D/g, "");
+  if (!digits) return undefined;
+  if (digits.startsWith("55")) return `+${digits}`;
+  if (digits.length === 10 || digits.length === 11) return `+55${digits}`;
+  return `+${digits}`;
+}
+
+// Dados cadastrais do usuario, usados para pre-preencher e comparar a verificacao.
+export interface DiditUserData {
+  fullName?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  documentNumber?: string | null; // CPF
+}
+
 // Cria uma sessao de verificacao na Didit (server-side).
 export async function createDiditSession(params: {
   vendorData: string;
   callback: string;
+  user?: DiditUserData;
 }): Promise<DiditSession> {
   const apiKey = process.env.DIDIT_API_KEY;
   if (!apiKey) {
     throw new Error("DIDIT_API_KEY nao configurada");
+  }
+
+  const payload: Record<string, unknown> = {
+    workflow_id: DIDIT_WORKFLOW_ID,
+    vendor_data: params.vendorData,
+    callback: params.callback,
+  };
+
+  const user = params.user;
+  if (user) {
+    // Dados de contato (email/telefone) enviados a Didit.
+    const email = user.email?.trim();
+    const phone = toE164BR(user.phone);
+    if (email || phone) {
+      payload.contact_details = {
+        ...(email ? { email, email_lang: "pt" } : {}),
+        ...(phone ? { phone } : {}),
+      };
+    }
+
+    // Dados esperados de identidade (comparados com o documento na verificacao).
+    const expected: Record<string, unknown> = {};
+    const fullName = user.fullName?.trim();
+    if (fullName) {
+      const parts = fullName.split(/\s+/);
+      expected.first_name = parts[0];
+      if (parts.length > 1) expected.last_name = parts.slice(1).join(" ");
+    }
+    const doc = user.documentNumber?.replace(/\D/g, "");
+    if (doc) {
+      expected.document_number = doc;
+    }
+    if (Object.keys(expected).length > 0) {
+      payload.expected_details = expected;
+    }
   }
 
   const res = await fetch(`${DIDIT_BASE_URL}/v3/session/`, {
@@ -40,11 +94,7 @@ export async function createDiditSession(params: {
       "x-api-key": apiKey,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({
-      workflow_id: DIDIT_WORKFLOW_ID,
-      vendor_data: params.vendorData,
-      callback: params.callback,
-    }),
+    body: JSON.stringify(payload),
   });
 
   if (!res.ok) {

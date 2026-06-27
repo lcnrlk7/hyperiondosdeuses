@@ -61,9 +61,24 @@ export async function POST(request: NextRequest) {
 
     const callback = `${getAppBaseUrl()}/dashboard/profile?liveness=done`;
 
+    // Busca os dados cadastrais para enviar a Didit (pre-preenche e compara
+    // com o documento durante a verificacao).
+    const profile = await sql`
+      SELECT name, email, phone, cpf_cnpj
+      FROM profiles
+      WHERE id = ${user.id}
+    `;
+    const p = profile[0] || {};
+
     const session = await createDiditSession({
       vendorData: user.id,
       callback,
+      user: {
+        fullName: p.name,
+        email: p.email,
+        phone: p.phone,
+        documentNumber: p.cpf_cnpj,
+      },
     });
 
     // Guarda o session_id e marca como em progresso
