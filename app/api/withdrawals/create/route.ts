@@ -13,6 +13,7 @@ import { logWithdrawalRequest } from "@/lib/discord-webhook";
 import { detectAttack } from "@/lib/sanitize";
 import { logAttack } from "@/lib/attack-logger";
 import { notifyWithdrawalRequested } from "@/lib/notifications";
+import { screenTransactionAsync } from "@/lib/aml";
 
 export async function POST(request: NextRequest) {
   try {
@@ -374,6 +375,20 @@ export async function POST(request: NextRequest) {
     // Notificar usuário via push notification
     notifyWithdrawalRequested(sessionUser.id, netAmount, pixKey).catch(err => {
       console.error("[Withdrawal] Erro ao enviar notificacao:", err);
+    });
+
+    // Monitoramento AML/KYT (Didit) - saida de dinheiro (outbound). Assincrono,
+    // apenas sinaliza, nao bloqueia o saque.
+    screenTransactionAsync({
+      entity: "withdrawal",
+      entityId: withdrawalId,
+      direction: "outbound",
+      userId: sessionUser.id,
+      userFullName: user.name || user.email || "N/A",
+      amount: netAmount,
+      currency: "BRL",
+      counterpartyName: pixKey,
+      counterpartyAccount: pixKey,
     });
 
     // Determinar mensagem baseada no status e se requer aprovação

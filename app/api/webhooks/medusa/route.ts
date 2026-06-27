@@ -8,6 +8,7 @@ import {
 } from "@/lib/notifications";
 import { logTransactionStatusUpdate, logWithdrawalStatusUpdate, logWebhookReceived } from "@/lib/discord-webhook";
 import { sendPixEventToUtmify } from "@/lib/utmify";
+import { screenTransactionAsync } from "@/lib/aml";
 
 /**
  * Webhook para receber notificações da Medusa Payments
@@ -530,6 +531,20 @@ export async function POST(request: NextRequest) {
       // Notificar usuario sobre o deposito/PIX recebido com valor bruto e liquido
       const grossAmount = Number(transaction.amount) || 0;
       await notifyPixPaid(transaction.user_id as string, grossAmount, netAmount);
+
+      // Monitoramento AML/KYT (Didit) - entrada de dinheiro (inbound). Assincrono,
+      // apenas sinaliza, nao bloqueia o deposito.
+      screenTransactionAsync({
+        entity: "deposit",
+        entityId: transaction.id as string,
+        direction: "inbound",
+        userId: transaction.user_id as string,
+        userFullName: (transaction.profile_name as string) || (customer?.name as string) || "N/A",
+        amount: grossAmount,
+        currency: "BRL",
+        counterpartyName: customer?.name || (transaction.profile_name as string) || undefined,
+        counterpartyAccount: customer?.document?.number || undefined,
+      });
       
       // Log para Discord - transacao confirmada
       logTransactionStatusUpdate({

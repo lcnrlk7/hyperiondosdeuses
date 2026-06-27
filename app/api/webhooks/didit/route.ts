@@ -50,6 +50,9 @@ export async function POST(request: NextRequest) {
   const status: string = payload.status;
   const webhookType: string = payload.webhook_type;
   const vendorData: string | undefined = payload.vendor_data;
+  // Eventos de monitoramento de transacao (AML/KYT)
+  const transactionId: string | undefined =
+    payload.transaction_id || payload.transaction?.transaction_id;
 
   // 2. Idempotencia — dedupe por event_id
   try {
@@ -96,6 +99,40 @@ export async function POST(request: NextRequest) {
         }
       } catch (e) {
         console.error("[v0] Erro ao atualizar liveness do usuário:", e);
+      }
+    }
+  }
+
+  // 3b. Eventos de monitoramento de transacao (AML/KYT) — apenas sinaliza.
+  if (
+    webhookType === "transaction.created" ||
+    webhookType === "transaction.status.updated"
+  ) {
+    if (transactionId) {
+      try {
+        // O transactionId aqui e o nosso transaction_ref (enviado no create).
+        const riskScore =
+          typeof payload.risk_score === "number"
+            ? payload.risk_score
+            : typeof payload.transaction?.risk_score === "number"
+              ? payload.transaction.risk_score
+              : null;
+
+        await sql`
+          UPDATE aml_screenings
+          SET
+            status = ${status ?? "PENDING"},
+            risk_score = COALESCE(${riskScore}, risk_score),
+            raw = ${JSON.stringify(payload)},
+            updated_at = NOW()
+          WHERE transaction_ref = ${transactionId}
+             OR didit_transaction_id = ${transactionId}
+        `;
+        console.log(
+          `[AML] Webhook atualizou triagem ${transactionId} -> ${status}`,
+        );
+      } catch (e) {
+        console.error("[v0] Erro ao atualizar triagem AML:", e);
       }
     }
   }
