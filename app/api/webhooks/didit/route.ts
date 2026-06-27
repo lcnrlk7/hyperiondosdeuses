@@ -74,15 +74,26 @@ export async function POST(request: NextRequest) {
 
     if (internalStatus && vendorData) {
       try {
-        const verifiedAt = internalStatus === "approved" ? new Date() : null;
-        await sql`
-          UPDATE profiles
-          SET
-            liveness_status = ${internalStatus},
-            liveness_verified_at = COALESCE(${verifiedAt}, liveness_verified_at),
-            liveness_updated_at = NOW()
-          WHERE id = ${vendorData}
-        `;
+        if (internalStatus === "approved") {
+          // Sistema automatico: ao aprovar a prova de vida, libera o KYC na hora.
+          await sql`
+            UPDATE profiles
+            SET
+              liveness_status = 'approved',
+              liveness_verified_at = NOW(),
+              liveness_updated_at = NOW(),
+              kyc_status = 'approved'
+            WHERE id = ${vendorData}
+          `;
+        } else {
+          await sql`
+            UPDATE profiles
+            SET
+              liveness_status = ${internalStatus},
+              liveness_updated_at = NOW()
+            WHERE id = ${vendorData}
+          `;
+        }
       } catch (e) {
         console.error("[v0] Erro ao atualizar liveness do usuário:", e);
       }

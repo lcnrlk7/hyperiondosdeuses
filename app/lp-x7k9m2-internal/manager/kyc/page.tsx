@@ -11,6 +11,7 @@ import {
   CreditCard,
   Home,
   Camera,
+  ShieldCheck,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -133,6 +134,19 @@ export default function ManagerKYCPage() {
         <p className="text-muted-foreground mt-1">
           Revise e aprove documentos de verificação
         </p>
+      </div>
+
+      {/* Aviso: verificacao agora e automatica */}
+      <div className="flex items-start gap-3 rounded-xl border border-green-500/30 bg-green-500/10 p-4">
+        <ShieldCheck className="w-5 h-5 text-green-500 shrink-0 mt-0.5" />
+        <div>
+          <p className="text-sm font-semibold text-foreground">Verificação automática ativada</p>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            O KYC agora é aprovado automaticamente pela verificação de prova de vida (biometria).
+            Não é mais necessário analisar documentos manualmente — os usuários são liberados assim
+            que concluem a prova de vida. Esta tela é mantida apenas para consulta.
+          </p>
+        </div>
       </div>
 
       {/* Filters */}

@@ -13,6 +13,7 @@ import {
   AlertTriangle,
   Loader2,
   ZoomIn,
+  ShieldCheck,
 } from "lucide-react";
 
 interface KYCDocument {
@@ -177,6 +178,19 @@ export default function KYCPage() {
 
   return (
     <div className="p-6 lg:p-8 space-y-6">
+      {/* Aviso: verificacao agora e automatica */}
+      <div className="flex items-start gap-3 rounded-xl border border-green-500/30 bg-green-500/10 p-4">
+        <ShieldCheck className="w-5 h-5 text-green-500 shrink-0 mt-0.5" />
+        <div>
+          <p className="text-sm font-semibold text-white">Verificação automática ativada</p>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            O KYC agora é aprovado automaticamente pela verificação de prova de vida (biometria).
+            Não é mais necessário analisar documentos manualmente — os usuários são liberados assim
+            que concluem a prova de vida. Esta tela é mantida apenas para consulta e casos excepcionais.
+          </p>
+        </div>
+      </div>
+
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
