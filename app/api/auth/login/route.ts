@@ -7,6 +7,13 @@ import { detectAttack } from "@/lib/sanitize";
 import { logAttack } from "@/lib/attack-logger";
 import { trackLogin, checkNewDevice } from "@/lib/login-tracker";
 import { is2FAEnabled, getUserSecret, verifyTOTP, verifyBackupCode } from "@/lib/two-factor";
+import {
+  isTrustedDevice,
+  createFaceChallenge,
+  createLoginTicket,
+  trustDevice,
+  setDeviceCookie,
+} from "@/lib/face-auth";
 
 const COOKIE_NAME = "auth-token";
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 7; // 7 days
@@ -174,6 +181,44 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // SEGURANCA: Reconhecimento facial em dispositivo novo.
+    // So exige o rosto se o usuario ja tem rosto cadastrado (liveness aprovado).
+    // Quem ainda nao verificou loga normalmente e e forcado a verificar pelo
+    // bloqueio obrigatorio do dashboard. Fail-open em erros para nao travar logins.
+    try {
+      const trusted = await isTrustedDevice(user.id);
+      if (!trusted) {
+        let faceEnrolled = false;
+        try {
+          const r = await sql`SELECT liveness_status FROM profiles WHERE id = ${user.id}`;
+          faceEnrolled = r[0]?.liveness_status === "approved";
+        } catch (e) {
+          console.error("[v0] Erro ao checar liveness no login:", e);
+        }
+
+        if (faceEnrolled) {
+          const { challengeId, url, deviceId } = await createFaceChallenge({
+            userId: user.id,
+            purpose: "login",
+          });
+          const ticket = await createLoginTicket(user.id);
+
+          const faceResponse = NextResponse.json({
+            requiresFaceAuth: true,
+            challengeId,
+            faceUrl: url,
+            ticket,
+            message: "Verificacao facial necessaria para este dispositivo",
+          });
+          setDeviceCookie(faceResponse, deviceId);
+          return faceResponse;
+        }
+      }
+    } catch (e) {
+      // Nunca bloqueia o login por falha na verificacao facial (ex.: Didit fora).
+      console.error("[v0] Falha no step-up facial (login liberado):", e);
+    }
+
     // Create JWT token
     const token = await createToken(user);
 
@@ -233,6 +278,9 @@ export async function POST(request: NextRequest) {
       maxAge: COOKIE_MAX_AGE,
       path: "/",
     });
+
+    // Marca este dispositivo como confiavel (nao pedira rosto nos proximos logins)
+    await trustDevice(user.id, response);
 
     return response;
   } catch (error) {

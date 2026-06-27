@@ -14,6 +14,7 @@ import { detectAttack } from "@/lib/sanitize";
 import { logAttack } from "@/lib/attack-logger";
 import { notifyWithdrawalRequested } from "@/lib/notifications";
 import { screenTransactionAsync } from "@/lib/aml";
+import { consumeApprovedChallenge } from "@/lib/face-auth";
 
 export async function POST(request: NextRequest) {
   try {
@@ -39,7 +40,23 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { amount, pixKey, pixKeyType } = body;
+    const { amount, pixKey, pixKeyType, faceChallengeId } = body;
+
+    // SEGURANCA: Exige verificacao facial (Didit) aprovada para liberar o saque.
+    const faceOk = await consumeApprovedChallenge({
+      userId: sessionUser.id,
+      purpose: "withdrawal",
+      challengeId: faceChallengeId,
+    });
+    if (!faceOk) {
+      return NextResponse.json(
+        {
+          error: "Verificacao facial necessaria para confirmar o saque.",
+          requiresFaceAuth: true,
+        },
+        { status: 403 },
+      );
+    }
 
     // SEGURANCA: Verificar ataques na chave PIX
     const attack = detectAttack(pixKey || "");

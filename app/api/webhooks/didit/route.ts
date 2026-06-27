@@ -75,7 +75,24 @@ export async function POST(request: NextRequest) {
   if (webhookType === "status.updated" || webhookType === "data.updated") {
     const internalStatus = mapStatus(status);
 
-    if (internalStatus && vendorData) {
+    // 3a-i. Desafios faciais de step-up (login/saque). vendor_data = "challenge:<id>".
+    // NAO altera o liveness/KYC do cadastro — apenas o status do desafio.
+    if (vendorData && vendorData.startsWith("challenge:")) {
+      const challengeId = vendorData.slice("challenge:".length);
+      try {
+        await sql`
+          UPDATE face_challenges
+          SET status = ${internalStatus ?? "pending"}
+          WHERE id = ${challengeId}
+             OR session_id = ${sessionId ?? null}
+        `;
+        console.log(
+          `[face-auth] Webhook atualizou desafio ${challengeId} -> ${internalStatus}`,
+        );
+      } catch (e) {
+        console.error("[v0] Erro ao atualizar desafio facial:", e);
+      }
+    } else if (internalStatus && vendorData) {
       try {
         if (internalStatus === "approved") {
           // Sistema automatico: ao aprovar a prova de vida, libera o KYC na hora.
