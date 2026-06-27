@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import { ScanFace, Clock, ShieldCheck, AlertTriangle, Loader2, RefreshCw } from "lucide-react";
@@ -14,6 +14,35 @@ interface LivenessBlockerProps {
 export function LivenessBlocker({ livenessStatus, onRefresh }: LivenessBlockerProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Liberacao automatica: enquanto bloqueado, consulta o status periodicamente.
+  // Assim que a Didit aprovar (via webhook), o perfil e atualizado e o bloqueio
+  // some sozinho, sem o usuario precisar clicar ou recarregar a pagina.
+  useEffect(() => {
+    if (livenessStatus === "approved" || !onRefresh) return;
+
+    const interval = setInterval(async () => {
+      try {
+        const token =
+          typeof window !== "undefined"
+            ? localStorage.getItem("auth-token")
+            : null;
+        const res = await fetch("/api/verify/liveness", {
+          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data.status && data.status !== livenessStatus) {
+          // Status mudou (ex: aprovado) — recarrega o perfil para refletir na UI
+          onRefresh();
+        }
+      } catch {
+        // Silencioso — tenta novamente no proximo ciclo
+      }
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [livenessStatus, onRefresh]);
 
   // Se aprovado, nao bloqueia
   if (livenessStatus === "approved") {
