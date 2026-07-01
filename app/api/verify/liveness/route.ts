@@ -59,7 +59,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const callback = `${getAppBaseUrl()}/dashboard/profile?liveness=done`;
+    // Permite que o chamador defina para onde a Didit deve redirecionar apos a
+    // verificacao (ex.: a pagina de KYC). So aceitamos caminhos internos.
+    let returnPath = "/dashboard/profile?liveness=done";
+    try {
+      const body = await request.json();
+      if (typeof body?.returnPath === "string" && body.returnPath.startsWith("/")) {
+        returnPath = body.returnPath;
+      }
+    } catch {
+      // sem corpo — usa o padrao
+    }
+    const callback = `${getAppBaseUrl()}${returnPath}`;
 
     // Busca os dados cadastrais para enviar a Didit (pre-preenche e compara
     // com o documento durante a verificacao).
