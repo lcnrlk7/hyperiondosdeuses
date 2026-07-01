@@ -28,7 +28,6 @@ import {
   DollarSign,
   Headphones,
   Gauge,
-  ShieldAlert,
   type LucideIcon,
 } from "lucide-react";
 
@@ -72,7 +71,6 @@ const menuCategories: MenuCategory[] = [
     color: "emerald",
     items: [
       { label: "Transacoes", href: "/lp-x7k9m2-internal/ceo/transactions", icon: ArrowLeftRight, permission: "view_transactions" },
-      { label: "Monitoramento AML", href: "/lp-x7k9m2-internal/ceo/aml", icon: ShieldAlert, permission: "view_transactions" },
       { label: "Saques", href: "/lp-x7k9m2-internal/ceo/withdrawals", icon: Wallet, permission: "view_withdrawals" },
       { label: "Taxas", href: "/lp-x7k9m2-internal/ceo/fees", icon: Percent, permission: "view_fees" },
       { label: "Adquirentes", href: "/lp-x7k9m2-internal/ceo/acquirers", icon: Server, permission: "view_acquirers" },

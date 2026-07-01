@@ -50,15 +50,6 @@ export async function POST(request: NextRequest) {
   const status: string = payload.status;
   const webhookType: string = payload.webhook_type;
   const vendorData: string | undefined = payload.vendor_data;
-  // Eventos de monitoramento de transacao (AML/KYT).
-  // A API v3 usa "txn_id" (nosso ref) e "uuid" (id interno da Didit).
-  const txnRef: string | undefined =
-    payload.txn_id ||
-    payload.transaction_id ||
-    payload.transaction?.txn_id ||
-    payload.transaction?.transaction_id;
-  const diditTxnUuid: string | undefined =
-    payload.uuid || payload.transaction?.uuid;
 
   // 2. Idempotencia — dedupe por event_id
   try {
@@ -122,43 +113,6 @@ export async function POST(request: NextRequest) {
         }
       } catch (e) {
         console.error("[v0] Erro ao atualizar liveness do usuário:", e);
-      }
-    }
-  }
-
-  // 3b. Eventos de monitoramento de transacao (AML/KYT) — apenas sinaliza.
-  if (
-    webhookType === "transaction.created" ||
-    webhookType === "transaction.status.updated"
-  ) {
-    if (txnRef || diditTxnUuid) {
-      try {
-        // A API v3 usa "score"; mantemos fallback para "risk_score".
-        const riskScore =
-          typeof payload.score === "number"
-            ? payload.score
-            : typeof payload.risk_score === "number"
-              ? payload.risk_score
-              : typeof payload.transaction?.score === "number"
-                ? payload.transaction.score
-                : null;
-
-        await sql`
-          UPDATE aml_screenings
-          SET
-            status = ${status ?? "PENDING"},
-            risk_score = COALESCE(${riskScore}, risk_score),
-            didit_transaction_id = COALESCE(${diditTxnUuid ?? null}, didit_transaction_id),
-            raw = ${JSON.stringify(payload)},
-            updated_at = NOW()
-          WHERE transaction_ref = ${txnRef ?? null}
-             OR didit_transaction_id = ${diditTxnUuid ?? txnRef ?? null}
-        `;
-        console.log(
-          `[AML] Webhook atualizou triagem ${txnRef || diditTxnUuid} -> ${status}`,
-        );
-      } catch (e) {
-        console.error("[v0] Erro ao atualizar triagem AML:", e);
       }
     }
   }
