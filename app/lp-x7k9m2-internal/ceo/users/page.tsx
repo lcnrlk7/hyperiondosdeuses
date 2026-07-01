@@ -702,10 +702,8 @@ const openEditModal = (user: UserProfile) => {
                 <p className="font-semibold text-primary">{formatCurrency(Number(user.balance) || 0)}</p>
               </div>
               <div>
-                <p className="text-muted-foreground text-xs">Taxa</p>
-                <p className="font-medium text-yellow-400">
-                  {user.custom_fee_percentage !== null && user.custom_fee_percentage !== undefined ? `${Number(user.custom_fee_percentage).toFixed(2)}%` : user.fee_percentage ? `${Number(user.fee_percentage).toFixed(2)}%` : "Padrao"}
-                </p>
+                <p className="text-muted-foreground text-xs">Taxa (deposito)</p>
+                <p className="font-medium text-yellow-400">6,00% + R$ 1,50</p>
               </div>
             </div>
             <div className="flex items-center gap-2 pt-3 border-t border-border">
@@ -799,16 +797,8 @@ const openEditModal = (user: UserProfile) => {
                   </td>
                             <td className="p-4">
                               <div className="flex flex-col">
-                                <p className="font-medium text-yellow-400">
-                                  {user.custom_fee_percentage !== null && user.custom_fee_percentage !== undefined
-                                    ? `${Number(user.custom_fee_percentage).toFixed(2)}%`
-                                    : user.fee_percentage 
-                                      ? `${Number(user.fee_percentage).toFixed(2)}%` 
-                                      : "Padrao"}
-                                </p>
-                                {user.custom_fee_percentage !== null && user.custom_fee_percentage !== undefined && (
-                                  <span className="text-xs text-green-400">Personalizada</span>
-                                )}
+                                <p className="font-medium text-yellow-400">6,00% + R$ 1,50</p>
+                                <span className="text-xs text-muted-foreground">deposito (fixo)</span>
                               </div>
                             </td>
                   <td className="p-4">

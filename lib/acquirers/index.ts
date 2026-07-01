@@ -676,121 +676,43 @@ export async function getSystemFeesByRoute(routeType: 'white' | 'black'): Promis
 }
 
 /**
- * Busca taxas do sistema para um usuário específico
- * Considera taxas personalizadas do usuário se configuradas (deposito e saque)
+ * Le a taxa GLOBAL de saque (PIX Out) da tabela system_settings.
+ * Esta e a fonte unica: o que o CEO salva na pagina de Configuracoes vale
+ * para TODOS os usuarios, sem excecao por usuario nem por rota.
+ * Valor fixo em R$ (padrao R$ 7,00 se nao configurado).
  */
-export async function getSystemFeesForUser(userId: string): Promise<FeeConfig> {
+export async function getGlobalWithdrawalFee(): Promise<number> {
   try {
-    // Buscar rota, taxas personalizadas e adquirente especifica do usuário
-    // Prioridade: custom_fee_percentage > fee_percentage (da rota)
-    const userResult = await sql`
-      SELECT route_type, fee_percentage, fixed_fee, withdrawal_fee, acquirer_id,
-             custom_fee_percentage, custom_withdrawal_fee, custom_withdrawal_fee_is_percentage
-      FROM profiles WHERE id = ${userId}
+    const rows = await sql`
+      SELECT value FROM system_settings WHERE key = 'withdrawal_fee' LIMIT 1
     `;
-  
-  const user = userResult[0];
-  const routeType = (user?.route_type || 'black') as 'white' | 'black';
-  
-  // Se usuario tem adquirente especifica, usar taxas dela como base
-  let routeFees: FeeConfig;
-  if (user?.acquirer_id) {
-    const acquirerResult = await sql`
-      SELECT fee_percentage, fixed_fee, fee_is_percentage, withdrawal_fee, withdrawal_fee_is_percentage, min_deposit, min_withdrawal, route_type
-      FROM acquirers WHERE id = ${user.acquirer_id} AND is_active = true
-    `;
-    if (acquirerResult.length > 0) {
-      const acq = acquirerResult[0];
-      const isFeePercentage = acq.fee_is_percentage ?? true;
-      const isWithdrawalPercentage = acq.withdrawal_fee_is_percentage ?? false;
-      
-      routeFees = {
-        // Taxa fixa sempre e considerada (pode ser 0)
-        // Taxa percentual e usada se fee_is_percentage = true
-        pixFixedFee: Number(acq.fixed_fee) || 0,
-        pixPercentageFee: isFeePercentage ? Number(acq.fee_percentage) || 0 : 0,
-        withdrawalFee: Number(acq.withdrawal_fee) || 0,
-        withdrawalFeeIsPercentage: isWithdrawalPercentage,
-      };
-    } else {
-      routeFees = await getSystemFeesByRoute(routeType);
+    if (rows.length > 0) {
+      // Os valores sao salvos como JSON string (ex.: "\"7.00\"").
+      let raw = rows[0].value;
+      try { raw = JSON.parse(raw); } catch { /* ja e valor puro */ }
+      const parsed = Number(raw);
+      if (!Number.isNaN(parsed)) return parsed;
     }
-  } else {
-    // Buscar taxas padrao da rota
-    routeFees = await getSystemFeesByRoute(routeType);
-  }
-    
-    // Criar objeto de taxas com valores personalizados se existirem
-    const fees: FeeConfig = {
-      pixFixedFee: routeFees.pixFixedFee,
-      pixPercentageFee: routeFees.pixPercentageFee,
-      withdrawalFee: routeFees.withdrawalFee,
-      withdrawalFeeIsPercentage: routeFees.withdrawalFeeIsPercentage,
-    };
-    
-    // PRIORIDADE DE TAXAS:
-    // 1. custom_fee_percentage / custom_withdrawal_fee (taxa personalizada do usuario)
-    // 2. fee_percentage / withdrawal_fee do profiles (legado, se custom nao existir)
-    // 3. Taxa da rota/adquirente (fallback)
-    
-    // Taxa percentual de deposito personalizada (PIX In)
-    // Prioridade: custom_fee_percentage > fee_percentage
-    const customFeePercentage = user?.custom_fee_percentage;
-    const legacyFeePercentage = user?.fee_percentage;
-    
-    if (customFeePercentage !== null && customFeePercentage !== undefined && String(customFeePercentage).trim() !== '') {
-      fees.pixPercentageFee = Number(customFeePercentage);
-      console.log(`[Acquirer] Usuario ${userId} - Usando taxa PERSONALIZADA de entrada: ${customFeePercentage}%`);
-    } else if (legacyFeePercentage !== null && legacyFeePercentage !== undefined && String(legacyFeePercentage).trim() !== '') {
-      fees.pixPercentageFee = Number(legacyFeePercentage);
-      console.log(`[Acquirer] Usuario ${userId} - Usando taxa LEGADA de entrada: ${legacyFeePercentage}%`);
-    }
-    
-    // Taxa fixa de deposito personalizada (PIX In)
-    // Prioridade: custom_fixed_fee > fixed_fee (legado)
-    const customFixedFee = user?.custom_fixed_fee;
-    const legacyFixedFee = user?.fixed_fee;
-    
-    if (customFixedFee !== null && customFixedFee !== undefined && String(customFixedFee).trim() !== '') {
-      fees.pixFixedFee = Number(customFixedFee);
-      console.log(`[Acquirer] Usuario ${userId} - Usando taxa fixa PERSONALIZADA: R$${customFixedFee}`);
-    } else if (legacyFixedFee !== null && legacyFixedFee !== undefined && String(legacyFixedFee).trim() !== '') {
-      fees.pixFixedFee = Number(legacyFixedFee);
-      console.log(`[Acquirer] Usuario ${userId} - Usando taxa fixa LEGADA: R$${legacyFixedFee}`);
-    }
-    
-    // Taxa de saque personalizada (PIX Out)
-    // Prioridade: custom_withdrawal_fee > withdrawal_fee
-    const customWithdrawalFee = user?.custom_withdrawal_fee;
-    const legacyWithdrawalFee = user?.withdrawal_fee;
-    const customWithdrawalFeeIsPercentage = user?.custom_withdrawal_fee_is_percentage ?? false;
-    
-    if (customWithdrawalFee !== null && customWithdrawalFee !== undefined && String(customWithdrawalFee).trim() !== '') {
-      fees.withdrawalFee = Number(customWithdrawalFee);
-      fees.withdrawalFeeIsPercentage = customWithdrawalFeeIsPercentage;
-      console.log(`[Acquirer] Usuario ${userId} - Usando taxa PERSONALIZADA de saque: ${customWithdrawalFee}${customWithdrawalFeeIsPercentage ? '%' : ' fixo'}`);
-    } else if (legacyWithdrawalFee !== null && legacyWithdrawalFee !== undefined && String(legacyWithdrawalFee).trim() !== '') {
-      fees.withdrawalFee = Number(legacyWithdrawalFee);
-      console.log(`[Acquirer] Usuario ${userId} - Usando taxa LEGADA de saque: ${legacyWithdrawalFee}`);
-    }
-    
-    // TAXA UNICA GLOBAL: todos os usuarios pagam 6% + R$1,50 no deposito (PIX In),
-    // sobrescrevendo qualquer taxa personalizada/VIP. O saque (PIX Out) permanece.
-    fees.pixPercentageFee = GLOBAL_DEPOSIT_PERCENTAGE_FEE;
-    fees.pixFixedFee = GLOBAL_DEPOSIT_FIXED_FEE;
-
-    console.log(`[Acquirer] Usuario ${userId} - TAXAS FINAIS: PIX In=${fees.pixPercentageFee}%+R$${fees.pixFixedFee}, PIX Out=${fees.withdrawalFee}${fees.withdrawalFeeIsPercentage ? '%' : ' fixo'}`);
-    
-    return fees;
   } catch (error) {
-    console.error("[Acquirer] Erro ao buscar taxas do usuário:", error);
-    // Fallback tambem aplica a taxa unica global de deposito.
-    const routeType = await getUserRouteType(userId);
-    const fallback = await getSystemFeesByRoute(routeType);
-    fallback.pixPercentageFee = GLOBAL_DEPOSIT_PERCENTAGE_FEE;
-    fallback.pixFixedFee = GLOBAL_DEPOSIT_FIXED_FEE;
-    return fallback;
+    console.error("[Acquirer] Erro ao ler withdrawal_fee global:", error);
   }
+  return 7.0; // padrao
+}
+
+/**
+ * Busca as taxas efetivas de um usuário.
+ * FONTE UNICA DE VERDADE (sem personalizacao por usuario, sem rota):
+ *  - Deposito (PIX In): FIXO em 6% + R$ 1,50 para todos.
+ *  - Saque (PIX Out):   valor GLOBAL definido em Configuracoes (R$ fixo).
+ */
+export async function getSystemFeesForUser(_userId: string): Promise<FeeConfig> {
+  const withdrawalFee = await getGlobalWithdrawalFee();
+  return {
+    pixPercentageFee: GLOBAL_DEPOSIT_PERCENTAGE_FEE,
+    pixFixedFee: GLOBAL_DEPOSIT_FIXED_FEE,
+    withdrawalFee,
+    withdrawalFeeIsPercentage: false, // taxa de saque global e sempre R$ fixo
+  };
 }
 
 /**
