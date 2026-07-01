@@ -1,3 +1,4 @@
+import { after } from "next/server";
 import { sql } from "@/lib/db";
 import { createDiditTransaction } from "@/lib/didit";
 
@@ -23,10 +24,23 @@ interface ScreenParams {
 
 // Dispara a triagem AML em segundo plano. Nunca lanca erro para o chamador.
 export function screenTransactionAsync(params: ScreenParams): void {
-  // Nao usa await de proposito: fire-and-forget para nao atrasar a resposta.
-  void runScreening(params).catch((err) => {
-    console.error("[AML] Falha na triagem assincrona:", err);
-  });
+  // Em ambiente serverless (Vercel), um fire-and-forget cru (void promise) e
+  // descartado assim que a resposta e enviada, entao o registro nunca era gravado.
+  // after() garante que o trabalho rode APOS a resposta, sem atrasar o usuario.
+  try {
+    after(async () => {
+      try {
+        await runScreening(params);
+      } catch (err) {
+        console.error("[AML] Falha na triagem assincrona:", err);
+      }
+    });
+  } catch {
+    // Fora de um contexto de request (ex.: script), executa direto.
+    void runScreening(params).catch((err) => {
+      console.error("[AML] Falha na triagem assincrona (fallback):", err);
+    });
+  }
 }
 
 async function runScreening(params: ScreenParams): Promise<void> {
