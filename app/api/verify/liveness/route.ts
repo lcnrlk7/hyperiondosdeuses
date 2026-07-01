@@ -72,14 +72,17 @@ export async function POST(request: NextRequest) {
     }
     const callback = `${getAppBaseUrl()}${returnPath}`;
 
-    // Busca os dados cadastrais para enviar a Didit (pre-preenche e compara
-    // com o documento durante a verificacao).
+    // Busca TODOS os dados cadastrais disponiveis para enviar a Didit
+    // (pre-preenche e compara com o documento durante a verificacao).
     const profile = await sql`
-      SELECT name, email, phone, cpf_cnpj
+      SELECT name, email, phone, cpf_cnpj, cpf
       FROM profiles
       WHERE id = ${user.id}
     `;
     const p = profile[0] || {};
+
+    // O documento pode estar em cpf_cnpj (padrao) ou, em cadastros antigos, em cpf.
+    const documentNumber = p.cpf_cnpj || p.cpf || null;
 
     const session = await createDiditSession({
       vendorData: user.id,
@@ -88,7 +91,7 @@ export async function POST(request: NextRequest) {
         fullName: p.name,
         email: p.email,
         phone: p.phone,
-        documentNumber: p.cpf_cnpj,
+        documentNumber,
       },
     });
 
