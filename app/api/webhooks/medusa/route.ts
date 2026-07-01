@@ -534,15 +534,36 @@ export async function POST(request: NextRequest) {
     // Extrair campos específicos de venda (podem não existir em callbacks de saque)
     const paidAt = payload.paidAt;
     const customer = payload.customer;
+    const pixData = payload.pix;
 
-    // Atualizar status da transação
+    // Dados REAIS de quem pagou, retornados pela Medusa quando o PIX e liquidado.
+    // Na criacao gravamos o nome do dono da conta como placeholder; agora que a
+    // Medusa informou o pagador de fato, sobrescrevemos para exibir quem pagou.
+    const realPayerName = customer?.name || null;
+    const realPayerDocument = customer?.document?.number || null;
+    const realPayerEmail = customer?.email || null;
+    const realPayerPhone = customer?.phone || null;
+    const endToEndId = pixData?.end2EndId || null;
+    const receiptUrl = pixData?.receiptUrl || null;
+
+    // Informacoes extras do pagamento (end-to-end, comprovante) guardadas no metadata.
+    const paymentExtras = JSON.stringify({
+      ...(endToEndId ? { end_to_end: endToEndId } : {}),
+      ...(receiptUrl ? { receipt_url: receiptUrl } : {}),
+      ...(realPayerName ? { medusa_payer_name: realPayerName } : {}),
+    });
+
+    // Atualizar status da transação com os dados do pagador reais da Medusa.
     await sql`
       UPDATE transactions 
       SET 
         status = ${internalStatus},
         paid_at = COALESCE(paid_at, ${paidAt ? new Date(paidAt) : (internalStatus === 'completed' ? new Date() : null)}),
-        payer_name = COALESCE(payer_name, ${customer?.name || null}),
-        payer_document = COALESCE(payer_document, ${customer?.document?.number || null}),
+        payer_name = COALESCE(${realPayerName}, payer_name),
+        payer_document = COALESCE(${realPayerDocument}, payer_document),
+        payer_email = COALESCE(${realPayerEmail}, payer_email),
+        payer_phone = COALESCE(${realPayerPhone}, payer_phone),
+        metadata = COALESCE(metadata, '{}'::jsonb) || ${paymentExtras}::jsonb,
         updated_at = NOW()
       WHERE id = ${transaction.id}
     `;
