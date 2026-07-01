@@ -34,12 +34,19 @@ import { screenTransactionAsync } from "@/lib/aml";
  * - cancelled: Operação encerrada sem sucesso
  */
 const MEDUSA_STATUS_MAP: Record<string, string> = {
-  // Status de transferência/saque
+  // Status de transferência/saque (formato TRANSFER_UPDATE - legado)
   "LIQUIDATED": "completed",
   "liquidated": "completed",
   "PENDING": "pending",
   "FAILED": "failed",
   "CANCELLED": "failed",
+
+  // Status de transferência/saque (formato oficial "withdraw")
+  "COMPLETED": "completed",
+  "PROCESSING": "pending",
+  "REFUSED": "failed",
+  "PENDING_ANALYSIS": "pending",
+  "PENDING_QUEUE": "pending",
   
   // Status de pagamento
   waiting_payment: "pending",
@@ -166,6 +173,11 @@ async function handleTransferUpdate(payload: MedusaTransferUpdatePayload) {
   const internalStatus = MEDUSA_STATUS_MAP[status] || status.toLowerCase();
   console.log(`[Medusa Webhook] Status mapeado: ${status} -> ${internalStatus}`);
 
+  // O correlation_id so pode ser comparado com w.id (coluna UUID) se for um UUID valido,
+  // senao o Postgres lanca "invalid input syntax for type uuid".
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  const correlationUuid = uuidRegex.test(String(correlation_id)) ? String(correlation_id) : null;
+
   // Buscar saque pelo correlation_id (nosso ID de referencia) ou pelo acquirer_withdrawal_id
   const withdrawals = await sql`
     SELECT w.id, w.user_id, w.amount, w.fee, w.net_amount, w.status, w.pix_key,
@@ -173,8 +185,8 @@ async function handleTransferUpdate(payload: MedusaTransferUpdatePayload) {
     FROM withdrawals w
     LEFT JOIN profiles p ON w.user_id = p.id
     WHERE w.acquirer_withdrawal_id = ${String(id_transaction)}
-       OR w.acquirer_withdrawal_id = ${correlation_id}
-       OR w.id = ${correlation_id}
+       OR w.acquirer_withdrawal_id = ${String(correlation_id)}
+       OR w.id = ${correlationUuid}
   `;
 
   if (withdrawals.length === 0) {
@@ -323,17 +335,60 @@ export async function POST(request: NextRequest) {
     const rawBody = await request.text();
     console.log("[Medusa Webhook] Raw body recebido:", rawBody);
     
-    const payload = JSON.parse(rawBody);
+    let payload = JSON.parse(rawBody);
 
     console.log("[Medusa Webhook] Payload parseado:", JSON.stringify(payload, null, 2));
 
-    // Detectar formato TRANSFER_UPDATE (formato novo de saques)
+    // FORMATO OFICIAL MEDUSA (postback): { type, objectId, data: { ... } }
+    // - type "transaction" = venda/deposito (PIX In)
+    // - type "withdraw"    = transferencia/saque (PIX Out)
+    // Todos os dados relevantes ficam ANINHADOS em "data". Aqui normalizamos.
+    if (payload && typeof payload.data === "object" && payload.data !== null) {
+      const d = payload.data;
+
+      // Saque no formato oficial -> converter para o formato TRANSFER_UPDATE ja tratado.
+      if (payload.type === "withdraw") {
+        const normalizedTransfer: MedusaTransferUpdatePayload = {
+          version: "v1",
+          event: "TRANSFER_UPDATE",
+          object: "Transfer",
+          date: d.updatedAt || d.transferredAt || d.processedAt || new Date().toISOString(),
+          transfer: {
+            id_transaction: d.id,
+            correlation_id: d.externalRef || String(d.id),
+            status: d.status,
+            value: d.amount,
+            end_to_end: d.pixEnd2EndId || "",
+          },
+          destination: {
+            name: "",
+            document: d.pixKey || "",
+            pix_key: d.pixKey || "",
+            bank: { name: "", ispb: "" },
+          },
+        };
+        console.log("[Medusa Webhook] Formato oficial 'withdraw' detectado. Normalizando.");
+        return await handleTransferUpdate(normalizedTransfer);
+      }
+
+      // Venda/deposito no formato oficial -> achatar "data" para o nivel raiz,
+      // pois o restante do handler le id/status/customer/paidAt na raiz.
+      if (payload.type === "transaction" || d.paymentMethod || d.pix) {
+        console.log("[Medusa Webhook] Formato oficial 'transaction' detectado. Achatando 'data'.");
+        payload = {
+          ...d,
+          objectId: payload.objectId,
+        };
+      }
+    }
+
+    // Detectar formato TRANSFER_UPDATE (formato legado de saques)
     if (payload.event === "TRANSFER_UPDATE" && payload.transfer) {
       return await handleTransferUpdate(payload as MedusaTransferUpdatePayload);
     }
 
     // Identificar o ID - pode vir em diferentes campos dependendo se é venda ou saque
-    const transactionId = payload.id || payload.withdrawal_id || payload.transaction_id;
+    const transactionId = payload.id || payload.objectId || payload.withdrawal_id || payload.transaction_id;
     const status = payload.status;
     
     // Detectar se é um callback de SAQUE (formato antigo)
