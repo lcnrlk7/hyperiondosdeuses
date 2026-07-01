@@ -22,6 +22,11 @@ export const ROUTE_DISPLAY_NAMES = {
   black: "Gateway Express",
 } as const;
 
+// TAXA UNICA DE DEPOSITO (PIX In) APLICADA A TODOS OS USUARIOS, SEM EXCECAO.
+// Sistema opera somente com a adquirente Medusa. 6% + R$1,50 fixo por deposito.
+export const GLOBAL_DEPOSIT_PERCENTAGE_FEE = 6;
+export const GLOBAL_DEPOSIT_FIXED_FEE = 1.5;
+
 /**
  * Detecta o tipo de chave PIX automaticamente
  */
@@ -769,13 +774,22 @@ export async function getSystemFeesForUser(userId: string): Promise<FeeConfig> {
       console.log(`[Acquirer] Usuario ${userId} - Usando taxa LEGADA de saque: ${legacyWithdrawalFee}`);
     }
     
+    // TAXA UNICA GLOBAL: todos os usuarios pagam 6% + R$1,50 no deposito (PIX In),
+    // sobrescrevendo qualquer taxa personalizada/VIP. O saque (PIX Out) permanece.
+    fees.pixPercentageFee = GLOBAL_DEPOSIT_PERCENTAGE_FEE;
+    fees.pixFixedFee = GLOBAL_DEPOSIT_FIXED_FEE;
+
     console.log(`[Acquirer] Usuario ${userId} - TAXAS FINAIS: PIX In=${fees.pixPercentageFee}%+R$${fees.pixFixedFee}, PIX Out=${fees.withdrawalFee}${fees.withdrawalFeeIsPercentage ? '%' : ' fixo'}`);
     
     return fees;
   } catch (error) {
     console.error("[Acquirer] Erro ao buscar taxas do usuário:", error);
+    // Fallback tambem aplica a taxa unica global de deposito.
     const routeType = await getUserRouteType(userId);
-    return getSystemFeesByRoute(routeType);
+    const fallback = await getSystemFeesByRoute(routeType);
+    fallback.pixPercentageFee = GLOBAL_DEPOSIT_PERCENTAGE_FEE;
+    fallback.pixFixedFee = GLOBAL_DEPOSIT_FIXED_FEE;
+    return fallback;
   }
 }
 

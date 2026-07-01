@@ -27,10 +27,7 @@ import {
   Clock,
   DollarSign,
   Headphones,
-  Bot,
-  Ban,
   Gauge,
-  Globe,
   ShieldAlert,
   type LucideIcon,
 } from "lucide-react";
@@ -68,7 +65,6 @@ const menuCategories: MenuCategory[] = [
       { label: "Verificacao KYC", href: "/lp-x7k9m2-internal/ceo/kyc", icon: FileCheck, permission: "view_kyc" },
       { label: "Afiliados", href: "/lp-x7k9m2-internal/ceo/affiliates", icon: UsersRound, permission: "view_affiliates" },
       { label: "Equipe Admin", href: "/lp-x7k9m2-internal/ceo/team", icon: UserCog, permission: "view_team" },
-      { label: "Blacklist", href: "/lp-x7k9m2-internal/ceo/blacklist", icon: Ban, permission: "view_blacklist" },
     ],
   },
   {
@@ -97,9 +93,6 @@ const menuCategories: MenuCategory[] = [
     items: [
       { label: "Status", href: "/lp-x7k9m2-internal/ceo/status", icon: Gauge, permission: "view_status" },
       { label: "Logs", href: "/lp-x7k9m2-internal/ceo/logs", icon: Activity, permission: "view_logs" },
-      { label: "Seguranca", href: "/lp-x7k9m2-internal/ceo/attacks", icon: Shield, permission: "view_attacks" },
-      { label: "Telegram Bot", href: "/lp-x7k9m2-internal/ceo/telegram", icon: Bot, permission: "view_telegram" },
-      { label: "White Label", href: "/lp-x7k9m2-internal/ceo/white-label", icon: Globe, permission: "view_whitelabel" },
       { label: "Configuracoes", href: "/lp-x7k9m2-internal/ceo/settings", icon: Settings, permission: "view_settings" },
     ],
   },

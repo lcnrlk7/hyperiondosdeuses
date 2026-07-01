@@ -31,7 +31,7 @@ export default function Home() {
           <nav className="hidden md:flex items-center gap-8">
             <Link href="#inicio" className="text-sm text-gray-400 hover:text-white transition-colors">Início</Link>
             <Link href="#solucoes" className="text-sm text-gray-400 hover:text-white transition-colors">Soluções</Link>
-            <Link href="#taxas" className="text-sm text-gray-400 hover:text-white transition-colors">Taxas</Link>
+            <Link href="#taxas" className="text-sm text-gray-400 hover:text-white transition-colors">Sem MED</Link>
             <a href="https://app.hyperionpay.com.br/dashboard/integration" className="text-sm text-gray-400 hover:text-white transition-colors">Documentação</a>
             <Link href="#sobre" className="text-sm text-gray-400 hover:text-white transition-colors">Sobre nós</Link>
           </nav>
@@ -375,42 +375,52 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Pricing/Fees Section */}
+      {/* Sem MED Section */}
       <section id="taxas" className="relative py-12 md:py-20 px-4 md:px-6">
-        <div className="max-w-7xl mx-auto">
+        <div className="max-w-5xl mx-auto">
           <div className="text-center mb-8 md:mb-12">
-            <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold">
-              Taxas transparentes que cabem no seu bolso
-            </h2>
-          </div>
-          
-          <div className="grid grid-cols-2 gap-3 md:gap-6 max-w-3xl mx-auto">
-            {/* PIX - Highlighted */}
-            <div className="relative bg-gradient-to-b from-indigo-500/20 to-[#0a0d1a] border border-indigo-500/30 rounded-xl md:rounded-2xl p-4 md:p-8">
-              <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 px-2 md:px-3 py-0.5 md:py-1 bg-indigo-500 rounded-full text-[10px] md:text-xs font-medium text-white whitespace-nowrap">
-                MELHOR CONDIÇÃO
-              </div>
-              <div className="w-10 h-10 md:w-14 md:h-14 bg-indigo-500/20 rounded-lg md:rounded-xl flex items-center justify-center mb-3 md:mb-4 mt-2">
-                <svg className="w-5 h-5 md:w-7 md:h-7 text-indigo-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="12" y1="1" x2="12" y2="23"/>
-                  <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
-                </svg>
-              </div>
-              <h3 className="text-base md:text-xl font-semibold mb-1 md:mb-2">PIX Instantâneo</h3>
-              <div className="text-2xl md:text-4xl font-bold text-indigo-500 mb-1 md:mb-2">R$0,50</div>
-              <p className="text-xs md:text-sm text-gray-500">Taxa fixa por transação.</p>
-              <p className="text-[10px] md:text-xs text-gray-600 mt-1 md:mt-2">Receba na hora.</p>
+            <div className="inline-flex items-center gap-2 px-3 py-1 mb-4 bg-indigo-500/10 border border-indigo-500/30 rounded-full">
+              <Shield className="w-4 h-4 text-indigo-400" />
+              <span className="text-xs md:text-sm font-medium text-indigo-300">Rota 100% sem MED</span>
             </div>
-            
-            {/* API PIX */}
-            <div className="bg-[#0a0d1a] border border-white/5 rounded-xl md:rounded-2xl p-4 md:p-8 hover:border-indigo-500/20 transition-all">
+            <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-balance">
+              Rota 100% sem MED. Deixa que a gente cuida disso.
+            </h2>
+            <p className="text-sm md:text-base text-gray-400 mt-3 md:mt-4 max-w-2xl mx-auto text-pretty">
+              Opere com total tranquilidade: seu saldo nunca é bloqueado e a estabilidade das suas
+              transações fica por nossa conta.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-6">
+            <div className="bg-[#0a0d1a] border border-indigo-500/20 rounded-xl md:rounded-2xl p-5 md:p-8">
               <div className="w-10 h-10 md:w-14 md:h-14 bg-indigo-500/10 rounded-lg md:rounded-xl flex items-center justify-center mb-3 md:mb-4">
-                <Code2 className="w-5 h-5 md:w-7 md:h-7 text-indigo-500" />
+                <Shield className="w-5 h-5 md:w-7 md:h-7 text-indigo-500" />
               </div>
-              <h3 className="text-base md:text-xl font-semibold mb-1 md:mb-2">API PIX</h3>
-              <div className="text-2xl md:text-4xl font-bold text-indigo-500 mb-1 md:mb-2">R$0,50</div>
-              <p className="text-xs md:text-sm text-gray-500">Integração via API.</p>
-              <p className="text-[10px] md:text-xs text-gray-600 mt-1 md:mt-2">Documentação completa.</p>
+              <h3 className="text-base md:text-xl font-semibold mb-1 md:mb-2">100% sem MED</h3>
+              <p className="text-xs md:text-sm text-gray-500">
+                Rota totalmente sem MED. Deixa que a gente cuida disso por você.
+              </p>
+            </div>
+
+            <div className="bg-[#0a0d1a] border border-white/5 rounded-xl md:rounded-2xl p-5 md:p-8">
+              <div className="w-10 h-10 md:w-14 md:h-14 bg-indigo-500/10 rounded-lg md:rounded-xl flex items-center justify-center mb-3 md:mb-4">
+                <Check className="w-5 h-5 md:w-7 md:h-7 text-indigo-500" />
+              </div>
+              <h3 className="text-base md:text-xl font-semibold mb-1 md:mb-2">Saldo nunca bloqueado</h3>
+              <p className="text-xs md:text-sm text-gray-500">
+                Seu saldo nunca é bloqueado. Você mantém o controle total do seu dinheiro.
+              </p>
+            </div>
+
+            <div className="bg-[#0a0d1a] border border-white/5 rounded-xl md:rounded-2xl p-5 md:p-8">
+              <div className="w-10 h-10 md:w-14 md:h-14 bg-indigo-500/10 rounded-lg md:rounded-xl flex items-center justify-center mb-3 md:mb-4">
+                <Zap className="w-5 h-5 md:w-7 md:h-7 text-indigo-500" />
+              </div>
+              <h3 className="text-base md:text-xl font-semibold mb-1 md:mb-2">Multiaquirência</h3>
+              <p className="text-xs md:text-sm text-gray-500">
+                Mais estabilidade nas suas transações e benefícios exclusivos para você.
+              </p>
             </div>
           </div>
         </div>
@@ -672,7 +682,7 @@ export default function Home() {
               <h4 className="text-sm md:text-base font-semibold mb-2 md:mb-4">Produtos</h4>
               <ul className="space-y-1.5 md:space-y-2 text-xs md:text-sm text-gray-500">
                 <li><Link href="#solucoes" className="hover:text-white transition-colors">Pagamentos PIX</Link></li>
-                <li><Link href="#taxas" className="hover:text-white transition-colors">Taxas</Link></li>
+                <li><Link href="#taxas" className="hover:text-white transition-colors">Sem MED</Link></li>
                 <li><a href="https://app.hyperionpay.com.br/dashboard/integration" className="hover:text-white transition-colors">API</a></li>
               </ul>
             </div>
