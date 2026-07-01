@@ -90,8 +90,13 @@ export default function NotificationsPage() {
       const notificationsData = await notificationsRes.json();
       const usersData = await usersRes.json();
 
-      if (Array.isArray(notificationsData)) {
-        setNotifications(notificationsData);
+      // A API retorna { notifications, motivationalMessages, ... }.
+      // Mantemos compatibilidade caso algum dia retorne um array direto.
+      const list = Array.isArray(notificationsData)
+        ? notificationsData
+        : notificationsData?.notifications;
+      if (Array.isArray(list)) {
+        setNotifications(list);
       }
       if (usersData?.users) {
         setUsers(usersData.users);

@@ -23,7 +23,6 @@ import {
   Gift,
   Percent,
   FileBarChart,
-  UsersRound,
   Clock,
   DollarSign,
   Headphones,
@@ -62,7 +61,6 @@ const menuCategories: MenuCategory[] = [
     items: [
       { label: "Todos Usuarios", href: "/lp-x7k9m2-internal/ceo/users", icon: Users, permission: "view_users" },
       { label: "Verificacao KYC", href: "/lp-x7k9m2-internal/ceo/kyc", icon: FileCheck, permission: "view_kyc" },
-      { label: "Afiliados", href: "/lp-x7k9m2-internal/ceo/affiliates", icon: UsersRound, permission: "view_affiliates" },
       { label: "Equipe Admin", href: "/lp-x7k9m2-internal/ceo/team", icon: UserCog, permission: "view_team" },
     ],
   },
