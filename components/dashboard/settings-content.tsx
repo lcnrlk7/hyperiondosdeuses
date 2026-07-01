@@ -404,13 +404,10 @@ export function SettingsContent() {
           return;
         }
 
-        // Chave VAPID publica (obrigatoria). Sem ela nao ha como assinar push.
-        const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "";
-        if (!vapidKey) {
-          setNotificationMessage({ type: "error", text: "Push nao configurado no servidor. Contate o suporte." });
-          setNotificationLoading(false);
-          return;
-        }
+        // Chave VAPID publica (nao secreta). Usa a env ou o valor padrao do projeto.
+        const vapidKey =
+          process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ||
+          "BD6ArfgWGgPaXXpqm6BD62dYW2Uvg-_85ly9aycJpUQdu5zw31G5k-RaX5E1KCzlk1zoo-Zc9NWcgZvUe8cw2xI";
 
         // Registrar service worker
         const registration = await navigator.serviceWorker.register("/sw.js");

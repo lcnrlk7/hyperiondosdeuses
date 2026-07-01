@@ -3,7 +3,12 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/components/auth-provider";
 
-const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "";
+// Chave VAPID publica (nao e secreta - vai para o navegador de qualquer forma).
+// Usamos a env se existir; senao caimos no valor padrao do projeto.
+const DEFAULT_VAPID_PUBLIC_KEY =
+  "BD6ArfgWGgPaXXpqm6BD62dYW2Uvg-_85ly9aycJpUQdu5zw31G5k-RaX5E1KCzlk1zoo-Zc9NWcgZvUe8cw2xI";
+const VAPID_PUBLIC_KEY =
+  process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || DEFAULT_VAPID_PUBLIC_KEY;
 
 function urlBase64ToUint8Array(base64String: string): Uint8Array<ArrayBuffer> {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
