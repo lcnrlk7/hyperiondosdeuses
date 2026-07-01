@@ -407,7 +407,7 @@ export function SettingsContent() {
         // Chave VAPID publica (nao secreta). Usa a env ou o valor padrao do projeto.
         const vapidKey =
           process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ||
-          "BD6ArfgWGgPaXXpqm6BD62dYW2Uvg-_85ly9aycJpUQdu5zw31G5k-RaX5E1KCzlk1zoo-Zc9NWcgZvUe8cw2xI";
+          "BDdXqzuofQqXUg2BS_JouTkhzzZZf4NG96GINkHv_i2x8WvI40WhmYHlCKwCOuBdRx3dSxmt8a5H-a24hsU9Uws";
 
         // Registrar service worker
         const registration = await navigator.serviceWorker.register("/sw.js");

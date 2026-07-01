@@ -7,7 +7,7 @@ import { sql } from "@/lib/db";
 // A chave PRIVADA e secreta e deve vir SEMPRE da variavel de ambiente VAPID_PRIVATE_KEY.
 const VAPID_PUBLIC_KEY =
   process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ||
-  "BD6ArfgWGgPaXXpqm6BD62dYW2Uvg-_85ly9aycJpUQdu5zw31G5k-RaX5E1KCzlk1zoo-Zc9NWcgZvUe8cw2xI";
+  "BDdXqzuofQqXUg2BS_JouTkhzzZZf4NG96GINkHv_i2x8WvI40WhmYHlCKwCOuBdRx3dSxmt8a5H-a24hsU9Uws";
 const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY || "";
 const VAPID_SUBJECT = process.env.VAPID_SUBJECT || "mailto:contato@hyperionpay.com.br";
 
