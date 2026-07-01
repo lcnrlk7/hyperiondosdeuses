@@ -50,9 +50,15 @@ export async function POST(request: NextRequest) {
   const status: string = payload.status;
   const webhookType: string = payload.webhook_type;
   const vendorData: string | undefined = payload.vendor_data;
-  // Eventos de monitoramento de transacao (AML/KYT)
-  const transactionId: string | undefined =
-    payload.transaction_id || payload.transaction?.transaction_id;
+  // Eventos de monitoramento de transacao (AML/KYT).
+  // A API v3 usa "txn_id" (nosso ref) e "uuid" (id interno da Didit).
+  const txnRef: string | undefined =
+    payload.txn_id ||
+    payload.transaction_id ||
+    payload.transaction?.txn_id ||
+    payload.transaction?.transaction_id;
+  const diditTxnUuid: string | undefined =
+    payload.uuid || payload.transaction?.uuid;
 
   // 2. Idempotencia — dedupe por event_id
   try {
@@ -125,28 +131,31 @@ export async function POST(request: NextRequest) {
     webhookType === "transaction.created" ||
     webhookType === "transaction.status.updated"
   ) {
-    if (transactionId) {
+    if (txnRef || diditTxnUuid) {
       try {
-        // O transactionId aqui e o nosso transaction_ref (enviado no create).
+        // A API v3 usa "score"; mantemos fallback para "risk_score".
         const riskScore =
-          typeof payload.risk_score === "number"
-            ? payload.risk_score
-            : typeof payload.transaction?.risk_score === "number"
-              ? payload.transaction.risk_score
-              : null;
+          typeof payload.score === "number"
+            ? payload.score
+            : typeof payload.risk_score === "number"
+              ? payload.risk_score
+              : typeof payload.transaction?.score === "number"
+                ? payload.transaction.score
+                : null;
 
         await sql`
           UPDATE aml_screenings
           SET
             status = ${status ?? "PENDING"},
             risk_score = COALESCE(${riskScore}, risk_score),
+            didit_transaction_id = COALESCE(${diditTxnUuid ?? null}, didit_transaction_id),
             raw = ${JSON.stringify(payload)},
             updated_at = NOW()
-          WHERE transaction_ref = ${transactionId}
-             OR didit_transaction_id = ${transactionId}
+          WHERE transaction_ref = ${txnRef ?? null}
+             OR didit_transaction_id = ${diditTxnUuid ?? txnRef ?? null}
         `;
         console.log(
-          `[AML] Webhook atualizou triagem ${transactionId} -> ${status}`,
+          `[AML] Webhook atualizou triagem ${txnRef || diditTxnUuid} -> ${status}`,
         );
       } catch (e) {
         console.error("[v0] Erro ao atualizar triagem AML:", e);

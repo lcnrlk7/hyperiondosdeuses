@@ -108,8 +108,14 @@ export async function createDiditSession(params: {
 // --- Monitoramento de transacoes (AML / KYT) ---
 
 export interface DiditTransactionResult {
-  transaction_id?: string;
+  // A API v3 retorna: uuid (id interno da Didit), txn_id (nosso ref), status e score.
+  uuid?: string;
+  txn_id?: string;
   status?: string; // APPROVED | IN_REVIEW | DECLINED | AWAITING_USER
+  score?: number; // pontuacao de risco (0-100)
+  severity?: string | null;
+  // Campos legados / alternativos (compatibilidade defensiva).
+  transaction_id?: string;
   risk_score?: number;
   [key: string]: unknown;
 }

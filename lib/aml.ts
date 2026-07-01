@@ -87,12 +87,21 @@ async function runScreening(params: ScreenParams): Promise<void> {
     });
 
     // 3. Persiste o resultado imediato (o webhook pode atualizar depois).
+    // A API v3 usa "uuid" (id da Didit) e "score" (risco); mantemos fallbacks.
+    const diditId = result.uuid || result.transaction_id || null;
+    const riskScore =
+      typeof result.score === "number"
+        ? result.score
+        : typeof result.risk_score === "number"
+          ? result.risk_score
+          : null;
+
     await sql`
       UPDATE aml_screenings
       SET
-        didit_transaction_id = ${result.transaction_id || null},
+        didit_transaction_id = ${diditId},
         status = ${result.status || "PENDING"},
-        risk_score = ${typeof result.risk_score === "number" ? result.risk_score : null},
+        risk_score = ${riskScore},
         raw = ${JSON.stringify(result)},
         updated_at = NOW()
       WHERE transaction_ref = ${transactionRef}
