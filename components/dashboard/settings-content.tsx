@@ -9,6 +9,18 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
+// Converte a chave VAPID (base64 url-safe) para o formato exigido pelo pushManager.
+function urlBase64ToUint8Array(base64String: string): Uint8Array {
+  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+  const rawData = window.atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+  return outputArray;
+}
+
 interface Profile {
   name: string;
   email: string;
@@ -390,24 +402,49 @@ export function SettingsContent() {
           return;
         }
 
+        // Chave VAPID publica (obrigatoria). Sem ela nao ha como assinar push.
+        const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "";
+        if (!vapidKey) {
+          setNotificationMessage({ type: "error", text: "Push nao configurado no servidor. Contate o suporte." });
+          setNotificationLoading(false);
+          return;
+        }
+
         // Registrar service worker
         const registration = await navigator.serviceWorker.register("/sw.js");
         await navigator.serviceWorker.ready;
 
-        // Obter subscription
-        const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckjBJuBkr3qBUYIHBQFLXYp5Nksh8U";
+        // Cancelar qualquer assinatura antiga (pode ter sido criada com chave diferente)
+        const existing = await registration.pushManager.getSubscription();
+        if (existing) {
+          try { await existing.unsubscribe(); } catch { /* ignora */ }
+        }
+
+        // Criar subscription com a chave correta (convertida para Uint8Array)
         const subscription = await registration.pushManager.subscribe({
           userVisibleOnly: true,
-          applicationServerKey: vapidKey
+          applicationServerKey: urlBase64ToUint8Array(vapidKey),
+        });
+        const subJSON = subscription.toJSON();
+
+        // Registrar na tabela push_subscriptions (usada para enviar os pushes)
+        await fetch("/api/push/subscribe", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            endpoint: subJSON.endpoint,
+            p256dh: subJSON.keys?.p256dh,
+            auth: subJSON.keys?.auth,
+          }),
         });
 
-        // Salvar no backend
+        // Salvar preferencia (flag) no perfil
         await fetch("/api/user/notifications/settings", {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             notifications_push: true,
-            push_subscription: subscription.toJSON()
+            push_subscription: subJSON
           })
         });
 

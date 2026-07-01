@@ -85,10 +85,10 @@ export async function sendPushNotification(
       console.error("[v0] Push notification failed:", error);
       failed++;
 
-      // Se a subscription expirou ou é inválida, remover
-      if (error.statusCode === 410 || error.statusCode === 404) {
+      // Remover se expirada (404/410) ou com chave VAPID incompativel (403).
+      if (error.statusCode === 410 || error.statusCode === 404 || error.statusCode === 403) {
         await sql`DELETE FROM push_subscriptions WHERE id = ${sub.id}`;
-        console.log("[v0] Removed expired subscription:", sub.id);
+        console.log("[v0] Removed invalid subscription:", sub.id);
       }
     }
   }
@@ -285,15 +285,12 @@ export async function sendPushToAllUsers(
     return { success: false, sent: 0, failed: 0 };
   }
 
-  // Buscar todas as subscriptions ativas da coluna push_subscription em profiles
-  const users = await sql`
-    SELECT id, push_subscription 
-    FROM profiles 
-    WHERE notifications_push = true 
-    AND push_subscription IS NOT NULL
+  // Buscar TODAS as subscriptions registradas (mesma tabela usada no envio por usuario).
+  const subscriptions = await sql`
+    SELECT id, endpoint, p256dh, auth FROM push_subscriptions
   `;
 
-  if (!users || users.length === 0) {
+  if (!subscriptions || subscriptions.length === 0) {
     return { success: false, sent: 0, failed: 0 };
   }
 
@@ -309,21 +306,14 @@ export async function sendPushToAllUsers(
   let sent = 0;
   let failed = 0;
 
-  for (const user of users) {
+  for (const sub of subscriptions) {
     try {
-      const sub = user.push_subscription as { endpoint: string; keys: { p256dh: string; auth: string } };
-      
-      if (!sub || !sub.endpoint || !sub.keys) {
-        failed++;
-        continue;
-      }
-
       await webpush.sendNotification(
         {
           endpoint: sub.endpoint,
           keys: {
-            p256dh: sub.keys.p256dh,
-            auth: sub.keys.auth,
+            p256dh: sub.p256dh,
+            auth: sub.auth,
           },
         },
         notificationPayload
@@ -332,9 +322,9 @@ export async function sendPushToAllUsers(
     } catch (err: unknown) {
       const error = err as { statusCode?: number };
       failed++;
-      // Se subscription expirou, limpar do profile
-      if (error.statusCode === 410 || error.statusCode === 404) {
-        await sql`UPDATE profiles SET push_subscription = NULL, notifications_push = false WHERE id = ${user.id}`;
+      // Remover subscriptions invalidas: expirada (404/410) ou chave VAPID incompativel (403).
+      if (error.statusCode === 410 || error.statusCode === 404 || error.statusCode === 403) {
+        await sql`DELETE FROM push_subscriptions WHERE id = ${sub.id}`;
       }
     }
   }

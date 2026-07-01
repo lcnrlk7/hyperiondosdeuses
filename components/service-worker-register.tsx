@@ -72,6 +72,26 @@ export function ServiceWorkerRegister() {
         // Verificar se já tem uma subscription
         let subscription = await registration.pushManager.getSubscription();
 
+        // Se a subscription existente foi criada com OUTRA chave VAPID
+        // (ex.: chave de demonstracao antiga), ela e inutilizavel pelo servidor.
+        // Nesse caso, cancelamos e criamos uma nova com a chave correta.
+        if (subscription) {
+          const currentKey = subscription.options?.applicationServerKey;
+          const expectedKey = urlBase64ToUint8Array(VAPID_PUBLIC_KEY);
+          const keysMatch =
+            currentKey &&
+            new Uint8Array(currentKey as ArrayBuffer).toString() ===
+              expectedKey.toString();
+          if (!keysMatch) {
+            try {
+              await subscription.unsubscribe();
+            } catch {
+              /* ignora erro ao cancelar */
+            }
+            subscription = null;
+          }
+        }
+
         if (!subscription && VAPID_PUBLIC_KEY) {
           // Criar nova subscription
           subscription = await registration.pushManager.subscribe({
