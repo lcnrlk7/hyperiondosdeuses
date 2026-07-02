@@ -97,7 +97,7 @@ export default function DocsPage() {
     );
   };
 
-  const baseUrl = "https://hyperionpay.com.br";
+  const baseUrl = "https://app.hyperionpay.com.br";
 
   return (
     <div className="min-h-screen bg-background">
@@ -1252,7 +1252,7 @@ const fullIntegrationPrompt = `Preciso integrar a API de pagamentos PIX da Hyper
 
 ## Informacoes da API
 
-**URL Base:** https://api.hyperionpay.com.br
+**URL Base:** https://app.hyperionpay.com.br
 **Autenticacao:** Bearer Token no header Authorization
 **Minha API Key:** SUA_API_KEY (substitua pela sua chave real)
 
@@ -1302,7 +1302,7 @@ Por favor, crie uma integracao completa para meu projeto com:
 
 const chargePrompt = `Preciso criar cobrancas PIX com QR Code usando a API Hyperion Pay.
 
-**URL Base:** https://api.hyperionpay.com.br
+**URL Base:** https://app.hyperionpay.com.br
 **Minha API Key:** SUA_API_KEY
 
 **Endpoint:** POST /v1/pix/charge
@@ -1339,7 +1339,7 @@ Crie uma funcao que:
 
 const webhookPrompt = `Preciso configurar um webhook para receber notificacoes de pagamento da Hyperion Pay.
 
-**URL Base:** https://api.hyperionpay.com.br
+**URL Base:** https://app.hyperionpay.com.br
 **Minha API Key:** SUA_API_KEY
 
 **Eventos disponiveis:**
@@ -1376,7 +1376,7 @@ Crie um endpoint webhook que:
 
 const transferPrompt = `Preciso enviar transferencias PIX automaticamente usando a API Hyperion Pay.
 
-**URL Base:** https://api.hyperionpay.com.br
+**URL Base:** https://app.hyperionpay.com.br
 **Minha API Key:** SUA_API_KEY
 
 **Endpoint:** POST /v1/pix/transfer
