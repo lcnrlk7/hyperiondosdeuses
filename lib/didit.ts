@@ -1,7 +1,9 @@
 import crypto from "node:crypto";
 
-// Workflow "Free KYC" da Didit (config por sessao, NAO e segredo).
-export const DIDIT_WORKFLOW_ID = "46b4c1c4-3458-4cd4-9437-9a215bb5e1e4";
+// Workflow de verificacao da Didit (config por sessao, NAO e segredo).
+// Pode ser sobrescrito por env; o padrao aponta para o workflow atual da conta.
+export const DIDIT_WORKFLOW_ID =
+  process.env.DIDIT_WORKFLOW_ID || "fc5d8dce-b01b-49fc-81fe-0c5d07f08a1b";
 
 // Base URL da API de verificacao da Didit
 export const DIDIT_BASE_URL = "https://verification.didit.me";
