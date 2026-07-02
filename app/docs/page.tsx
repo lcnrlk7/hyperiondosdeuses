@@ -275,7 +275,7 @@ export default function DocsPage() {
                 <div>
                   <h1 className="text-4xl font-bold text-foreground mb-4">Autenticacao</h1>
                   <p className="text-lg text-muted-foreground">
-                    Existem dois tipos de autenticacao: API Key (simples) e Basic Auth (integracoes).
+                    A autenticacao usa suas credenciais de integracao (Client ID + Client Secret), enviadas via Basic Auth ou em headers separados.
                   </p>
                 </div>
 
@@ -286,16 +286,16 @@ export default function DocsPage() {
                     <div className="bg-background/50 rounded-xl p-4 border border-border">
                       <div className="flex items-center gap-2 mb-2">
                         <span className="w-2 h-2 rounded-full bg-blue-500"></span>
-                        <h3 className="font-semibold text-foreground">API Key</h3>
+                        <h3 className="font-semibold text-foreground">Headers separados</h3>
                         <span className="text-xs bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded">Simples</span>
                       </div>
                       <p className="text-sm text-muted-foreground mb-2">
-                        Chave unica para acesso basico. Encontrada no Dashboard &gt; API.
+                        Envie o Client ID e o Client Secret em headers separados. Ideal para testes rapidos.
                       </p>
-                      <code className="text-xs bg-secondary px-2 py-1 rounded text-primary">lp_xxxxxxxxxxxxxxxx</code>
-                      <p className="text-xs text-muted-foreground mt-2">
-                        <strong>Uso:</strong> Enviar no body da requisicao como <code className="text-primary">apiKey</code>
-                      </p>
+                      <div className="space-y-1">
+                        <code className="text-xs bg-secondary px-2 py-1 rounded text-primary block w-fit">x-client-id: cli_xxxxxxxxxxxx</code>
+                        <code className="text-xs bg-secondary px-2 py-1 rounded text-primary block w-fit">x-client-secret: sec_xxxxxxxxxxxx</code>
+                      </div>
                     </div>
 
                     <div className="bg-background/50 rounded-xl p-4 border border-border">
@@ -333,7 +333,7 @@ export default function DocsPage() {
                       </p>
                       <code className="text-xs bg-secondary px-2 py-1 rounded text-primary">whsec_xxxxxxxxxxxxxxxx</code>
                       <p className="text-xs text-muted-foreground mt-2">
-                        <strong>Uso:</strong> Valide o header <code className="text-primary">X-Hyperion Pay-Signature</code> usando HMAC-SHA256
+                        <strong>Uso:</strong> Valide o header <code className="text-primary">X-Webhook-Signature</code> usando HMAC-SHA256
                       </p>
                     </div>
                   </div>
@@ -342,8 +342,7 @@ export default function DocsPage() {
                 <div className="bg-card border border-border rounded-2xl p-6">
                   <h2 className="text-xl font-semibold text-foreground mb-4">Obtendo suas Credenciais</h2>
                   <ol className="list-decimal list-inside space-y-3 text-muted-foreground mb-4">
-                    <li><strong>API Key:</strong> Dashboard &gt; API &gt; Copie a chave que comeca com <code className="text-primary">lp_</code></li>
-                    <li><strong>Client ID/Secret:</strong> Dashboard &gt; Integracao API &gt; Crie uma nova integracao</li>
+                    <li><strong>Client ID/Secret:</strong> Dashboard &gt; Integracao &gt; Crie uma nova integracao e copie as credenciais</li>
                     <li><strong>Webhook Secret:</strong> Gerado automaticamente ao criar uma integracao</li>
                   </ol>
                   <div className="flex gap-2 flex-wrap">
@@ -361,16 +360,17 @@ export default function DocsPage() {
                 </div>
 
                 <div className="bg-card border border-border rounded-2xl p-6">
-                  <h2 className="text-xl font-semibold text-foreground mb-4">Metodo 1: API Key (Simples)</h2>
+                  <h2 className="text-xl font-semibold text-foreground mb-4">Metodo 1: Headers separados (Simples)</h2>
                   <p className="text-sm text-muted-foreground mb-4">
-                    Envie a API Key no body da requisicao. Ideal para testes rapidos.
+                    Envie o Client ID e o Client Secret em headers separados. Ideal para testes rapidos.
                   </p>
                   <CodeBlock 
-                    code={`POST /api/pix/create
+                    code={`POST /api/v1/integration/pix
+x-client-id: cli_seu_client_id
+x-client-secret: sec_seu_client_secret
 Content-Type: application/json
 
 {
-  "apiKey": "lp_sua_api_key_aqui",
   "amount": 100.00,
   "description": "Pagamento teste"
 }`}
@@ -594,7 +594,7 @@ if ($data["success"]) {
                 <div className="bg-card border border-border rounded-2xl p-6">
                   <div className="flex items-center gap-3 mb-4">
                     <MethodBadge method="GET" />
-                    <code className="text-foreground font-mono text-lg">/api/user/balance</code>
+                    <code className="text-foreground font-mono text-lg">/api/v1/integration/balance</code>
                   </div>
                   
                   <h3 className="text-lg font-semibold text-foreground mb-4">Resposta</h3>
@@ -603,9 +603,13 @@ if ($data["success"]) {
   "success": true,
   "data": {
     "balance": 1500.50,
-    "pending": 250.00,
-    "available": 1250.50,
-    "currency": "BRL"
+    "kyc_status": "approved",
+    "statistics": {
+      "completed_transactions": 128,
+      "pending_transactions": 4,
+      "total_received": 8450.00,
+      "total_fees": 320.50
+    }
   }
 }`}
                     id="balance-response"
@@ -615,9 +619,9 @@ if ($data["success"]) {
                   <div className="mt-6 space-y-2">
                     <h4 className="text-sm font-semibold text-foreground">Campos da Resposta</h4>
                     {[
-                      { name: "balance", desc: "Saldo total da conta" },
-                      { name: "pending", desc: "Valor em transacoes pendentes" },
-                      { name: "available", desc: "Saldo disponivel para saque" },
+                      { name: "balance", desc: "Saldo disponivel na conta" },
+                      { name: "kyc_status", desc: "Status da verificacao KYC" },
+                      { name: "statistics", desc: "Estatisticas das transacoes recebidas" },
                     ].map((field) => (
                       <div key={field.name} className="flex items-center gap-4 p-3 bg-secondary/50 rounded-xl">
                         <code className="text-primary text-sm font-mono">{field.name}</code>
@@ -649,7 +653,7 @@ if ($data["success"]) {
                 <div className="bg-card border border-border rounded-2xl p-6">
                   <div className="flex items-center gap-3 mb-4">
                     <MethodBadge method="POST" />
-                    <code className="text-foreground font-mono text-lg">/api/pix/create</code>
+                    <code className="text-foreground font-mono text-lg">/api/v1/integration/pix</code>
                   </div>
                   
                   <h3 className="text-lg font-semibold text-foreground mb-4">Criar Cobranca</h3>
@@ -658,10 +662,10 @@ if ($data["success"]) {
                     <h4 className="text-sm font-semibold text-foreground mb-3">Parametros</h4>
                     <div className="space-y-2">
                       {[
-                        { name: "amount", type: "number", required: true, desc: "Valor da cobranca em reais (ex: 100.00)" },
+                        { name: "amount", type: "number", required: true, desc: "Valor da cobranca em reais (min 1,00 max 50.000,00)" },
                         { name: "description", type: "string", required: false, desc: "Descricao da cobranca" },
-                        { name: "expiration", type: "number", required: false, desc: "Tempo de expiracao em minutos (padrao: 30)" },
-                        { name: "external_id", type: "string", required: false, desc: "ID externo para sua referencia" },
+                        { name: "external_id", type: "string", required: false, desc: "ID externo para sua referencia/conciliacao" },
+                        { name: "payer", type: "object", required: false, desc: "Dados do pagador: { name, document, email }" },
                       ].map((param) => (
                         <div key={param.name} className="flex items-start gap-4 p-3 bg-secondary/50 rounded-xl">
                           <div className="flex items-center gap-2 flex-shrink-0">
@@ -679,12 +683,14 @@ if ($data["success"]) {
 
                   <h4 className="text-sm font-semibold text-foreground mb-3">Exemplo</h4>
                   <CodeBlock
-                    code={`curl -X POST "${baseUrl}/api/pix/create" \\
+                    code={`curl -X POST "${baseUrl}/api/v1/integration/pix" \\
+  -H "Authorization: Basic <base64(client_id:client_secret)>" \\
   -H "Content-Type: application/json" \\
   -d '{
     "amount": 150.00,
     "description": "Pedido #12345",
-    "expiration": 60
+    "external_id": "pedido_12345",
+    "payer": { "name": "Maria Silva", "document": "12345678900" }
   }'`}
                     id="charge-create"
                     language="bash"
@@ -695,14 +701,19 @@ if ($data["success"]) {
                     code={`{
   "success": true,
   "data": {
-    "id": "chr_abc123def456",
+    "transaction_id": "a1b2c3d4-...",
+    "external_id": "pedido_12345",
     "amount": 150.00,
-    "description": "Pedido #12345",
-    "status": "active",
-    "qr_code_base64": "data:image/png;base64,iVBORw0KGgo...",
-    "copy_paste": "00020126580014br.gov.bcb.pix...",
-    "expiration": "2024-01-15T11:00:00Z",
-    "created_at": "2024-01-15T10:00:00Z"
+    "fee": 6.00,
+    "net_amount": 144.00,
+    "status": "pending",
+    "pix": {
+      "qr_code": "00020126580014br.gov.bcb.pix...",
+      "qr_code_base64": "data:image/png;base64,iVBORw0KGgo...",
+      "copy_paste": "00020126580014br.gov.bcb.pix..."
+    },
+    "expires_at": "2025-01-15T11:00:00Z",
+    "created_at": "2025-01-15T10:00:00Z"
   }
 }`}
                     id="charge-response"
@@ -714,19 +725,19 @@ if ($data["success"]) {
                 <div className="bg-card border border-border rounded-2xl p-6">
                   <div className="flex items-center gap-3 mb-4">
                     <MethodBadge method="GET" />
-                    <code className="text-foreground font-mono text-lg">/api/pix/status?id=:id</code>
+                    <code className="text-foreground font-mono text-lg">/api/v1/integration/pix?transaction_id=:id</code>
                   </div>
                   
                   <h3 className="text-lg font-semibold text-foreground mb-4">Consultar Cobranca</h3>
                   <p className="text-muted-foreground mb-4">
-                    Consulte o status e detalhes de uma cobranca pelo ID.
+                    Consulte o status e detalhes de uma cobranca. Informe <code className="text-primary">transaction_id</code> OU <code className="text-primary">external_id</code> como query.
                   </p>
 
                   <h4 className="text-sm font-semibold text-foreground mb-3">Status Possiveis</h4>
                   <div className="grid gap-2 sm:grid-cols-2">
                     {[
-                      { status: "active", color: "text-blue-400", desc: "Aguardando pagamento" },
-                      { status: "paid", color: "text-green-400", desc: "Pagamento confirmado" },
+                      { status: "pending", color: "text-blue-400", desc: "Aguardando pagamento" },
+                      { status: "completed", color: "text-green-400", desc: "Pagamento confirmado" },
                       { status: "expired", color: "text-yellow-400", desc: "Cobranca expirada" },
                       { status: "cancelled", color: "text-red-400", desc: "Cobranca cancelada" },
                     ].map((item) => (
@@ -742,7 +753,7 @@ if ($data["success"]) {
                 <div className="bg-card border border-border rounded-2xl p-6">
                   <div className="flex items-center gap-3 mb-4">
                     <MethodBadge method="GET" />
-                    <code className="text-foreground font-mono text-lg">/api/transactions</code>
+                    <code className="text-foreground font-mono text-lg">/api/v1/integration/transactions</code>
                   </div>
                   
                   <h3 className="text-lg font-semibold text-foreground mb-4">Listar Cobrancas</h3>
@@ -751,9 +762,10 @@ if ($data["success"]) {
                     <h4 className="text-sm font-semibold text-foreground mb-3">Query Parameters</h4>
                     <div className="space-y-2">
                       {[
-                        { name: "status", desc: "Filtrar por status (active, paid, expired, cancelled)" },
-                        { name: "limit", desc: "Limite de resultados (padrao: 20, max: 100)" },
+                        { name: "status", desc: "Filtrar por status (pending, completed, expired, cancelled)" },
+                        { name: "limit", desc: "Limite de resultados (padrao: 50, max: 100)" },
                         { name: "offset", desc: "Offset para paginacao" },
+                        { name: "start_date / end_date", desc: "Periodo em ISO 8601 (opcional)" },
                       ].map((param) => (
                         <div key={param.name} className="flex items-center gap-4 p-3 bg-secondary/50 rounded-xl">
                           <code className="text-primary text-sm font-mono">{param.name}</code>
@@ -785,19 +797,20 @@ if ($data["success"]) {
                 <div className="bg-card border border-border rounded-2xl p-6">
                   <div className="flex items-center gap-3 mb-4">
                     <MethodBadge method="POST" />
-                    <code className="text-foreground font-mono text-lg">/api/withdrawals/create</code>
+                    <code className="text-foreground font-mono text-lg">/api/v1/integration/withdrawal</code>
                   </div>
                   
-                  <h3 className="text-lg font-semibold text-foreground mb-4">Enviar PIX</h3>
+                  <h3 className="text-lg font-semibold text-foreground mb-4">Realizar Saque PIX</h3>
                   
                   <div className="mb-6">
                     <h4 className="text-sm font-semibold text-foreground mb-3">Parametros</h4>
                     <div className="space-y-2">
                       {[
-                        { name: "amount", type: "number", required: true, desc: "Valor da transferencia em reais" },
+                        { name: "amount", type: "number", required: true, desc: "Valor do saque em reais (minimo 10,00)" },
                         { name: "pix_key", type: "string", required: true, desc: "Chave PIX de destino" },
                         { name: "pix_key_type", type: "string", required: true, desc: "cpf, cnpj, email, phone ou random" },
-                        { name: "description", type: "string", required: false, desc: "Descricao da transferencia" },
+                        { name: "external_id", type: "string", required: false, desc: "Seu identificador unico para o saque" },
+                        { name: "description", type: "string", required: false, desc: "Descricao do saque" },
                       ].map((param) => (
                         <div key={param.name} className="flex items-start gap-4 p-3 bg-secondary/50 rounded-xl">
                           <div className="flex items-center gap-2 flex-shrink-0">
@@ -815,13 +828,14 @@ if ($data["success"]) {
 
                   <h4 className="text-sm font-semibold text-foreground mb-3">Exemplo</h4>
                   <CodeBlock
-                    code={`curl -X POST "${baseUrl}/v1/pix/transfer" \\
-  -H "Authorization: Bearer lp_sua_api_key" \\
+                    code={`curl -X POST "${baseUrl}/api/v1/integration/withdrawal" \\
+  -H "Authorization: Basic <base64(client_id:client_secret)>" \\
   -H "Content-Type: application/json" \\
   -d '{
     "amount": 100.00,
     "pix_key": "email@exemplo.com",
     "pix_key_type": "email",
+    "external_id": "saque_123",
     "description": "Pagamento fornecedor"
   }'`}
                     id="transfer-create"
@@ -833,13 +847,15 @@ if ($data["success"]) {
                     code={`{
   "success": true,
   "data": {
-    "id": "txn_xyz789abc123",
+    "withdrawal_id": "wd_a1b2c3d4-...",
+    "external_id": "saque_123",
     "amount": 100.00,
-    "fee": 1.75,
-    "net_amount": 98.25,
-    "status": "completed",
+    "fee": 2.00,
+    "net_amount": 100.00,
     "pix_key": "email@exemplo.com",
-    "created_at": "2024-01-15T10:30:00Z"
+    "pix_key_type": "email",
+    "status": "processing",
+    "created_at": "2025-01-15T10:30:00Z"
   }
 }`}
                     id="transfer-response"
@@ -891,8 +907,8 @@ if ($data["success"]) {
                       { event: "charge.paid", desc: "Cobranca foi paga" },
                       { event: "charge.expired", desc: "Cobranca expirou" },
                       { event: "charge.cancelled", desc: "Cobranca foi cancelada" },
-                      { event: "transfer.completed", desc: "Transferencia concluida" },
-                      { event: "transfer.failed", desc: "Transferencia falhou" },
+                      { event: "withdrawal.completed", desc: "Saque concluido" },
+                      { event: "withdrawal.failed", desc: "Saque falhou" },
                     ].map((item) => (
                       <div key={item.event} className="flex items-center gap-4 p-3 bg-secondary/50 rounded-xl">
                         <code className="text-primary text-sm font-mono">{item.event}</code>
@@ -927,25 +943,25 @@ if ($data["success"]) {
                 <div className="bg-card border border-border rounded-2xl p-6">
                   <h2 className="text-xl font-semibold text-foreground mb-4">Verificacao de Assinatura</h2>
                   <p className="text-muted-foreground mb-4">
-                    Valide a assinatura HMAC-SHA256 do header <code className="text-primary">X-Webhook-Signature</code> usando sua API Key.
+                    Valide a assinatura HMAC-SHA256 do header <code className="text-primary">X-Webhook-Signature</code> usando seu Webhook Secret. A assinatura e o hash em hexadecimal.
                   </p>
                   <CodeBlock
                     code={`const crypto = require('crypto');
 
-function verifyWebhook(payload, signature, apiKey) {
+function verifyWebhook(payload, signature, webhookSecret) {
   const expected = crypto
-    .createHmac('sha256', apiKey)
+    .createHmac('sha256', webhookSecret)
     .update(JSON.stringify(payload))
     .digest('hex');
   
-  return signature === 'sha256=' + expected;
+  return signature === expected;
 }
 
 // Exemplo de uso no Express
 app.post('/webhook', (req, res) => {
   const signature = req.headers['x-webhook-signature'];
   
-  if (!verifyWebhook(req.body, signature, 'lp_sua_api_key')) {
+  if (!verifyWebhook(req.body, signature, 'whsec_seu_webhook_secret')) {
     return res.status(401).json({ error: 'Assinatura invalida' });
   }
   
@@ -956,7 +972,7 @@ app.post('/webhook', (req, res) => {
     case 'charge.paid':
       // Liberar produto/servico
       break;
-    case 'transfer.completed':
+    case 'withdrawal.completed':
       // Atualizar status interno
       break;
   }
@@ -1253,40 +1269,46 @@ const fullIntegrationPrompt = `Preciso integrar a API de pagamentos PIX da Hyper
 ## Informacoes da API
 
 **URL Base:** https://app.hyperionpay.com.br
-**Autenticacao:** Bearer Token no header Authorization
-**Minha API Key:** SUA_API_KEY (substitua pela sua chave real)
+**Autenticacao:** Basic Auth com Client ID e Client Secret (gere em Dashboard > Integracao).
+Envie de uma destas duas formas em TODAS as requisicoes:
+- Header "Authorization: Basic <base64(client_id:client_secret)>", ou
+- Headers separados "x-client-id: SEU_CLIENT_ID" e "x-client-secret: SEU_CLIENT_SECRET"
+Requisito: KYC aprovado e conta ativa. Valores (amount) sempre em reais (R$).
 
 ## Endpoints Disponiveis
 
 ### 1. Consultar Saldo
-- GET /v1/balance
-- Retorna: { balance, pending, available }
+- GET /api/v1/integration/balance
+- Retorna: { balance, kyc_status, statistics }
 
 ### 2. Criar Cobranca PIX (QR Code)
-- POST /v1/pix/charge
-- Body: { amount: number, description?: string, expiration?: number, external_id?: string }
-- Retorna: { id, qr_code_base64, copy_paste, status, expiration }
+- POST /api/v1/integration/pix
+- Body: { amount: number, external_id?: string, description?: string, payer?: { name, document, email } }
+- Retorna: { transaction_id, external_id, amount, fee, net_amount, status, pix: { qr_code, qr_code_base64, copy_paste }, expires_at }
 
 ### 3. Consultar Cobranca
-- GET /v1/pix/charge/:id
-- Retorna detalhes da cobranca incluindo status (active, paid, expired, cancelled)
+- GET /api/v1/integration/pix?transaction_id=... OU ?external_id=...
+- Retorna detalhes da cobranca incluindo status (pending, completed, expired, cancelled)
 
 ### 4. Listar Cobrancas
-- GET /v1/pix/charge?status=paid&limit=20
-- Retorna array de cobrancas
+- GET /api/v1/integration/transactions?status=completed&limit=20&offset=0
+- Retorna: { transactions: [...], pagination: { total, limit, offset, has_more } }
 
-### 5. Enviar PIX (Transferencia)
-- POST /v1/pix/transfer
-- Body: { amount: number, pix_key: string, pix_key_type: "cpf"|"cnpj"|"email"|"phone"|"random", description?: string }
-- Retorna: { id, amount, fee, status }
+### 5. Realizar Saque PIX
+- POST /api/v1/integration/withdrawal
+- Body: { amount: number, pix_key: string, pix_key_type: "cpf"|"cnpj"|"email"|"phone"|"random", external_id?: string, description?: string }
+- Retorna: { withdrawal_id, amount, fee, net_amount, pix_key, status }
+- Saques de ate R$ 500,00 sao processados automaticamente. Minimo R$ 10,00.
 
-### 6. Configurar Webhook
-- POST /v1/webhook
-- Body: { url: string, events: string[] }
-- Eventos: charge.paid, charge.expired, transfer.completed, transfer.failed
+### 6. Consultar Saque
+- GET /api/v1/integration/withdrawal?withdrawal_id=... OU ?external_id=...
+
+### 7. Webhook de notificacoes
+- Configure a URL do webhook em Dashboard > Integracao.
+- A assinatura HMAC-SHA256 vem no header X-Webhook-Signature.
 
 ## Formato de Resposta
-Todas as respostas seguem: { success: boolean, data?: object, error?: { code, message } }
+Todas as respostas seguem: { success: boolean, data?: object, error?: string, code?: string }
 
 ## Taxas
 - Rota White (MisticPay): 0% + R$1,50 fixo | Saque: R$2,00
@@ -1295,7 +1317,7 @@ Todas as respostas seguem: { success: boolean, data?: object, error?: { code, me
 Por favor, crie uma integracao completa para meu projeto com:
 1. Funcao para criar cobrancas PIX com QR Code
 2. Funcao para consultar status de cobranca
-3. Funcao para enviar transferencias PIX
+3. Funcao para realizar saques PIX
 4. Endpoint de webhook para receber notificacoes
 5. Tratamento de erros adequado
 6. Tipagem TypeScript (se aplicavel)`;
@@ -1303,92 +1325,105 @@ Por favor, crie uma integracao completa para meu projeto com:
 const chargePrompt = `Preciso criar cobrancas PIX com QR Code usando a API Hyperion Pay.
 
 **URL Base:** https://app.hyperionpay.com.br
-**Minha API Key:** SUA_API_KEY
+**Credenciais:** CLIENT_ID e CLIENT_SECRET (gere em Dashboard > Integracao)
 
-**Endpoint:** POST /v1/pix/charge
-**Headers:** 
-- Authorization: Bearer SUA_API_KEY
+**Endpoint:** POST /api/v1/integration/pix
+**Headers:**
+- Authorization: Basic <base64(client_id:client_secret)>
+  (ou envie os headers "x-client-id" e "x-client-secret" separadamente)
 - Content-Type: application/json
 
 **Body:**
 {
-  "amount": 100.00,        // valor em reais (obrigatorio)
-  "description": "Pedido #123",  // descricao (opcional)
-  "expiration": 30,        // minutos ate expirar (opcional, padrao 30)
-  "external_id": "meu_id"  // seu ID interno (opcional)
+  "amount": 100.00,             // valor em reais (obrigatorio, min 1,00 max 50.000,00)
+  "description": "Pedido #123", // descricao (opcional)
+  "external_id": "meu_id",      // seu ID interno para conciliacao (opcional)
+  "payer": {                    // dados do pagador (opcional)
+    "name": "Joao Silva",
+    "document": "12345678900"
+  }
 }
 
 **Resposta de sucesso:**
 {
   "success": true,
   "data": {
-    "id": "chr_abc123",
+    "transaction_id": "a1b2c3d4-...",
+    "external_id": "meu_id",
     "amount": 100.00,
-    "status": "active",
-    "qr_code_base64": "data:image/png;base64,...",
-    "copy_paste": "00020126...",
-    "expiration": "2024-01-15T11:00:00Z"
+    "fee": 4.00,
+    "net_amount": 96.00,
+    "status": "pending",
+    "pix": {
+      "qr_code": "00020126...",
+      "qr_code_base64": "data:image/png;base64,...",
+      "copy_paste": "00020126..."
+    },
+    "expires_at": "2025-01-15T11:00:00Z"
   }
 }
 
 Crie uma funcao que:
 1. Receba valor e descricao
-2. Faca a requisicao para criar a cobranca
-3. Retorne o QR Code (base64) e codigo copia e cola
-4. Trate erros adequadamente`;
+2. Monte o header Authorization Basic com base64(client_id:client_secret)
+3. Faca a requisicao para criar a cobranca
+4. Retorne o QR Code (base64) e codigo copia e cola (pix.copy_paste)
+5. Trate erros adequadamente`;
 
 const webhookPrompt = `Preciso configurar um webhook para receber notificacoes de pagamento da Hyperion Pay.
 
 **URL Base:** https://app.hyperionpay.com.br
-**Minha API Key:** SUA_API_KEY
+**Configuracao:** Cadastre a URL do seu webhook em Dashboard > Integracao.
 
 **Eventos disponiveis:**
 - charge.paid - Cobranca foi paga
 - charge.expired - Cobranca expirou
 - charge.cancelled - Cobranca cancelada
-- transfer.completed - Transferencia concluida
-- transfer.failed - Transferencia falhou
+- withdrawal.completed - Saque concluido
+- withdrawal.failed - Saque falhou
 
 **Payload recebido no webhook:**
 {
   "event": "charge.paid",
-  "timestamp": "2024-01-15T10:30:00Z",
+  "timestamp": "2025-01-15T10:30:00Z",
   "data": {
-    "id": "chr_abc123",
-    "amount": 100.00,
-    "status": "paid",
-    "payer_name": "Joao Silva",
+    "transaction_id": "a1b2c3d4-...",
     "external_id": "meu_id_interno",
-    "paid_at": "2024-01-15T10:30:00Z"
+    "amount": 100.00,
+    "status": "completed",
+    "payer_name": "Joao Silva",
+    "paid_at": "2025-01-15T10:30:00Z"
   },
   "signature": "sha256=..."
 }
 
 **Verificacao de assinatura:**
-A assinatura HMAC-SHA256 esta no header X-Webhook-Signature.
-Calcule: sha256=HMAC-SHA256(payload_json, api_key)
+A assinatura HMAC-SHA256 vem no header X-Webhook-Signature.
+Calcule: sha256=HMAC-SHA256(payload_json, seu_client_secret) e compare com o header.
 
 Crie um endpoint webhook que:
 1. Receba as notificacoes POST
 2. Verifique a assinatura para seguranca
-3. Processe os eventos (charge.paid, etc)
+3. Processe os eventos (charge.paid, withdrawal.completed, etc)
 4. Retorne 200 OK para confirmar recebimento`;
 
-const transferPrompt = `Preciso enviar transferencias PIX automaticamente usando a API Hyperion Pay.
+const transferPrompt = `Preciso realizar saques PIX automaticamente usando a API Hyperion Pay.
 
 **URL Base:** https://app.hyperionpay.com.br
-**Minha API Key:** SUA_API_KEY
+**Credenciais:** CLIENT_ID e CLIENT_SECRET (gere em Dashboard > Integracao)
 
-**Endpoint:** POST /v1/pix/transfer
+**Endpoint:** POST /api/v1/integration/withdrawal
 **Headers:**
-- Authorization: Bearer SUA_API_KEY  
+- Authorization: Basic <base64(client_id:client_secret)>
+  (ou envie os headers "x-client-id" e "x-client-secret" separadamente)
 - Content-Type: application/json
 
 **Body:**
 {
-  "amount": 100.00,           // valor em reais (obrigatorio)
+  "amount": 100.00,           // valor em reais (obrigatorio, minimo 10,00)
   "pix_key": "email@ex.com",  // chave PIX destino (obrigatorio)
   "pix_key_type": "email",    // tipo: cpf, cnpj, email, phone, random (obrigatorio)
+  "external_id": "saque_123", // seu ID interno (opcional)
   "description": "Pagamento"  // descricao (opcional)
 }
 
@@ -1396,14 +1431,20 @@ const transferPrompt = `Preciso enviar transferencias PIX automaticamente usando
 {
   "success": true,
   "data": {
-    "id": "txn_xyz789",
+    "withdrawal_id": "wd_a1b2c3d4-...",
+    "external_id": "saque_123",
     "amount": 100.00,
-    "fee": 1.75,
-    "net_amount": 98.25,
-    "status": "completed",
-    "pix_key": "email@ex.com"
+    "fee": 2.00,
+    "net_amount": 100.00,
+    "pix_key": "email@ex.com",
+    "pix_key_type": "email",
+    "status": "processing"
   }
 }
+
+**Observacoes:**
+- Saques de ate R$ 500,00 sao processados automaticamente; acima disso passam por analise.
+- O valor + taxa e debitado do saldo disponivel.
 
 **Taxas:**
 - Rota White (MisticPay): 0% + R$1,50 fixo | Saque: R$2,00
@@ -1412,6 +1453,6 @@ const transferPrompt = `Preciso enviar transferencias PIX automaticamente usando
 Crie uma funcao que:
 1. Receba valor, chave PIX e tipo da chave
 2. Valide os parametros antes de enviar
-3. Faca a transferencia
+3. Realize o saque
 4. Retorne o resultado com a taxa cobrada
 5. Trate erros (saldo insuficiente, chave invalida, etc)`;
