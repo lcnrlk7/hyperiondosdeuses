@@ -2,6 +2,7 @@ import { sql } from "@/lib/db"
 import { getSession } from "@/lib/auth"
 import { NextResponse, NextRequest } from "next/server"
 import crypto from "crypto"
+import { sendMerchantWebhook } from "@/lib/merchant-webhook"
 
 // Testar webhook de uma integracao
 export async function POST(request: NextRequest) {
@@ -57,10 +58,11 @@ export async function POST(request: NextRequest) {
       webhookSecret = profile.webhook_secret
     }
 
-    // Criar payload de teste
-    const testPayload = {
+    // Enviar webhook de teste usando o mesmo formato/assinatura da producao
+    const result = await sendMerchantWebhook({
+      url: webhookUrl,
+      secret: webhookSecret,
       event: "payment.test",
-      timestamp: new Date().toISOString(),
       data: {
         id: "test_" + crypto.randomBytes(8).toString("hex"),
         external_id: "test_payment",
@@ -73,65 +75,21 @@ export async function POST(request: NextRequest) {
         paid_at: new Date().toISOString(),
         created_at: new Date().toISOString(),
       },
-    }
-
-    // Gerar assinatura
-    const signature = crypto
-      .createHmac("sha256", webhookSecret || "")
-      .update(JSON.stringify(testPayload))
-      .digest("hex")
-
-    // Enviar para o webhook
-    const startTime = Date.now()
-    let webhookResponse
-    let webhookError = null
-    let responseTime = 0
-    let responseStatus = 0
-    let responseBody = ""
-
-    try {
-      webhookResponse = await fetch(webhookUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Hyperion Pay-Signature": signature,
-          "X-Hyperion Pay-Event": "payment.test",
-          "X-Hyperion Pay-Timestamp": testPayload.timestamp,
-        },
-        body: JSON.stringify(testPayload),
-      })
-
-      responseTime = Date.now() - startTime
-      responseStatus = webhookResponse.status
-      
-      try {
-        responseBody = await webhookResponse.text()
-        if (responseBody.length > 500) {
-          responseBody = responseBody.substring(0, 500) + "..."
-        }
-      } catch {
-        responseBody = "[Nao foi possivel ler a resposta]"
-      }
-    } catch (error) {
-      responseTime = Date.now() - startTime
-      webhookError = error instanceof Error ? error.message : "Erro desconhecido"
-    }
-
-    const success = responseStatus >= 200 && responseStatus < 300
+    })
 
     return NextResponse.json({
-      success,
-      message: success 
-        ? "Webhook recebeu a requisicao com sucesso!" 
-        : webhookError ? `Erro: ${webhookError}` : `Webhook retornou status ${responseStatus}`,
+      success: result.ok,
+      message: result.ok
+        ? "Webhook recebeu a requisicao com sucesso!"
+        : result.error ? `Erro: ${result.error}` : `Webhook retornou status ${result.status}`,
       data: {
         webhook_url: webhookUrl,
-        response_time_ms: responseTime,
-        response_status: responseStatus || null,
-        response_body: responseBody || null,
-        error: webhookError,
-        test_payload: testPayload,
-        signature_header: "X-Hyperion Pay-Signature",
+        response_time_ms: result.responseTimeMs,
+        response_status: result.status || null,
+        response_body: result.responseBody || null,
+        error: result.error,
+        test_payload: result.payload,
+        signature_header: "X-Webhook-Signature",
       },
     })
   } catch (error) {

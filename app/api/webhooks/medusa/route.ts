@@ -7,6 +7,7 @@ import {
   notifyDeposit 
 } from "@/lib/notifications";
 import { logTransactionStatusUpdate, logWithdrawalStatusUpdate, logWebhookReceived } from "@/lib/discord-webhook";
+import { sendMerchantWebhook } from "@/lib/merchant-webhook";
   import { sendPixEventToUtmify } from "@/lib/utmify";
 
 /**
@@ -727,22 +728,19 @@ export async function POST(request: NextRequest) {
 
       if (userProfile.length > 0 && userProfile[0].webhook_url) {
         try {
-          const webhookPayload = {
-            event: "payment.completed",
-            transaction_id: transaction.id,
-            amount: Number(transaction.amount),
-            net_amount: netAmount,
-            status: "completed",
-            paid_at: paidAt || new Date().toISOString(),
-          };
-
-          const response = await fetch(userProfile[0].webhook_url, {
-            method: "POST",
-            headers: { 
-              "Content-Type": "application/json",
-              ...(userProfile[0].webhook_secret && { "X-Webhook-Secret": userProfile[0].webhook_secret })
+          const result = await sendMerchantWebhook({
+            url: userProfile[0].webhook_url,
+            secret: userProfile[0].webhook_secret,
+            event: "charge.paid",
+            data: {
+              transaction_id: transaction.id,
+              external_id: transaction.external_id ?? null,
+              amount: Number(transaction.amount),
+              net_amount: netAmount,
+              status: "completed",
+              payer_name: transaction.payer_name ?? null,
+              paid_at: paidAt || new Date().toISOString(),
             },
-            body: JSON.stringify(webhookPayload),
           });
 
           // Registrar log do webhook
@@ -753,9 +751,9 @@ export async function POST(request: NextRequest) {
               ${transaction.user_id},
               ${transaction.id},
               ${userProfile[0].webhook_url},
-              ${JSON.stringify(webhookPayload)},
-              ${response.status},
-              ${response.ok},
+              ${JSON.stringify(result.payload)},
+              ${result.status},
+              ${result.ok},
               NOW()
             )
           `;
