@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sql } from "@/lib/db";
 import webpush from "web-push";
+import { VAPID_PUBLIC_KEY } from "@/lib/vapid";
 
-// Configurar VAPID
-const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+// Configurar VAPID (chave publica de lib/vapid, privada do ambiente)
 const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY;
 
 if (VAPID_PUBLIC_KEY && VAPID_PRIVATE_KEY) {

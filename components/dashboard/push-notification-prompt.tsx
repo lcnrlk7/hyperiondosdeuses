@@ -4,8 +4,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Bell, X, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
-
-const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "";
+import { VAPID_PUBLIC_KEY } from "@/lib/vapid";
 
 interface PushNotificationPromptProps {
   userId: string;
