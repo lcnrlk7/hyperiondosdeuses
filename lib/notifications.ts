@@ -83,15 +83,14 @@ export async function notifyDeposit(userId: string, amount: number, description?
 /**
  * Notifica sobre uma cobranca PIX criada
  */
-export async function notifyPixCreated(userId: string, amount: number, externalId: string, payerName?: string): Promise<void> {
+export async function notifyPixCreated(userId: string, amount: number, externalId: string): Promise<void> {
   const formattedAmount = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(amount);
-  const payerPart = payerName && payerName.trim() ? ` para ${payerName.trim()}` : '';
   await createNotification({
     userId,
     title: "Cobranca PIX Gerada",
-    message: `Cobranca PIX de ${formattedAmount}${payerPart} gerada. Aguardando pagamento.`,
+    message: `Cobranca PIX de ${formattedAmount} gerada. Aguardando pagamento.`,
     type: "info",
-    pushData: { amount, payerName: payerName || null }
+    pushData: { amount }
   });
 }
 
@@ -101,11 +100,11 @@ export async function notifyPixCreated(userId: string, amount: number, externalI
 export async function notifyPixPaid(userId: string, grossAmount: number, netAmount: number, payerName?: string): Promise<void> {
   const formattedGross = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(grossAmount);
   const formattedNet = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(netAmount);
-  const payerPart = payerName && payerName.trim() ? `Pago por ${payerName.trim()} - ` : '';
+  const payerPart = payerName && payerName.trim() ? `de ${payerName.trim()} ` : '';
   await createNotification({
     userId,
-    title: "Pagamento Aprovado!",
-    message: `${payerPart}Bruto: ${formattedGross} | Liquido: ${formattedNet}`,
+    title: "Transferencia PIX recebida",
+    message: `Voce recebeu ${formattedGross} ${payerPart}| Liquido: ${formattedNet}`,
     type: "success",
     pushData: {
       grossAmount,

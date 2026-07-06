@@ -355,8 +355,8 @@ export async function POST(request: NextRequest) {
       status: "pending",
     });
 
-    // Notificar usuario que PIX foi criado (com nome do pagador quando informado)
-    notifyPixCreated(profile.id, amount, transactionId, payerName || undefined).catch(err => {
+    // Notificar usuario que PIX foi criado (sem nome, pois ainda nao foi pago)
+    notifyPixCreated(profile.id, amount, transactionId).catch(err => {
       console.error("[PIX Create] Erro ao enviar notificacao:", err);
     });
 

@@ -106,25 +106,21 @@ export async function sendPushNotification(
 export async function notifyNewTransaction(
   userId: string,
   amount: number,
-  transactionId: string,
-  payerName?: string
+  transactionId: string
 ): Promise<void> {
   const formattedAmount = new Intl.NumberFormat("pt-BR", {
     style: "currency",
     currency: "BRL",
   }).format(amount);
 
-  const payerPart = payerName && payerName.trim() ? ` para ${payerName.trim()}` : "";
-
   await sendPushNotification(userId, {
     title: "PIX Gerado!",
-    body: `Cobranca PIX de ${formattedAmount}${payerPart} gerada. Aguardando pagamento.`,
+    body: `Cobranca PIX de ${formattedAmount} gerada. Aguardando pagamento.`,
     tag: `transaction-${transactionId}`,
     data: {
       type: "new_transaction",
       transactionId,
       amount,
-      payerName: payerName || null,
       url: "/dashboard/transactions",
     },
     actions: [
@@ -156,11 +152,11 @@ export async function notifyTransactionApproved(
     currency: "BRL",
   }).format(netAmount);
 
-  const payerPart = payerName && payerName.trim() ? `Pago por ${payerName.trim()} - ` : "";
+  const payerPart = payerName && payerName.trim() ? `de ${payerName.trim()} ` : "";
 
   await sendPushNotification(userId, {
-    title: "Pagamento Aprovado!",
-    body: `${payerPart}Bruto: ${formattedGross} | Liquido: ${formattedNet}`,
+    title: "Transferencia PIX recebida",
+    body: `Voce recebeu ${formattedGross} ${payerPart}| Liquido: ${formattedNet}`,
     tag: `transaction-approved-${transactionId}`,
     data: {
       type: "transaction_approved",

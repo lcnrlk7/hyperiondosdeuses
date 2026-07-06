@@ -176,7 +176,7 @@ export async function POST(request: NextRequest) {
     
     if (userId) {
       try {
-        const pushResult = await notifyNewTransaction(userId, amount, transaction.id, payer?.name || undefined);
+        const pushResult = await notifyNewTransaction(userId, amount, transaction.id);
         console.log("[v0] Push notification result:", pushResult);
       } catch (err) {
         console.error("[v0] Error sending push notification:", err);
