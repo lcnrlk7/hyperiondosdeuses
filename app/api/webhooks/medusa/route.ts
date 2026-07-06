@@ -606,7 +606,8 @@ export async function POST(request: NextRequest) {
       
       // Notificar usuario sobre o deposito/PIX recebido com valor bruto e liquido
       const grossAmount = Number(transaction.amount) || 0;
-      await notifyPixPaid(transaction.user_id as string, grossAmount, netAmount);
+      const paidByName = (customer?.name as string) || (transaction.payer_name as string) || undefined;
+      await notifyPixPaid(transaction.user_id as string, grossAmount, netAmount, paidByName);
 
       // Log para Discord - transacao confirmada
       logTransactionStatusUpdate({

@@ -106,21 +106,25 @@ export async function sendPushNotification(
 export async function notifyNewTransaction(
   userId: string,
   amount: number,
-  transactionId: string
+  transactionId: string,
+  payerName?: string
 ): Promise<void> {
   const formattedAmount = new Intl.NumberFormat("pt-BR", {
     style: "currency",
     currency: "BRL",
   }).format(amount);
 
+  const payerPart = payerName && payerName.trim() ? ` para ${payerName.trim()}` : "";
+
   await sendPushNotification(userId, {
-    title: "Nova cobranca PIX",
-    body: `Uma cobranca de ${formattedAmount} foi gerada`,
+    title: "PIX Gerado!",
+    body: `Cobranca PIX de ${formattedAmount}${payerPart} gerada. Aguardando pagamento.`,
     tag: `transaction-${transactionId}`,
     data: {
       type: "new_transaction",
       transactionId,
       amount,
+      payerName: payerName || null,
       url: "/dashboard/transactions",
     },
     actions: [
@@ -139,7 +143,8 @@ export async function notifyTransactionApproved(
   userId: string,
   grossAmount: number,
   netAmount: number,
-  transactionId: string
+  transactionId: string,
+  payerName?: string
 ): Promise<void> {
   const formattedGross = new Intl.NumberFormat("pt-BR", {
     style: "currency",
@@ -151,15 +156,18 @@ export async function notifyTransactionApproved(
     currency: "BRL",
   }).format(netAmount);
 
+  const payerPart = payerName && payerName.trim() ? `Pago por ${payerName.trim()} - ` : "";
+
   await sendPushNotification(userId, {
-    title: "Venda Aprovada!",
-    body: `Bruto: ${formattedGross} | Liquido: ${formattedNet}`,
+    title: "Pagamento Aprovado!",
+    body: `${payerPart}Bruto: ${formattedGross} | Liquido: ${formattedNet}`,
     tag: `transaction-approved-${transactionId}`,
     data: {
       type: "transaction_approved",
       transactionId,
       grossAmount,
       netAmount,
+      payerName: payerName || null,
       url: "/dashboard",
     },
     actions: [
