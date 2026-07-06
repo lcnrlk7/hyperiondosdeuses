@@ -93,6 +93,8 @@ export function SettingsContent() {
   const [emailFrequency, setEmailFrequency] = useState<"daily" | "weekly">("daily");
   const [pushSupported, setPushSupported] = useState(false);
   const [pushPermission, setPushPermission] = useState<NotificationPermission>("default");
+  // iOS so permite push com o app instalado na tela inicial (modo standalone)
+  const [iosNeedsInstall, setIosNeedsInstall] = useState(false);
   const [notificationLoading, setNotificationLoading] = useState(false);
   const [notificationTestLoading, setNotificationTestLoading] = useState<string | null>(null);
   const [notificationMessage, setNotificationMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
@@ -106,10 +108,33 @@ export function SettingsContent() {
   }, []);
 
   async function checkPushSupport() {
-    if (typeof window !== "undefined" && "serviceWorker" in navigator && "PushManager" in window) {
+    if (typeof window === "undefined") return;
+
+    // Detecta iOS/iPadOS (inclui iPad que se identifica como Mac com touch)
+    const ua = window.navigator.userAgent;
+    const isIOS =
+      /iphone|ipad|ipod/i.test(ua) ||
+      (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+
+    // App rodando instalado na tela inicial (standalone)?
+    const isStandalone =
+      window.matchMedia("(display-mode: standalone)").matches ||
+      // Safari iOS usa a flag proprietaria navigator.standalone
+      (window.navigator as Navigator & { standalone?: boolean }).standalone === true;
+
+    const hasPushApis = "serviceWorker" in navigator && "PushManager" in window;
+
+    // No iOS, as APIs de push so existem quando o app esta instalado (standalone).
+    // Se for iOS fora do standalone, orientamos a instalar antes de ativar.
+    if (isIOS && !isStandalone) {
+      setIosNeedsInstall(true);
+      setPushSupported(false);
+      return;
+    }
+
+    if (hasPushApis) {
       setPushSupported(true);
-      const permission = Notification.permission;
-      setPushPermission(permission);
+      setPushPermission(Notification.permission);
     }
   }
 
@@ -394,12 +419,31 @@ export function SettingsContent() {
     
     try {
       if (enabled) {
+        // Verificacoes de suporte antes de tentar ativar (evita erro generico no celular)
+        if (!("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) {
+          if (iosNeedsInstall) {
+            setNotificationMessage({
+              type: "error",
+              text: "No iPhone/iPad, instale o app na tela inicial (Compartilhar > Adicionar a Tela de Inicio) e abra por la para ativar as notificacoes.",
+            });
+          } else {
+            setNotificationMessage({ type: "error", text: "Seu navegador nao suporta notificacoes push." });
+          }
+          setNotificationLoading(false);
+          return;
+        }
+
         // Pedir permissao e registrar service worker
         const permission = await Notification.requestPermission();
         setPushPermission(permission);
         
         if (permission !== "granted") {
-          setNotificationMessage({ type: "error", text: "Permissao de notificacao negada" });
+          setNotificationMessage({
+            type: "error",
+            text: permission === "denied"
+              ? "Permissao bloqueada. Habilite as notificacoes para este site nas configuracoes do navegador/celular."
+              : "Permissao de notificacao nao concedida. Tente novamente e toque em Permitir.",
+          });
           setNotificationLoading(false);
           return;
         }
@@ -427,7 +471,7 @@ export function SettingsContent() {
         const subJSON = subscription.toJSON();
 
         // Registrar na tabela push_subscriptions (usada para enviar os pushes)
-        await fetch("/api/push/subscribe", {
+        const subscribeRes = await fetch("/api/push/subscribe", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -436,6 +480,16 @@ export function SettingsContent() {
             auth: subJSON.keys?.auth,
           }),
         });
+
+        if (!subscribeRes.ok) {
+          const errData = await subscribeRes.json().catch(() => ({}));
+          setNotificationMessage({
+            type: "error",
+            text: errData.error || "Nao foi possivel registrar as notificacoes no servidor. Tente novamente.",
+          });
+          setNotificationLoading(false);
+          return;
+        }
 
         // Salvar preferencia (flag) no perfil
         await fetch("/api/user/notifications/settings", {
@@ -461,7 +515,18 @@ export function SettingsContent() {
       }
     } catch (err) {
       console.error("Erro ao configurar push:", err);
-      setNotificationMessage({ type: "error", text: "Erro ao configurar notificacoes" });
+      const error = err as { name?: string; message?: string };
+      let text = "Erro ao configurar notificacoes. Tente novamente.";
+
+      if (iosNeedsInstall || error.name === "NotAllowedError") {
+        text = "No iPhone/iPad, instale o app na tela inicial (Compartilhar > Adicionar a Tela de Inicio) e abra por la para ativar as notificacoes.";
+      } else if (error.name === "NotSupportedError") {
+        text = "Seu navegador ou dispositivo nao suporta notificacoes push.";
+      } else if (error.name === "AbortError") {
+        text = "O servico de push falhou. Verifique sua conexao e tente novamente.";
+      }
+
+      setNotificationMessage({ type: "error", text });
     } finally {
       setNotificationLoading(false);
     }
@@ -904,7 +969,17 @@ export function SettingsContent() {
               </Button>
             </div>
           </div>
-          {!pushSupported && (
+          {iosNeedsInstall && (
+            <div className="flex items-start gap-2 text-xs text-muted-foreground px-4">
+              <Smartphone className="w-4 h-4 flex-shrink-0 mt-0.5" />
+              <p>
+                No iPhone/iPad, as notificacoes so funcionam com o app instalado. Toque em{" "}
+                <span className="font-medium text-foreground">Compartilhar</span> e depois em{" "}
+                <span className="font-medium text-foreground">Adicionar a Tela de Inicio</span>, abra o app por la e ative as notificacoes.
+              </p>
+            </div>
+          )}
+          {!pushSupported && !iosNeedsInstall && (
             <p className="text-xs text-muted-foreground px-4">
               Seu navegador nao suporta notificacoes push.
             </p>
