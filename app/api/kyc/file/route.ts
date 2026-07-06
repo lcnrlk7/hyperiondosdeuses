@@ -5,7 +5,7 @@ import { jwtVerify } from 'jose'
 import { sql } from '@/lib/db'
 
 const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || 'your-secret-key-change-in-production'
+  process.env.JWT_SECRET || 'fallback-secret-change-in-production'
 )
 
 // Verificar se é membro da equipe interna

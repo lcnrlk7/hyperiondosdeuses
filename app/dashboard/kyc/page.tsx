@@ -1,193 +1,141 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
-import { 
-  FileCheck, 
-  Upload, 
-  CheckCircle2, 
-  Clock, 
+import {
+  ShieldCheck,
+  CheckCircle2,
+  Clock,
   XCircle,
-  AlertCircle,
+  ScanFace,
+  Loader2,
+  Zap,
+  Lock,
   Camera,
-  CreditCard,
-  Home
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 
-interface KYCDocument {
-  id: string;
-  document_type: string;
-  file_url: string;
-  file_name?: string;
-  status: string;
-  rejection_reason: string | null;
-  created_at: string;
-  viewUrl?: string;
-}
+type KycStatus =
+  | "not_started"
+  | "in_progress"
+  | "in_review"
+  | "resubmitted"
+  | "approved"
+  | "declined"
+  | "expired"
+  | "abandoned";
 
-const documentTypes = [
-  {
-    type: "document_front",
-    title: "Documento de Identidade (Frente)",
-    description: "RG, CNH ou Passaporte - foto da frente",
-    icon: CreditCard,
-  },
-  {
-    type: "document_back",
-    title: "Documento de Identidade (Verso)",
-    description: "RG, CNH ou Passaporte - foto do verso",
-    icon: CreditCard,
-  },
-  {
-    type: "address_proof",
-    title: "Comprovante de Endereço",
-    description: "Conta de luz, água ou telefone (últimos 3 meses)",
-    icon: Home,
-  },
-  {
-    type: "selfie",
-    title: "Selfie com Documento",
-    description: "Foto sua segurando o documento de identidade",
-    icon: Camera,
-  },
-];
+function KYCPageInner() {
+  const params = useSearchParams();
+  const justReturned = params.get("kyc") === "done";
 
-export default function KYCPage() {
-  const [documents, setDocuments] = useState<KYCDocument[]>([]);
-  const [kycStatus, setKycStatus] = useState<string>("pending");
-  const [uploading, setUploading] = useState<string | null>(null);
+  const [status, setStatus] = useState<KycStatus>("not_started");
   const [loading, setLoading] = useState(true);
+  const [starting, setStarting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadKYCData();
+  const loadStatus = useCallback(async () => {
+    try {
+      const res = await fetch("/api/verify/liveness");
+      const data = await res.json();
+      if (res.ok && data.status) {
+        setStatus(data.status as KycStatus);
+      }
+    } catch {
+      // silencioso — mantem o status atual
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  const loadKYCData = async () => {
-    try {
-      // Get session to check user
-      const sessionRes = await fetch('/api/auth/session');
-      const sessionData = await sessionRes.json();
-      
-      if (!sessionData.user) {
-        setLoading(false);
-        return;
+  useEffect(() => {
+    loadStatus();
+  }, [loadStatus]);
+
+  // Ao voltar da Didit, faz um polling curto ate o webhook atualizar o status.
+  useEffect(() => {
+    if (!justReturned) return;
+    let attempts = 0;
+    let stopped = false;
+    const tick = async () => {
+      if (stopped) return;
+      attempts++;
+      await loadStatus();
+      if (attempts < 12 && !stopped) {
+        setTimeout(tick, 3000);
       }
+    };
+    const id = setTimeout(tick, 2000);
+    return () => {
+      stopped = true;
+      clearTimeout(id);
+    };
+  }, [justReturned, loadStatus]);
 
-      // Get KYC documents and profile
-      const [docsRes, profileRes] = await Promise.all([
-        fetch('/api/kyc/documents'),
-        fetch('/api/user/profile')
-      ]);
-      
-      const docsData = await docsRes.json();
-      const profileData = await profileRes.json();
-
-      setDocuments(docsData.documents || []);
-      setKycStatus(profileData.profile?.kyc_status || "not_submitted");
-    } catch (error) {
-      console.error('Error loading KYC data:', error);
-    }
-    setLoading(false);
-  };
-
-  const getDocumentStatus = (type: string) => {
-    const doc = documents.find(d => d.document_type === type);
-    return doc ? doc.status : "not_submitted";
-  };
-
-  const getDocumentInfo = (type: string) => {
-    return documents.find(d => d.document_type === type);
-  };
-
-  const handleUpload = async (type: string, file: File) => {
-    setUploading(type);
-
+  const startVerification = async () => {
+    setStarting(true);
+    setError(null);
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('documentType', type);
-
-      const response = await fetch('/api/kyc/upload', {
-        method: 'POST',
-        body: formData,
+      const res = await fetch("/api/verify/liveness", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ returnPath: "/dashboard/kyc?kyc=done" }),
       });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        alert(result.error || 'Erro ao enviar documento');
+      const data = await res.json();
+      if (!res.ok || !data.url) {
+        setError(data.error || "Não foi possível iniciar a verificação. Tente novamente.");
+        setStarting(false);
         return;
       }
-
-      // Recarregar dados após upload bem sucedido
-      loadKYCData();
-    } catch (error) {
-      console.error('Erro no upload:', error);
-      alert('Erro ao enviar documento. Tente novamente.');
-    } finally {
-      setUploading(null);
+      // Redireciona para o fluxo hospedado da Didit
+      window.location.href = data.url;
+    } catch {
+      setError("Erro de conexão. Tente novamente.");
+      setStarting(false);
     }
   };
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case "approved":
-        return <CheckCircle2 className="w-5 h-5 text-green-500" />;
-      case "rejected":
-        return <XCircle className="w-5 h-5 text-red-500" />;
-      case "pending":
-        return <Clock className="w-5 h-5 text-yellow-500" />;
-      default:
-        return <AlertCircle className="w-5 h-5 text-muted-foreground" />;
-    }
-  };
+  const isApproved = status === "approved";
+  const isPending =
+    status === "in_progress" ||
+    status === "in_review" ||
+    status === "resubmitted" ||
+    justReturned;
+  const isRejected = status === "declined" || status === "expired" || status === "abandoned";
 
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case "approved":
-        return "Aprovado";
-      case "rejected":
-        return "Rejeitado";
-      case "pending":
-        return "Em análise";
-      default:
-        return "Não enviado";
+  const StatusBadge = () => {
+    if (isApproved) {
+      return (
+        <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-green-500/20 text-green-500">
+          <CheckCircle2 className="w-5 h-5" />
+          <span className="font-medium">Verificado</span>
+        </div>
+      );
     }
-  };
-
-  const getOverallStatusBadge = () => {
-    switch (kycStatus) {
-      case "approved":
-        return (
-          <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-green-500/20 text-green-500">
-            <CheckCircle2 className="w-5 h-5" />
-            <span className="font-medium">Verificado</span>
-          </div>
-        );
-      case "rejected":
-        return (
-          <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-red-500/20 text-red-500">
-            <XCircle className="w-5 h-5" />
-            <span className="font-medium">Rejeitado</span>
-          </div>
-        );
-      case "submitted":
-        return (
-          <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-yellow-500/20 text-yellow-500">
-            <Clock className="w-5 h-5" />
-            <span className="font-medium">Em Análise</span>
-          </div>
-        );
-      default:
-        return (
-          <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-muted text-muted-foreground">
-            <AlertCircle className="w-5 h-5" />
-            <span className="font-medium">Pendente</span>
-          </div>
-        );
+    if (isPending) {
+      return (
+        <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-yellow-500/20 text-yellow-500">
+          <Clock className="w-5 h-5" />
+          <span className="font-medium">Em análise</span>
+        </div>
+      );
     }
+    if (isRejected) {
+      return (
+        <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-red-500/20 text-red-500">
+          <XCircle className="w-5 h-5" />
+          <span className="font-medium">Não concluída</span>
+        </div>
+      );
+    }
+    return (
+      <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-muted text-muted-foreground">
+        <ShieldCheck className="w-5 h-5" />
+        <span className="font-medium">Pendente</span>
+      </div>
+    );
   };
 
   if (loading) {
@@ -198,26 +146,22 @@ export default function KYCPage() {
     );
   }
 
-  // Se KYC ja esta aprovado, mostrar apenas mensagem de sucesso
-  if (kycStatus === "approved") {
-    return (
-      <div className="space-y-8">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
-              Verificação KYC
-            </h1>
-            <p className="text-muted-foreground mt-1">
-              Sua conta está totalmente verificada
-            </p>
-          </div>
-          {getOverallStatusBadge()}
+  return (
+    <div className="space-y-8">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Verificação de Identidade</h1>
+          <p className="text-muted-foreground mt-1">
+            Verificação 100% automática e instantânea
+          </p>
         </div>
+        <StatusBadge />
+      </div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-        >
+      {/* Estado: Aprovado */}
+      {isApproved && (
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           <Card className="border-green-500/20 bg-green-500/5">
             <CardContent className="p-8">
               <div className="flex flex-col items-center text-center gap-4">
@@ -225,57 +169,10 @@ export default function KYCPage() {
                   <CheckCircle2 className="w-12 h-12 text-green-500" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold text-foreground mb-2">
-                    Verificação Concluída!
-                  </h3>
+                  <h3 className="text-xl font-bold text-foreground mb-2">Verificação Concluída!</h3>
                   <p className="text-muted-foreground max-w-md">
-                    Sua identidade foi verificada com sucesso. Você tem acesso completo 
-                    a todas as funcionalidades da Hyperion Pay, incluindo saques e transferências.
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-8">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
-            Verificação KYC
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            Complete sua verificação para desbloquear todos os recursos
-          </p>
-        </div>
-        {getOverallStatusBadge()}
-      </div>
-
-      {/* Info Card */}
-      {kycStatus !== "approved" && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-        >
-          <Card className="border-primary/20 bg-primary/5">
-            <CardContent className="p-6">
-              <div className="flex items-start gap-4">
-                <div className="p-3 rounded-xl bg-primary/20">
-                  <FileCheck className="w-6 h-6 text-primary" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-foreground mb-1">
-                    Por que preciso verificar minha identidade?
-                  </h3>
-                  <p className="text-muted-foreground text-sm">
-                    A verificação KYC é necessária para garantir a segurança da plataforma 
-                    e permitir saques. Após a aprovação, você terá acesso completo a todas 
-                    as funcionalidades.
+                    Sua identidade foi verificada com sucesso. Você tem acesso completo a todas as
+                    funcionalidades da Hyperion Pay, incluindo saques e transferências.
                   </p>
                 </div>
               </div>
@@ -284,152 +181,127 @@ export default function KYCPage() {
         </motion.div>
       )}
 
-      {/* Document Cards */}
-      <div className="grid gap-6">
-        {documentTypes.map((docType, index) => {
-          const status = getDocumentStatus(docType.type);
-          const docInfo = getDocumentInfo(docType.type);
-          const isUploading = uploading === docType.type;
+      {/* Estado: Em análise (aguardando webhook) */}
+      {!isApproved && isPending && (
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+          <Card className="border-yellow-500/20 bg-yellow-500/5">
+            <CardContent className="p-8">
+              <div className="flex flex-col items-center text-center gap-4">
+                <div className="p-4 rounded-full bg-yellow-500/20">
+                  <Loader2 className="w-12 h-12 text-yellow-500 animate-spin" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-foreground mb-2">Confirmando sua verificação</h3>
+                  <p className="text-muted-foreground max-w-md">
+                    Estamos processando sua verificação de identidade. Isso costuma levar apenas alguns
+                    segundos. Esta página atualiza automaticamente.
+                  </p>
+                </div>
+                <Button variant="outline" onClick={loadStatus}>
+                  Atualizar status
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      )}
 
-          return (
-            <motion.div
-              key={docType.type}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-            >
-              <Card className={status === "approved" ? "border-green-500/20" : ""}>
-                <CardContent className="p-6">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex items-start gap-4">
-                      <div className={`p-3 rounded-xl ${
-                        status === "approved" ? "bg-green-500/20" : "bg-muted"
-                      }`}>
-                        <docType.icon className={`w-6 h-6 ${
-                          status === "approved" ? "text-green-500" : "text-muted-foreground"
-                        }`} />
-                      </div>
-                      <div>
-                        <h3 className="font-semibold text-foreground">
-                          {docType.title}
-                        </h3>
-                        <p className="text-muted-foreground text-sm mt-1">
-                          {docType.description}
-                        </p>
-                        
-                        {docInfo?.rejection_reason && (
-                          <div className="mt-3 p-3 rounded-lg bg-red-500/10 border border-red-500/20">
-                            <p className="text-red-500 text-sm">
-                              <strong>Motivo da rejeição:</strong> {docInfo.rejection_reason}
-                            </p>
-                          </div>
-                        )}
-
-                        {/* Preview da imagem enviada */}
-                        {docInfo && docInfo.viewUrl && (
-                          <div className="mt-3">
-                            <a 
-                              href={docInfo.viewUrl} 
-                              target="_blank" 
-                              rel="noopener noreferrer"
-                              className="block"
-                            >
-                              <img 
-                                src={docInfo.viewUrl} 
-                                alt={docType.title}
-                                className="max-w-[200px] max-h-[150px] rounded-lg border border-border object-cover hover:opacity-80 transition-opacity"
-                                onError={(e) => {
-                                  (e.target as HTMLImageElement).style.display = 'none';
-                                }}
-                              />
-                            </a>
-                            <p className="text-xs text-muted-foreground mt-1">
-                              Clique para ver em tamanho completo
-                            </p>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-4">
-                      <div className="flex items-center gap-2">
-                        {getStatusIcon(status)}
-                        <span className={`text-sm font-medium ${
-                          status === "approved" ? "text-green-500" :
-                          status === "rejected" ? "text-red-500" :
-                          status === "pending" ? "text-yellow-500" :
-                          "text-muted-foreground"
-                        }`}>
-                          {getStatusText(status)}
-                        </span>
-                      </div>
-
-                      {(status === "not_submitted" || status === "rejected") && (
-                        <label className="cursor-pointer">
-                          <input
-                            type="file"
-                            accept="image/*,.pdf"
-                            className="hidden"
-                            onChange={(e) => {
-                              const file = e.target.files?.[0];
-                              if (file) handleUpload(docType.type, file);
-                            }}
-                            disabled={isUploading}
-                          />
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            disabled={isUploading}
-                            asChild
-                          >
-                            <span>
-                              {isUploading ? (
-                                <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                              ) : (
-                                <>
-                                  <Upload className="w-4 h-4 mr-2" />
-                                  Enviar
-                                </>
-                              )}
-                            </span>
-                          </Button>
-                        </label>
-                      )}
-                    </div>
+      {/* Estado: Não iniciado ou rejeitado -> iniciar verificacao */}
+      {!isApproved && !isPending && (
+        <>
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+            <Card className={isRejected ? "border-red-500/20 bg-red-500/5" : "border-primary/20 bg-primary/5"}>
+              <CardContent className="p-8">
+                <div className="flex flex-col items-center text-center gap-6">
+                  <div className={`p-4 rounded-full ${isRejected ? "bg-red-500/20" : "bg-primary/20"}`}>
+                    <ScanFace className={`w-12 h-12 ${isRejected ? "text-red-500" : "text-primary"}`} />
                   </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-foreground mb-2">
+                      {isRejected ? "Vamos tentar novamente" : "Verifique sua identidade"}
+                    </h3>
+                    <p className="text-muted-foreground max-w-lg text-pretty">
+                      {isRejected
+                        ? "Não conseguimos concluir sua verificação anterior. Refaça o processo com seu documento em mãos e boa iluminação."
+                        : "A verificação é feita de forma segura e automática. Você vai precisar do seu documento de identidade (RG, CNH ou Passaporte) e da câmera do seu dispositivo. Leva menos de 1 minuto."}
+                    </p>
+                  </div>
+
+                  {error && (
+                    <div className="w-full max-w-md p-3 rounded-lg bg-red-500/10 border border-red-500/20">
+                      <p className="text-red-500 text-sm">{error}</p>
+                    </div>
+                  )}
+
+                  <Button
+                    size="lg"
+                    onClick={startVerification}
+                    disabled={starting}
+                    className="bg-primary hover:bg-primary/90 text-primary-foreground min-w-[220px]"
+                  >
+                    {starting ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Iniciando...
+                      </>
+                    ) : (
+                      <>
+                        <ScanFace className="w-4 h-4 mr-2" />
+                        {isRejected ? "Refazer verificação" : "Iniciar verificação"}
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          {/* Como funciona */}
+          <div className="grid gap-4 sm:grid-cols-3">
+            {[
+              {
+                icon: Camera,
+                title: "Documento + Selfie",
+                desc: "Você fotografa seu documento e faz uma selfie para comprovar que é você.",
+              },
+              {
+                icon: Zap,
+                title: "Aprovação instantânea",
+                desc: "A análise é automática e o resultado sai em segundos, sem espera manual.",
+              },
+              {
+                icon: Lock,
+                title: "Seguro e criptografado",
+                desc: "Seus dados são processados com segurança pelo nosso parceiro de verificação.",
+              },
+            ].map((item) => (
+              <Card key={item.title}>
+                <CardContent className="p-6">
+                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center mb-3">
+                    <item.icon className="w-5 h-5 text-primary" />
+                  </div>
+                  <h4 className="font-semibold text-foreground mb-1">{item.title}</h4>
+                  <p className="text-sm text-muted-foreground">{item.desc}</p>
                 </CardContent>
               </Card>
-            </motion.div>
-          );
-        })}
-      </div>
-
-      {/* Help Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Dúvidas frequentes</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <h4 className="font-medium text-foreground">Quais documentos são aceitos?</h4>
-            <p className="text-muted-foreground text-sm mt-1">
-              RG, CNH, Passaporte, Conta de luz, água, telefone ou internet.
-            </p>
+            ))}
           </div>
-          <div>
-            <h4 className="font-medium text-foreground">Quanto tempo leva a análise?</h4>
-            <p className="text-muted-foreground text-sm mt-1">
-              A análise é feita em até 24 horas úteis após o envio de todos os documentos.
-            </p>
-          </div>
-          <div>
-            <h4 className="font-medium text-foreground">O que acontece se meu documento for rejeitado?</h4>
-            <p className="text-muted-foreground text-sm mt-1">
-              Você receberá o motivo da rejeição e poderá enviar novamente um documento válido.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+        </>
+      )}
     </div>
+  );
+}
+
+export default function KYCPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+        </div>
+      }
+    >
+      <KYCPageInner />
+    </Suspense>
   );
 }

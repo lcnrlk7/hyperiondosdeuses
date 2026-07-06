@@ -34,8 +34,27 @@ export async function verifyAdmin(): Promise<AdminSession | null> {
     if (teamToken?.value) {
       try {
         const { payload } = await jwtVerify(teamToken.value, JWT_SECRET);
-        
-        // Verificar se o membro ainda esta ativo no banco - busca em admin_team + profiles
+
+        // O login da equipe (/api/auth/team/login) emite o token com o id da
+        // tabela team_members. Verificamos primeiro nela.
+        const memberCheck = await sql`
+          SELECT id, email, name, role, is_active
+          FROM team_members
+          WHERE id = ${payload.id as string} AND is_active = true
+          AND LOWER(role) IN ('ceo', 'admin', 'superadmin', 'manager', 'finance', 'attendant', 'support', 'tech')
+        `;
+
+        if (memberCheck.length > 0) {
+          return {
+            userId: memberCheck[0].id,
+            email: memberCheck[0].email,
+            name: memberCheck[0].name,
+            isAdmin: true,
+            isTeamMember: true
+          };
+        }
+
+        // Compatibilidade: tokens emitidos pelo sistema admin_team (+ profiles).
         const teamCheck = await sql`
           SELECT at.id as team_id, at.user_id, p.email, p.name, at.role, at.is_active
           FROM admin_team at

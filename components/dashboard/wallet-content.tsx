@@ -206,7 +206,7 @@ export function WalletContent() {
     }
   };
 
-  const handleWithdraw = async (amount: number, pixKey: string, pixKeyType: string) => {
+  const handleWithdraw = async (amount: number, pixKey: string, pixKeyType: string, faceChallengeId?: string) => {
     if (!amount || amount <= 0 || !pixKey) {
       setError("Preencha todos os campos");
       return;
@@ -240,10 +240,44 @@ export function WalletContent() {
           amount: amount,
           pixKey: pixKey,
           pixKeyType: pixKeyType,
+          faceChallengeId: faceChallengeId,
         }),
       });
 
       const data = await response.json();
+
+      // SEGURANCA: saque exige verificacao facial (Didit). Inicia o fluxo.
+      if (response.status === 403 && data.requiresFaceAuth) {
+        try {
+          const chRes = await fetch("/api/verify/face-challenge", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ purpose: "withdrawal" }),
+          });
+          const chData = await chRes.json();
+          if (chRes.ok && chData.url) {
+            sessionStorage.setItem(
+              "face_withdraw",
+              JSON.stringify({
+                amount,
+                pixKey,
+                pixKeyType,
+                returnTo: window.location.pathname,
+              }),
+            );
+            window.location.href = chData.url;
+            return;
+          }
+          setError("Nao foi possivel iniciar a verificacao facial.");
+        } catch {
+          setError("Nao foi possivel iniciar a verificacao facial.");
+        }
+        setLoading(false);
+        return;
+      }
 
       if (!response.ok) {
         const code = data.code || "SAQUE-ERR";
@@ -273,6 +307,35 @@ export function WalletContent() {
       setLoading(false);
     }
   };
+
+  // Retoma o saque automaticamente apos a verificacao facial aprovada.
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    const faceChallenge = url.searchParams.get("faceChallenge");
+    if (!faceChallenge) return;
+
+    const raw = sessionStorage.getItem("face_withdraw");
+    // Limpa o parametro da URL para evitar reenvio em refresh.
+    url.searchParams.delete("faceChallenge");
+    window.history.replaceState({}, "", url.toString());
+
+    if (raw) {
+      try {
+        const pending = JSON.parse(raw);
+        sessionStorage.removeItem("face_withdraw");
+        setWithdrawDialogOpen(true);
+        handleWithdraw(
+          pending.amount,
+          pending.pixKey,
+          pending.pixKeyType,
+          faceChallenge,
+        );
+      } catch {
+        // ignora dados invalidos
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const copyToClipboard = async (text: string) => {
     await navigator.clipboard.writeText(text);

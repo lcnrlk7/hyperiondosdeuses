@@ -3,7 +3,11 @@ import { sql } from "@/lib/db";
 
 // Configurar VAPID keys (você precisa gerar essas chaves)
 // Para gerar: npx web-push generate-vapid-keys
-const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "";
+// Chave publica NAO e secreta (vai ao navegador). Fica fixa como padrao do projeto.
+// A chave PRIVADA e secreta e deve vir SEMPRE da variavel de ambiente VAPID_PRIVATE_KEY.
+const VAPID_PUBLIC_KEY =
+  process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ||
+  "BDdXqzuofQqXUg2BS_JouTkhzzZZf4NG96GINkHv_i2x8WvI40WhmYHlCKwCOuBdRx3dSxmt8a5H-a24hsU9Uws";
 const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY || "";
 const VAPID_SUBJECT = process.env.VAPID_SUBJECT || "mailto:contato@hyperionpay.com.br";
 
@@ -85,10 +89,10 @@ export async function sendPushNotification(
       console.error("[v0] Push notification failed:", error);
       failed++;
 
-      // Se a subscription expirou ou é inválida, remover
-      if (error.statusCode === 410 || error.statusCode === 404) {
+      // Remover se expirada (404/410) ou com chave VAPID incompativel (403).
+      if (error.statusCode === 410 || error.statusCode === 404 || error.statusCode === 403) {
         await sql`DELETE FROM push_subscriptions WHERE id = ${sub.id}`;
-        console.log("[v0] Removed expired subscription:", sub.id);
+        console.log("[v0] Removed invalid subscription:", sub.id);
       }
     }
   }
@@ -110,8 +114,8 @@ export async function notifyNewTransaction(
   }).format(amount);
 
   await sendPushNotification(userId, {
-    title: "Nova cobranca PIX",
-    body: `Uma cobranca de ${formattedAmount} foi gerada`,
+    title: "PIX Gerado!",
+    body: `Cobranca PIX de ${formattedAmount} gerada. Aguardando pagamento.`,
     tag: `transaction-${transactionId}`,
     data: {
       type: "new_transaction",
@@ -135,7 +139,8 @@ export async function notifyTransactionApproved(
   userId: string,
   grossAmount: number,
   netAmount: number,
-  transactionId: string
+  transactionId: string,
+  payerName?: string
 ): Promise<void> {
   const formattedGross = new Intl.NumberFormat("pt-BR", {
     style: "currency",
@@ -147,15 +152,18 @@ export async function notifyTransactionApproved(
     currency: "BRL",
   }).format(netAmount);
 
+  const payerPart = payerName && payerName.trim() ? `de ${payerName.trim()} ` : "";
+
   await sendPushNotification(userId, {
-    title: "Venda Aprovada!",
-    body: `Bruto: ${formattedGross} | Liquido: ${formattedNet}`,
+    title: "Transferencia PIX recebida",
+    body: `Voce recebeu ${formattedGross} ${payerPart}| Liquido: ${formattedNet}`,
     tag: `transaction-approved-${transactionId}`,
     data: {
       type: "transaction_approved",
       transactionId,
       grossAmount,
       netAmount,
+      payerName: payerName || null,
       url: "/dashboard",
     },
     actions: [
@@ -285,15 +293,12 @@ export async function sendPushToAllUsers(
     return { success: false, sent: 0, failed: 0 };
   }
 
-  // Buscar todas as subscriptions ativas da coluna push_subscription em profiles
-  const users = await sql`
-    SELECT id, push_subscription 
-    FROM profiles 
-    WHERE notifications_push = true 
-    AND push_subscription IS NOT NULL
+  // Buscar TODAS as subscriptions registradas (mesma tabela usada no envio por usuario).
+  const subscriptions = await sql`
+    SELECT id, endpoint, p256dh, auth FROM push_subscriptions
   `;
 
-  if (!users || users.length === 0) {
+  if (!subscriptions || subscriptions.length === 0) {
     return { success: false, sent: 0, failed: 0 };
   }
 
@@ -309,21 +314,14 @@ export async function sendPushToAllUsers(
   let sent = 0;
   let failed = 0;
 
-  for (const user of users) {
+  for (const sub of subscriptions) {
     try {
-      const sub = user.push_subscription as { endpoint: string; keys: { p256dh: string; auth: string } };
-      
-      if (!sub || !sub.endpoint || !sub.keys) {
-        failed++;
-        continue;
-      }
-
       await webpush.sendNotification(
         {
           endpoint: sub.endpoint,
           keys: {
-            p256dh: sub.keys.p256dh,
-            auth: sub.keys.auth,
+            p256dh: sub.p256dh,
+            auth: sub.auth,
           },
         },
         notificationPayload
@@ -332,9 +330,9 @@ export async function sendPushToAllUsers(
     } catch (err: unknown) {
       const error = err as { statusCode?: number };
       failed++;
-      // Se subscription expirou, limpar do profile
-      if (error.statusCode === 410 || error.statusCode === 404) {
-        await sql`UPDATE profiles SET push_subscription = NULL, notifications_push = false WHERE id = ${user.id}`;
+      // Remover subscriptions invalidas: expirada (404/410) ou chave VAPID incompativel (403).
+      if (error.statusCode === 410 || error.statusCode === 404 || error.statusCode === 403) {
+        await sql`DELETE FROM push_subscriptions WHERE id = ${sub.id}`;
       }
     }
   }

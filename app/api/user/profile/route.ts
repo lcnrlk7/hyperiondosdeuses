@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
     }
 
     const result = await sql`
-      SELECT id, name, email, phone, cpf_cnpj as cpf, kyc_status, created_at, route_type, api_key, avatar_url, bio
+      SELECT id, name, email, phone, cpf_cnpj as cpf, kyc_status, created_at, route_type, api_key, avatar_url, bio, liveness_status, liveness_verified_at
       FROM profiles
       WHERE id = ${user.id}
     `;
@@ -53,6 +53,8 @@ export async function GET(request: NextRequest) {
         api_key: profile.api_key,
         avatar_url: profile.avatar_url,
         bio: profile.bio,
+        liveness_status: profile.liveness_status || "not_started",
+        liveness_verified_at: profile.liveness_verified_at,
       },
     });
   } catch (error) {

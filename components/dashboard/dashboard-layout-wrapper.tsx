@@ -7,13 +7,13 @@ import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { DashboardSidebar } from "@/components/dashboard/sidebar";
 import { DashboardHeader } from "@/components/dashboard/header";
-import { KYCBlocker } from "@/components/dashboard/kyc-blocker";
+import { LivenessBlocker } from "@/components/dashboard/liveness-blocker";
 import { NotificationListener } from "@/components/notification-listener";
 import { MobileBottomNav } from "@/components/dashboard/mobile-bottom-nav";
 
 function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
   const { user, token, isLoading: authLoading } = useAuth();
-  const { profile, isLoading: profileLoading } = useProfile();
+  const { profile, isLoading: profileLoading, refreshProfile } = useProfile();
   const router = useRouter();
   const [hasRedirected, setHasRedirected] = useState(false);
 
@@ -45,12 +45,16 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
     email: user.email,
   };
 
-  const kycStatus = profile?.kyc_status || "pending";
-  const isKYCApproved = kycStatus === "approved";
+  // Verificacao obrigatoria de prova de vida (Didit). Quando aprovada, o KYC e
+  // liberado automaticamente, entao a prova de vida e o unico portao de acesso.
+  const livenessStatus = (profile?.liveness_status as string) || "not_started";
+  const isVerified = livenessStatus === "approved";
 
   return (
     <div className="min-h-screen bg-background flex overflow-x-hidden">
-      {!isKYCApproved && <KYCBlocker kycStatus={kycStatus} />}
+      {!isVerified && (
+        <LivenessBlocker livenessStatus={livenessStatus} onRefresh={refreshProfile} />
+      )}
       <NotificationListener userId={user.id} />
       <DashboardSidebar user={userForComponents} profile={profile} />
       <div className="flex-1 flex flex-col min-w-0 pt-14 lg:pt-0 lg:ml-[var(--sidebar-width,256px)] transition-all duration-300">

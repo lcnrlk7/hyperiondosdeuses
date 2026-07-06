@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
             VALUES (${crypto.randomUUID()}, ${transaction.user_id}, ${'Pagamento Recebido!'}, ${`Você recebeu R$ ${transaction.net_amount.toFixed(2)} via PIX.`}, ${'success'}, NOW())
           `;
 
-          await notifyTransactionApproved(transaction.user_id, Number(transaction.amount), Number(transaction.net_amount), transaction.id);
+          await notifyTransactionApproved(transaction.user_id, Number(transaction.amount), Number(transaction.net_amount), transaction.id, data.payer?.name || undefined);
           
           // Notificar no Telegram
           const fee = Number(transaction.amount) - Number(transaction.net_amount);

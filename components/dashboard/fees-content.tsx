@@ -1,18 +1,20 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import { motion } from "framer-motion";
 import {
   Percent,
   ArrowDownLeft,
   ArrowUpRight,
   Info,
-  TrendingDown,
   DollarSign,
   TrendingUp,
   Calendar,
   Building2,
-  Check,
+  ShieldCheck,
+  Lock,
+  Sparkles,
 } from "lucide-react";
 
 interface UserFees {
@@ -36,25 +38,13 @@ interface UserFees {
   total_volume: number;
 }
 
-const ROUTE_DESCRIPTIONS = {
-  black: "Taxa percentual em depositos + taxa fixa em saques",
-  white: "Taxa reduzida com valor fixo adicional",
-};
-
 export function FeesContent() {
   const [fees, setFees] = useState<UserFees | null>(null);
   const [loading, setLoading] = useState(true);
-  const [selectedRoute, setSelectedRoute] = useState<"black" | "white">("black");
 
   useEffect(() => {
     loadFees();
   }, []);
-
-  useEffect(() => {
-    if (fees?.route_type) {
-      setSelectedRoute(fees.route_type as "black" | "white");
-    }
-  }, [fees]);
 
   async function loadFees() {
     try {
@@ -91,8 +81,79 @@ export function FeesContent() {
     );
   }
 
+  const depositFee = 100 * (fees?.pix_percentage_fee || 0) / 100 + (fees?.pix_fixed_fee || 0);
+
   return (
     <div className="space-y-4 sm:space-y-6">
+      {/* Banner Hyperion Pay */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="relative w-full overflow-hidden rounded-xl sm:rounded-2xl border border-blue-500/20"
+      >
+        <Image
+          src="/banner-hyperion-taxas.png"
+          alt="Hyperion Pay - 100% sem MED, multiaquirência e benefícios exclusivos"
+          width={2200}
+          height={330}
+          priority
+          className="w-full h-auto"
+        />
+      </motion.div>
+
+      {/* Mensagens sem MED */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="p-4 sm:p-5 rounded-xl sm:rounded-2xl bg-gradient-to-br from-blue-500/15 to-blue-600/5 border border-blue-500/20"
+        >
+          <div className="flex items-center gap-2 sm:gap-3 mb-2">
+            <div className="p-1.5 sm:p-2 rounded-lg sm:rounded-xl bg-blue-500/20">
+              <ShieldCheck className="w-4 h-4 sm:w-5 sm:h-5 text-blue-400" />
+            </div>
+            <span className="text-sm font-semibold text-white">100% sem MED</span>
+          </div>
+          <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+            Rota totalmente sem MED. Deixa que a gente cuida disso por você.
+          </p>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="p-4 sm:p-5 rounded-xl sm:rounded-2xl bg-gradient-to-br from-green-500/15 to-green-600/5 border border-green-500/20"
+        >
+          <div className="flex items-center gap-2 sm:gap-3 mb-2">
+            <div className="p-1.5 sm:p-2 rounded-lg sm:rounded-xl bg-green-500/20">
+              <Lock className="w-4 h-4 sm:w-5 sm:h-5 text-green-400" />
+            </div>
+            <span className="text-sm font-semibold text-white">Saldo nunca bloqueado</span>
+          </div>
+          <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+            Seu saldo nunca é bloqueado. Você opera com total tranquilidade.
+          </p>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="p-4 sm:p-5 rounded-xl sm:rounded-2xl bg-gradient-to-br from-cyan-500/15 to-cyan-600/5 border border-cyan-500/20"
+        >
+          <div className="flex items-center gap-2 sm:gap-3 mb-2">
+            <div className="p-1.5 sm:p-2 rounded-lg sm:rounded-xl bg-cyan-500/20">
+              <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-cyan-400" />
+            </div>
+            <span className="text-sm font-semibold text-white">Multiaquirência</span>
+          </div>
+          <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+            Mais estabilidade nas suas transações e benefícios exclusivos.
+          </p>
+        </motion.div>
+      </div>
+
       {/* Resumo de Taxas Pagas */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
         <motion.div
@@ -146,113 +207,38 @@ export function FeesContent() {
         </motion.div>
       </div>
 
-      {/* Seletor de Rotas */}
+      {/* Sua Taxa */}
       <div>
-        <h2 className="text-lg font-semibold text-foreground mb-4">Taxas por Rota</h2>
-        <div className="flex gap-3 mb-6">
-          <button
-            onClick={() => setSelectedRoute("black")}
-            className={`flex-1 p-4 rounded-xl border-2 transition-all ${
-              selectedRoute === "black"
-                ? "border-indigo-500 bg-indigo-500/10"
-                : "border-border bg-card hover:border-indigo-500/50"
-            }`}
-          >
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-indigo-500" />
-                <span className="font-bold text-indigo-500">ROTA BLACK</span>
-              </div>
-              {selectedRoute === "black" && (
-                <Check className="w-5 h-5 text-indigo-500" />
-              )}
-            </div>
-            <p className="text-sm text-muted-foreground text-left">
-              {ROUTE_DESCRIPTIONS.black}
-            </p>
-          </button>
-
-          <button
-            onClick={() => setSelectedRoute("white")}
-            className={`flex-1 p-4 rounded-xl border-2 transition-all ${
-              selectedRoute === "white"
-                ? "border-zinc-400 bg-zinc-500/10"
-                : "border-border bg-card hover:border-zinc-400/50"
-            }`}
-          >
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-zinc-400" />
-                <span className="font-bold text-zinc-400">ROTA WHITE</span>
-              </div>
-              {selectedRoute === "white" && (
-                <Check className="w-5 h-5 text-zinc-400" />
-              )}
-            </div>
-            <p className="text-sm text-muted-foreground text-left">
-              {ROUTE_DESCRIPTIONS.white}
-            </p>
-          </button>
-        </div>
-
-        {/* Cards de Taxas da Rota Selecionada */}
-        <motion.div
-          key={selectedRoute}
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="grid grid-cols-2 md:grid-cols-4 gap-4"
-        >
-          <div className={`p-5 rounded-xl border ${
-            selectedRoute === "black" 
-              ? "bg-indigo-500/5 border-indigo-500/20" 
-              : "bg-zinc-500/5 border-zinc-500/20"
-          }`}>
+        <h2 className="text-lg font-semibold text-foreground mb-4">Sua Taxa</h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="p-5 rounded-xl bg-blue-500/5 border border-blue-500/20">
             <div className="flex items-center gap-3 mb-3">
-              <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                selectedRoute === "black" ? "bg-indigo-500/20" : "bg-zinc-500/20"
-              }`}>
-                <ArrowDownLeft className={`w-5 h-5 ${
-                  selectedRoute === "black" ? "text-indigo-500" : "text-zinc-400"
-                }`} />
+              <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-blue-500/20">
+                <ArrowDownLeft className="w-5 h-5 text-blue-400" />
               </div>
               <span className="text-sm text-muted-foreground">Taxa Deposito</span>
             </div>
-            <p className={`text-2xl font-bold ${
-              selectedRoute === "black" ? "text-indigo-500" : "text-zinc-400"
-            }`}>
+            <p className="text-2xl font-bold text-blue-400">
               {formatPercent(fees?.pix_percentage_fee || 0)}
             </p>
             {(fees?.pix_fixed_fee || 0) > 0 && (
-              <p className={`text-lg font-semibold ${
-                selectedRoute === "black" ? "text-indigo-400" : "text-zinc-500"
-              }`}>
+              <p className="text-lg font-semibold text-blue-300">
                 + {formatCurrency(fees?.pix_fixed_fee || 0)}
               </p>
             )}
           </div>
 
-          <div className={`p-5 rounded-xl border ${
-            selectedRoute === "black" 
-              ? "bg-indigo-500/5 border-indigo-500/20" 
-              : "bg-zinc-500/5 border-zinc-500/20"
-          }`}>
+          <div className="p-5 rounded-xl bg-blue-500/5 border border-blue-500/20">
             <div className="flex items-center gap-3 mb-3">
-              <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                selectedRoute === "black" ? "bg-indigo-500/20" : "bg-zinc-500/20"
-              }`}>
-                <ArrowUpRight className={`w-5 h-5 ${
-                  selectedRoute === "black" ? "text-indigo-500" : "text-zinc-400"
-                }`} />
+              <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-blue-500/20">
+                <ArrowUpRight className="w-5 h-5 text-blue-400" />
               </div>
               <span className="text-sm text-muted-foreground">Taxa Saque</span>
             </div>
-            <p className={`text-2xl font-bold ${
-              selectedRoute === "black" ? "text-indigo-500" : "text-zinc-400"
-            }`}>
-              {fees?.withdrawal_fee_is_percentage 
+            <p className="text-2xl font-bold text-blue-400">
+              {fees?.withdrawal_fee_is_percentage
                 ? formatPercent(fees?.withdrawal_fee || 0)
-                : formatCurrency(fees?.withdrawal_fee || 0)
-              }
+                : formatCurrency(fees?.withdrawal_fee || 0)}
             </p>
           </div>
 
@@ -279,27 +265,30 @@ export function FeesContent() {
               {formatCurrency(fees?.per_withdrawal_limit || fees?.max_withdrawal || 10000)}
             </p>
           </div>
-        </motion.div>
+        </div>
       </div>
 
-      {/* Alerta de rota atual */}
+      {/* Resumo da taxa atual */}
       {fees && (
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className={`flex items-center gap-3 p-4 rounded-xl ${
-            fees.route_type === 'black'
-              ? 'bg-indigo-500/10 border border-indigo-500/20'
-              : 'bg-zinc-500/10 border border-zinc-500/20'
-          }`}
+          className="flex items-center gap-3 p-4 rounded-xl bg-blue-500/10 border border-blue-500/20"
         >
-          <TrendingDown className={`w-5 h-5 flex-shrink-0 ${
-            fees.route_type === 'black' ? 'text-indigo-500' : 'text-zinc-400'
-          }`} />
-          <p className={`text-sm ${fees.route_type === 'black' ? 'text-indigo-400' : 'text-zinc-400'}`}>
-            Voce esta na rota <strong>{fees.route_type?.toUpperCase() || 'BLACK'}</strong> - 
-            Taxa de <strong>{fees.pix_percentage_fee}%{fees.pix_fixed_fee > 0 ? ` + R$${fees.pix_fixed_fee.toFixed(2)}` : ''}</strong> em depositos e{' '}
-            <strong>{fees.withdrawal_fee_is_percentage ? `${fees.withdrawal_fee}%` : `R$${fees.withdrawal_fee.toFixed(2)}`}</strong> em saques
+          <ShieldCheck className="w-5 h-5 flex-shrink-0 text-blue-400" />
+          <p className="text-sm text-blue-300">
+            Sua taxa é de{" "}
+            <strong>
+              {fees.pix_percentage_fee}%
+              {fees.pix_fixed_fee > 0 ? ` + R$${fees.pix_fixed_fee.toFixed(2)}` : ""}
+            </strong>{" "}
+            em depositos e{" "}
+            <strong>
+              {fees.withdrawal_fee_is_percentage
+                ? `${fees.withdrawal_fee}%`
+                : `R$${fees.withdrawal_fee.toFixed(2)}`}
+            </strong>{" "}
+            em saques — <strong>100% sem MED</strong>.
           </p>
         </motion.div>
       )}
@@ -345,8 +334,8 @@ export function FeesContent() {
           className="p-6 rounded-xl bg-card border border-border"
         >
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 rounded-lg bg-indigo-500/10 flex items-center justify-center">
-              <ArrowUpRight className="w-5 h-5 text-indigo-500" />
+            <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
+              <ArrowUpRight className="w-5 h-5 text-blue-400" />
             </div>
             <div>
               <h3 className="font-semibold text-foreground">Saques (PIX Out)</h3>
@@ -374,7 +363,6 @@ export function FeesContent() {
       {/* Exemplo de Calculo */}
       {fees && (
         <motion.div
-          key={`calc-${selectedRoute}`}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5 }}
@@ -385,8 +373,8 @@ export function FeesContent() {
               <Percent className="w-6 h-6 text-purple-500" />
             </div>
             <div>
-              <h3 className="font-semibold text-foreground">Exemplo de Calculo - Sua Rota</h3>
-              <p className="text-sm text-muted-foreground">Veja como as taxas sao aplicadas</p>
+              <h3 className="font-semibold text-foreground">Exemplo de Calculo</h3>
+              <p className="text-sm text-muted-foreground">Veja como a taxa e aplicada</p>
             </div>
           </div>
 
@@ -401,13 +389,13 @@ export function FeesContent() {
                 {fees.pix_fixed_fee > 0 && ` + ${formatCurrency(fees.pix_fixed_fee)}`})
               </span>
               <span className="font-semibold text-red-400">
-                - {formatCurrency(100 * fees.pix_percentage_fee / 100 + fees.pix_fixed_fee)}
+                - {formatCurrency(depositFee)}
               </span>
             </div>
             <div className="flex justify-between items-center pt-1">
               <span className="font-semibold text-foreground">Valor liquido</span>
               <span className="font-bold text-green-400 text-lg">
-                {formatCurrency(100 - (100 * fees.pix_percentage_fee / 100) - fees.pix_fixed_fee)}
+                {formatCurrency(100 - depositFee)}
               </span>
             </div>
           </div>
@@ -428,11 +416,11 @@ export function FeesContent() {
               <strong className="text-foreground">Como funcionam as taxas?</strong>
             </p>
             <ul className="list-disc list-inside space-y-1 ml-2">
-              <li><strong>Rota BLACK:</strong> Taxa percentual em depositos + taxa fixa em saques (R$)</li>
-              <li><strong>Rota WHITE:</strong> Taxa percentual + taxa fixa em depositos</li>
-              <li>A taxa de deposito e descontada automaticamente do valor recebido</li>
-              <li>A taxa de saque e descontada do valor sacado</li>
-              <li>Entre em contato com o suporte para mais informacoes</li>
+              <li>Rota <strong>100% sem MED</strong> — deixa que a gente cuida disso.</li>
+              <li>Seu saldo <strong>nunca é bloqueado</strong>.</li>
+              <li>A taxa de deposito e descontada automaticamente do valor recebido.</li>
+              <li>A taxa de saque e descontada do valor sacado.</li>
+              <li>Entre em contato com o suporte para mais informacoes.</li>
             </ul>
           </div>
         </div>

@@ -234,8 +234,12 @@ export async function middleware(request: NextRequest) {
     return response
   }
   
-  // Ignorar webhooks do Telegram e PIX do bot (nao precisa de auth)
-  if (pathname.startsWith('/api/telegram') || pathname.startsWith('/api/webhooks/telegram-pix')) {
+  // Ignorar webhooks do Telegram, PIX do bot e Didit (nao precisa de auth)
+  if (
+    pathname.startsWith('/api/telegram') ||
+    pathname.startsWith('/api/webhooks/telegram-pix') ||
+    pathname.startsWith('/api/webhooks/didit')
+  ) {
     return NextResponse.next()
   }
   

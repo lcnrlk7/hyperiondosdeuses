@@ -12,7 +12,8 @@ import { validateWithdrawal, getClientIP, logSuspiciousActivity, rateLimit, isVa
 import { logWithdrawalRequest } from "@/lib/discord-webhook";
 import { detectAttack } from "@/lib/sanitize";
 import { logAttack } from "@/lib/attack-logger";
-import { notifyWithdrawalRequested } from "@/lib/notifications";
+  import { notifyWithdrawalRequested } from "@/lib/notifications";
+  import { consumeApprovedChallenge } from "@/lib/face-auth";
 
 export async function POST(request: NextRequest) {
   try {
@@ -38,7 +39,23 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { amount, pixKey, pixKeyType } = body;
+    const { amount, pixKey, pixKeyType, faceChallengeId } = body;
+
+    // SEGURANCA: Exige verificacao facial (Didit) aprovada para liberar o saque.
+    const faceOk = await consumeApprovedChallenge({
+      userId: sessionUser.id,
+      purpose: "withdrawal",
+      challengeId: faceChallengeId,
+    });
+    if (!faceOk) {
+      return NextResponse.json(
+        {
+          error: "Verificacao facial necessaria para confirmar o saque.",
+          requiresFaceAuth: true,
+        },
+        { status: 403 },
+      );
+    }
 
     // SEGURANCA: Verificar ataques na chave PIX
     const attack = detectAttack(pixKey || "");
@@ -170,10 +187,11 @@ export async function POST(request: NextRequest) {
 
     // Buscar saldo, KYC e status de bloqueio diretamente do banco
     const profileResult = await sql`
-      SELECT balance, kyc_status, is_blocked, is_active, created_at FROM profiles WHERE id = ${sessionUser.id}
+      SELECT balance, kyc_status, liveness_status, is_blocked, is_active, created_at FROM profiles WHERE id = ${sessionUser.id}
     `;
     const currentBalance = Number(profileResult[0]?.balance) || 0;
     const currentKycStatus = profileResult[0]?.kyc_status;
+    const currentLivenessStatus = profileResult[0]?.liveness_status;
     const isBlocked = profileResult[0]?.is_blocked;
     const isActive = profileResult[0]?.is_active;
     const createdAt = profileResult[0]?.created_at;
@@ -208,6 +226,15 @@ export async function POST(request: NextRequest) {
     if (currentKycStatus !== "approved") {
       return NextResponse.json(
         { error: "KYC não aprovado. Complete a verificação para sacar." },
+        { status: 403 }
+      );
+    }
+
+    // OBRIGATORIO: verificacao de identidade (prova de vida) pela Didit.
+    // Sem ela, o usuario nao pode movimentar dinheiro, mesmo com KYC legado.
+    if (currentLivenessStatus !== "approved") {
+      return NextResponse.json(
+        { error: "Verificação de identidade obrigatória. Conclua a verificação de prova de vida para sacar." },
         { status: 403 }
       );
     }

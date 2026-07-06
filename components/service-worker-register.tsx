@@ -3,7 +3,12 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/components/auth-provider";
 
-const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "";
+// Chave VAPID publica (nao e secreta - vai para o navegador de qualquer forma).
+// Usamos a env se existir; senao caimos no valor padrao do projeto.
+const DEFAULT_VAPID_PUBLIC_KEY =
+  "BDdXqzuofQqXUg2BS_JouTkhzzZZf4NG96GINkHv_i2x8WvI40WhmYHlCKwCOuBdRx3dSxmt8a5H-a24hsU9Uws";
+const VAPID_PUBLIC_KEY =
+  process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || DEFAULT_VAPID_PUBLIC_KEY;
 
 function urlBase64ToUint8Array(base64String: string): Uint8Array<ArrayBuffer> {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
@@ -71,6 +76,26 @@ export function ServiceWorkerRegister() {
 
         // Verificar se já tem uma subscription
         let subscription = await registration.pushManager.getSubscription();
+
+        // Se a subscription existente foi criada com OUTRA chave VAPID
+        // (ex.: chave de demonstracao antiga), ela e inutilizavel pelo servidor.
+        // Nesse caso, cancelamos e criamos uma nova com a chave correta.
+        if (subscription) {
+          const currentKey = subscription.options?.applicationServerKey;
+          const expectedKey = urlBase64ToUint8Array(VAPID_PUBLIC_KEY);
+          const keysMatch =
+            currentKey &&
+            new Uint8Array(currentKey as ArrayBuffer).toString() ===
+              expectedKey.toString();
+          if (!keysMatch) {
+            try {
+              await subscription.unsubscribe();
+            } catch {
+              /* ignora erro ao cancelar */
+            }
+            subscription = null;
+          }
+        }
 
         if (!subscription && VAPID_PUBLIC_KEY) {
           // Criar nova subscription

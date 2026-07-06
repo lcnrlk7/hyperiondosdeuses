@@ -7,7 +7,8 @@ import {
   notifyDeposit 
 } from "@/lib/notifications";
 import { logTransactionStatusUpdate, logWithdrawalStatusUpdate, logWebhookReceived } from "@/lib/discord-webhook";
-import { sendPixEventToUtmify } from "@/lib/utmify";
+import { sendMerchantWebhook } from "@/lib/merchant-webhook";
+  import { sendPixEventToUtmify } from "@/lib/utmify";
 
 /**
  * Webhook para receber notificações da Medusa Payments
@@ -33,12 +34,19 @@ import { sendPixEventToUtmify } from "@/lib/utmify";
  * - cancelled: Operação encerrada sem sucesso
  */
 const MEDUSA_STATUS_MAP: Record<string, string> = {
-  // Status de transferência/saque
+  // Status de transferência/saque (formato TRANSFER_UPDATE - legado)
   "LIQUIDATED": "completed",
   "liquidated": "completed",
   "PENDING": "pending",
   "FAILED": "failed",
   "CANCELLED": "failed",
+
+  // Status de transferência/saque (formato oficial "withdraw")
+  "COMPLETED": "completed",
+  "PROCESSING": "pending",
+  "REFUSED": "failed",
+  "PENDING_ANALYSIS": "pending",
+  "PENDING_QUEUE": "pending",
   
   // Status de pagamento
   waiting_payment: "pending",
@@ -165,6 +173,11 @@ async function handleTransferUpdate(payload: MedusaTransferUpdatePayload) {
   const internalStatus = MEDUSA_STATUS_MAP[status] || status.toLowerCase();
   console.log(`[Medusa Webhook] Status mapeado: ${status} -> ${internalStatus}`);
 
+  // O correlation_id so pode ser comparado com w.id (coluna UUID) se for um UUID valido,
+  // senao o Postgres lanca "invalid input syntax for type uuid".
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  const correlationUuid = uuidRegex.test(String(correlation_id)) ? String(correlation_id) : null;
+
   // Buscar saque pelo correlation_id (nosso ID de referencia) ou pelo acquirer_withdrawal_id
   const withdrawals = await sql`
     SELECT w.id, w.user_id, w.amount, w.fee, w.net_amount, w.status, w.pix_key,
@@ -172,8 +185,8 @@ async function handleTransferUpdate(payload: MedusaTransferUpdatePayload) {
     FROM withdrawals w
     LEFT JOIN profiles p ON w.user_id = p.id
     WHERE w.acquirer_withdrawal_id = ${String(id_transaction)}
-       OR w.acquirer_withdrawal_id = ${correlation_id}
-       OR w.id = ${correlation_id}
+       OR w.acquirer_withdrawal_id = ${String(correlation_id)}
+       OR w.id = ${correlationUuid}
   `;
 
   if (withdrawals.length === 0) {
@@ -322,17 +335,60 @@ export async function POST(request: NextRequest) {
     const rawBody = await request.text();
     console.log("[Medusa Webhook] Raw body recebido:", rawBody);
     
-    const payload = JSON.parse(rawBody);
+    let payload = JSON.parse(rawBody);
 
     console.log("[Medusa Webhook] Payload parseado:", JSON.stringify(payload, null, 2));
 
-    // Detectar formato TRANSFER_UPDATE (formato novo de saques)
+    // FORMATO OFICIAL MEDUSA (postback): { type, objectId, data: { ... } }
+    // - type "transaction" = venda/deposito (PIX In)
+    // - type "withdraw"    = transferencia/saque (PIX Out)
+    // Todos os dados relevantes ficam ANINHADOS em "data". Aqui normalizamos.
+    if (payload && typeof payload.data === "object" && payload.data !== null) {
+      const d = payload.data;
+
+      // Saque no formato oficial -> converter para o formato TRANSFER_UPDATE ja tratado.
+      if (payload.type === "withdraw") {
+        const normalizedTransfer: MedusaTransferUpdatePayload = {
+          version: "v1",
+          event: "TRANSFER_UPDATE",
+          object: "Transfer",
+          date: d.updatedAt || d.transferredAt || d.processedAt || new Date().toISOString(),
+          transfer: {
+            id_transaction: d.id,
+            correlation_id: d.externalRef || String(d.id),
+            status: d.status,
+            value: d.amount,
+            end_to_end: d.pixEnd2EndId || "",
+          },
+          destination: {
+            name: "",
+            document: d.pixKey || "",
+            pix_key: d.pixKey || "",
+            bank: { name: "", ispb: "" },
+          },
+        };
+        console.log("[Medusa Webhook] Formato oficial 'withdraw' detectado. Normalizando.");
+        return await handleTransferUpdate(normalizedTransfer);
+      }
+
+      // Venda/deposito no formato oficial -> achatar "data" para o nivel raiz,
+      // pois o restante do handler le id/status/customer/paidAt na raiz.
+      if (payload.type === "transaction" || d.paymentMethod || d.pix) {
+        console.log("[Medusa Webhook] Formato oficial 'transaction' detectado. Achatando 'data'.");
+        payload = {
+          ...d,
+          objectId: payload.objectId,
+        };
+      }
+    }
+
+    // Detectar formato TRANSFER_UPDATE (formato legado de saques)
     if (payload.event === "TRANSFER_UPDATE" && payload.transfer) {
       return await handleTransferUpdate(payload as MedusaTransferUpdatePayload);
     }
 
     // Identificar o ID - pode vir em diferentes campos dependendo se é venda ou saque
-    const transactionId = payload.id || payload.withdrawal_id || payload.transaction_id;
+    const transactionId = payload.id || payload.objectId || payload.withdrawal_id || payload.transaction_id;
     const status = payload.status;
     
     // Detectar se é um callback de SAQUE (formato antigo)
@@ -478,15 +534,36 @@ export async function POST(request: NextRequest) {
     // Extrair campos específicos de venda (podem não existir em callbacks de saque)
     const paidAt = payload.paidAt;
     const customer = payload.customer;
+    const pixData = payload.pix;
 
-    // Atualizar status da transação
+    // Dados REAIS de quem pagou, retornados pela Medusa quando o PIX e liquidado.
+    // Na criacao gravamos o nome do dono da conta como placeholder; agora que a
+    // Medusa informou o pagador de fato, sobrescrevemos para exibir quem pagou.
+    const realPayerName = customer?.name || null;
+    const realPayerDocument = customer?.document?.number || null;
+    const realPayerEmail = customer?.email || null;
+    const realPayerPhone = customer?.phone || null;
+    const endToEndId = pixData?.end2EndId || null;
+    const receiptUrl = pixData?.receiptUrl || null;
+
+    // Informacoes extras do pagamento (end-to-end, comprovante) guardadas no metadata.
+    const paymentExtras = JSON.stringify({
+      ...(endToEndId ? { end_to_end: endToEndId } : {}),
+      ...(receiptUrl ? { receipt_url: receiptUrl } : {}),
+      ...(realPayerName ? { medusa_payer_name: realPayerName } : {}),
+    });
+
+    // Atualizar status da transação com os dados do pagador reais da Medusa.
     await sql`
       UPDATE transactions 
       SET 
         status = ${internalStatus},
         paid_at = COALESCE(paid_at, ${paidAt ? new Date(paidAt) : (internalStatus === 'completed' ? new Date() : null)}),
-        payer_name = COALESCE(payer_name, ${customer?.name || null}),
-        payer_document = COALESCE(payer_document, ${customer?.document?.number || null}),
+        payer_name = COALESCE(${realPayerName}, payer_name),
+        payer_document = COALESCE(${realPayerDocument}, payer_document),
+        payer_email = COALESCE(${realPayerEmail}, payer_email),
+        payer_phone = COALESCE(${realPayerPhone}, payer_phone),
+        metadata = COALESCE(metadata, '{}'::jsonb) || ${paymentExtras}::jsonb,
         updated_at = NOW()
       WHERE id = ${transaction.id}
     `;
@@ -529,8 +606,9 @@ export async function POST(request: NextRequest) {
       
       // Notificar usuario sobre o deposito/PIX recebido com valor bruto e liquido
       const grossAmount = Number(transaction.amount) || 0;
-      await notifyPixPaid(transaction.user_id as string, grossAmount, netAmount);
-      
+      const paidByName = (customer?.name as string) || (transaction.payer_name as string) || undefined;
+      await notifyPixPaid(transaction.user_id as string, grossAmount, netAmount, paidByName);
+
       // Log para Discord - transacao confirmada
       logTransactionStatusUpdate({
         transactionId: transaction.id as string,
@@ -651,22 +729,19 @@ export async function POST(request: NextRequest) {
 
       if (userProfile.length > 0 && userProfile[0].webhook_url) {
         try {
-          const webhookPayload = {
-            event: "payment.completed",
-            transaction_id: transaction.id,
-            amount: Number(transaction.amount),
-            net_amount: netAmount,
-            status: "completed",
-            paid_at: paidAt || new Date().toISOString(),
-          };
-
-          const response = await fetch(userProfile[0].webhook_url, {
-            method: "POST",
-            headers: { 
-              "Content-Type": "application/json",
-              ...(userProfile[0].webhook_secret && { "X-Webhook-Secret": userProfile[0].webhook_secret })
+          const result = await sendMerchantWebhook({
+            url: userProfile[0].webhook_url,
+            secret: userProfile[0].webhook_secret,
+            event: "charge.paid",
+            data: {
+              transaction_id: transaction.id,
+              external_id: transaction.external_id ?? null,
+              amount: Number(transaction.amount),
+              net_amount: netAmount,
+              status: "completed",
+              payer_name: transaction.payer_name ?? null,
+              paid_at: paidAt || new Date().toISOString(),
             },
-            body: JSON.stringify(webhookPayload),
           });
 
           // Registrar log do webhook
@@ -677,9 +752,9 @@ export async function POST(request: NextRequest) {
               ${transaction.user_id},
               ${transaction.id},
               ${userProfile[0].webhook_url},
-              ${JSON.stringify(webhookPayload)},
-              ${response.status},
-              ${response.ok},
+              ${JSON.stringify(result.payload)},
+              ${result.status},
+              ${result.ok},
               NOW()
             )
           `;

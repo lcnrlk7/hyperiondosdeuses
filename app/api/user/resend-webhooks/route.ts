@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { sql } from "@/lib/db";
+import { sendMerchantWebhook } from "@/lib/merchant-webhook";
 
 export async function POST() {
   try {
@@ -47,31 +48,23 @@ export async function POST() {
 
     for (const tx of recentTransactions) {
       try {
-        const webhookPayload = {
-          event: tx.type === "pix_in" ? "payment.received" : "payment.sent",
-          transaction_id: tx.id,
-          external_id: tx.external_id,
-          amount: tx.amount,
-          status: tx.status,
-          payer_name: tx.payer_name,
-          payer_document: tx.payer_document,
-          created_at: tx.created_at,
-          paid_at: tx.paid_at,
-        };
-
-        const response = await fetch(webhookConfig.url, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            ...(webhookConfig.secret && {
-              "X-Webhook-Secret": webhookConfig.secret,
-            }),
+        const result = await sendMerchantWebhook({
+          url: webhookConfig.url,
+          secret: webhookConfig.secret,
+          event: tx.type === "pix_in" ? "charge.paid" : "withdrawal.completed",
+          data: {
+            transaction_id: tx.id,
+            external_id: tx.external_id,
+            amount: tx.amount,
+            status: tx.status,
+            payer_name: tx.payer_name,
+            payer_document: tx.payer_document,
+            created_at: tx.created_at,
+            paid_at: tx.paid_at,
           },
-          body: JSON.stringify(webhookPayload),
-          signal: AbortSignal.timeout(10000),
         });
 
-        if (response.ok) {
+        if (result.ok) {
           sentCount++;
         } else {
           failedCount++;

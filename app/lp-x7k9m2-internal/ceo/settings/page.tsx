@@ -5,16 +5,13 @@ import { motion } from "framer-motion";
 import { Save, Percent, DollarSign, Shield, Bell, Palette } from "lucide-react";
 import { ThemeToggleWithLabel } from "@/components/theme-toggle";
 
+// Taxa de deposito e FIXA no sistema (6% + R$ 1,50) para todos os usuarios.
+const DEPOSIT_PERCENTAGE_FEE = 6;
+const DEPOSIT_FIXED_FEE = 1.5;
+
 interface SystemSettings {
-  // Taxas de Deposito (PIX In)
-  pix_percentage_fee: string;
-  pix_fixed_fee: string;
-  white_pix_percentage_fee: string;
-  white_pix_fixed_fee: string;
-  // Taxas de Saque (PIX Out)
+  // Taxa de Saque (PIX Out) - valor global unico
   withdrawal_fee: string;
-  withdrawal_fee_white: string;
-  withdrawal_fee_black: string;
   // Limites de Deposito
   min_deposit: string;
   max_deposit: string;
@@ -27,15 +24,8 @@ interface SystemSettings {
 
 export default function SettingsPage() {
   const [settings, setSettings] = useState<SystemSettings>({
-    // Taxas de Deposito (PIX In)
-    pix_percentage_fee: "5.00",
-    pix_fixed_fee: "0.75",
-    white_pix_percentage_fee: "2.00",
-    white_pix_fixed_fee: "0.75",
-    // Taxas de Saque (PIX Out)
+    // Taxa de Saque (PIX Out) - valor global unico
     withdrawal_fee: "7.00",
-    withdrawal_fee_white: "7.00",
-    withdrawal_fee_black: "7.00",
     // Limites de Deposito
     min_deposit: "1.00",
     max_deposit: "100000.00",
@@ -153,94 +143,27 @@ export default function SettingsPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Rota Black - PIX In */}
-          <div className="p-4 rounded-xl bg-primary/5 border border-primary/20">
-            <h3 className="font-medium text-white mb-4 flex items-center gap-2">
-              <span className="w-3 h-3 rounded-full bg-primary" />
-              Rota Black (PIX In)
-            </h3>
-            <div className="space-y-4">
-              <div>
-                <label className="text-sm text-muted-foreground mb-2 block">
-                  Taxa Percentual (%)
-                </label>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={settings.pix_percentage_fee}
-                  onChange={(e) =>
-                    setSettings({
-                      ...settings,
-                      pix_percentage_fee: e.target.value,
-                    })
-                  }
-                  className="w-full px-4 py-2.5 bg-secondary border border-border rounded-xl text-white focus:outline-none focus:border-primary/50"
-                />
-              </div>
-              <div>
-                <label className="text-sm text-muted-foreground mb-2 block">
-                  Valor Fixo (R$)
-                </label>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={settings.pix_fixed_fee}
-                  onChange={(e) =>
-                    setSettings({
-                      ...settings,
-                      pix_fixed_fee: e.target.value,
-                    })
-                  }
-                  className="w-full px-4 py-2.5 bg-secondary border border-border rounded-xl text-white focus:outline-none focus:border-primary/50"
-                />
-              </div>
+          <div className="p-4 rounded-xl bg-secondary border border-border">
+            <label className="text-sm text-muted-foreground mb-2 block">
+              Taxa Percentual (%)
+            </label>
+            <div className="w-full px-4 py-2.5 bg-secondary border border-border rounded-xl text-white opacity-70">
+              {DEPOSIT_PERCENTAGE_FEE.toFixed(2)}
             </div>
           </div>
-
-          {/* Rota White - PIX In */}
           <div className="p-4 rounded-xl bg-secondary border border-border">
-            <h3 className="font-medium text-white mb-4 flex items-center gap-2">
-              <span className="w-3 h-3 rounded-full bg-zinc-400" />
-              Rota White (PIX In)
-            </h3>
-            <div className="space-y-4">
-              <div>
-                <label className="text-sm text-muted-foreground mb-2 block">
-                  Taxa Percentual (%)
-                </label>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={settings.white_pix_percentage_fee}
-                  onChange={(e) =>
-                    setSettings({
-                      ...settings,
-                      white_pix_percentage_fee: e.target.value,
-                    })
-                  }
-                  className="w-full px-4 py-2.5 bg-secondary border border-border rounded-xl text-white focus:outline-none focus:border-primary/50"
-                />
-              </div>
-              <div>
-                <label className="text-sm text-muted-foreground mb-2 block">
-                  Valor Fixo (R$)
-                </label>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={settings.white_pix_fixed_fee}
-                  onChange={(e) =>
-                    setSettings({
-                      ...settings,
-                      white_pix_fixed_fee: e.target.value,
-                    })
-                  }
-                  className="w-full px-4 py-2.5 bg-secondary border border-border rounded-xl text-white focus:outline-none focus:border-primary/50"
-                />
-              </div>
+            <label className="text-sm text-muted-foreground mb-2 block">
+              Valor Fixo (R$)
+            </label>
+            <div className="w-full px-4 py-2.5 bg-secondary border border-border rounded-xl text-white opacity-70">
+              {DEPOSIT_FIXED_FEE.toFixed(2)}
             </div>
           </div>
         </div>
+        <p className="text-xs text-muted-foreground mt-4">
+          A taxa de deposito e fixa em {DEPOSIT_PERCENTAGE_FEE}% + R$ {DEPOSIT_FIXED_FEE.toFixed(2)} por
+          transacao e vale para todos os usuarios, sem excecao.
+        </p>
       </motion.div>
 
       {/* Taxas de Saque (PIX Out) */}
@@ -262,10 +185,10 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="p-4 rounded-xl bg-secondary border border-border">
             <label className="text-sm text-muted-foreground mb-2 block">
-              Taxa Padrao de Saque (R$)
+              Taxa de Saque (R$)
             </label>
             <input
               type="number"
@@ -280,44 +203,8 @@ export default function SettingsPage() {
               className="w-full px-4 py-2.5 bg-secondary border border-border rounded-xl text-white focus:outline-none focus:border-primary/50"
             />
             <p className="text-xs text-muted-foreground mt-2">
-              Valor fixo cobrado por saque
+              Valor fixo cobrado por saque. Vale para todos os usuarios.
             </p>
-          </div>
-          
-          <div className="p-4 rounded-xl bg-secondary border border-border">
-            <label className="text-sm text-muted-foreground mb-2 block">
-              Taxa Saque Rota White (R$)
-            </label>
-            <input
-              type="number"
-              step="0.01"
-              value={settings.withdrawal_fee_white}
-              onChange={(e) =>
-                setSettings({
-                  ...settings,
-                  withdrawal_fee_white: e.target.value,
-                })
-              }
-              className="w-full px-4 py-2.5 bg-secondary border border-border rounded-xl text-white focus:outline-none focus:border-primary/50"
-            />
-          </div>
-          
-          <div className="p-4 rounded-xl bg-primary/5 border border-primary/20">
-            <label className="text-sm text-muted-foreground mb-2 block">
-              Taxa Saque Rota Black (R$)
-            </label>
-            <input
-              type="number"
-              step="0.01"
-              value={settings.withdrawal_fee_black}
-              onChange={(e) =>
-                setSettings({
-                  ...settings,
-                  withdrawal_fee_black: e.target.value,
-                })
-              }
-              className="w-full px-4 py-2.5 bg-secondary border border-border rounded-xl text-white focus:outline-none focus:border-primary/50"
-            />
           </div>
         </div>
       </motion.div>
@@ -497,8 +384,9 @@ export default function SettingsPage() {
               Alteracoes em tempo real
             </p>
             <p className="text-sm text-blue-300/70">
-              As configuracoes sao aplicadas imediatamente apos salvar. Taxas
-              personalizadas de usuarios tem prioridade sobre as taxas padrao.
+              As configuracoes sao aplicadas imediatamente apos salvar e valem
+              para todos os usuarios. A taxa de deposito e fixa; a taxa de saque
+              e definida aqui.
             </p>
           </div>
         </div>

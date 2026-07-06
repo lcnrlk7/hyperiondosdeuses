@@ -45,6 +45,16 @@ export default function LoginPage() {
         return;
       }
 
+      // Verificar se precisa de reconhecimento facial (dispositivo novo)
+      if (data.requiresFaceAuth && data.faceUrl) {
+        sessionStorage.setItem(
+          "face_login",
+          JSON.stringify({ ticket: data.ticket, challengeId: data.challengeId }),
+        );
+        window.location.href = data.faceUrl;
+        return;
+      }
+
       if (!response.ok) {
         setError(data.error || "Erro ao fazer login");
         if (data.requires2FA) {

@@ -13,6 +13,11 @@ import {
   Download,
   Loader2,
   Calendar,
+  X,
+  Copy,
+  User,
+  QrCode,
+  Receipt,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -22,10 +27,21 @@ export interface Transaction {
   type: string;
   amount: number;
   fee: number;
+  net_amount?: number | null;
   status: string;
   created_at: string;
+  updated_at?: string | null;
+  paid_at?: string | null;
   description: string | null;
   pix_key: string | null;
+  pix_key_type?: string | null;
+  payer_name?: string | null;
+  payer_document?: string | null;
+  payer_email?: string | null;
+  payer_phone?: string | null;
+  external_id?: string | null;
+  acquirer_transaction_id?: string | null;
+  metadata?: Record<string, unknown> | null;
 }
 
 interface TransactionsContentProps {
@@ -105,6 +121,7 @@ const getStatusLabel = (status: string) => {
 export function TransactionsContent({ transactions }: TransactionsContentProps) {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<string | null>(null);
+  const [selected, setSelected] = useState<Transaction | null>(null);
   const [exporting, setExporting] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
   const [exportStartDate, setExportStartDate] = useState("");
@@ -331,7 +348,8 @@ export function TransactionsContent({ transactions }: TransactionsContentProps) 
                 key={transaction.id}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="bg-card border border-border rounded-xl p-4"
+                onClick={() => setSelected(transaction)}
+                className="bg-card border border-border rounded-xl p-4 cursor-pointer hover:border-primary/40 transition-colors"
               >
                 {/* ID da transacao */}
                 <div className="flex items-center justify-between mb-3 pb-2 border-b border-border">
@@ -339,7 +357,8 @@ export function TransactionsContent({ transactions }: TransactionsContentProps) 
                     ID: {transaction.id}
                   </span>
                   <button
-                    onClick={() => {
+                    onClick={(e) => {
+                      e.stopPropagation();
                       navigator.clipboard.writeText(transaction.id);
                     }}
                     className="p-1 hover:bg-secondary rounded transition-colors"
@@ -438,7 +457,8 @@ export function TransactionsContent({ transactions }: TransactionsContentProps) 
                   {filteredTransactions.map((transaction) => (
                     <tr
                       key={transaction.id}
-                      className="hover:bg-secondary/30 transition-colors"
+                      onClick={() => setSelected(transaction)}
+                      className="hover:bg-secondary/30 transition-colors cursor-pointer"
                     >
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-2">
@@ -446,7 +466,8 @@ export function TransactionsContent({ transactions }: TransactionsContentProps) 
                             {transaction.id}
                           </span>
                           <button
-                            onClick={() => {
+                            onClick={(e) => {
+                              e.stopPropagation();
                               navigator.clipboard.writeText(transaction.id);
                             }}
                             className="p-1 hover:bg-secondary rounded transition-colors flex-shrink-0"
@@ -515,6 +536,204 @@ export function TransactionsContent({ transactions }: TransactionsContentProps) 
           </motion.div>
         </>
       )}
+
+      {/* Modal de Detalhes da Transacao */}
+      {selected && (
+        <div
+          className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4"
+          onClick={() => setSelected(null)}
+        >
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            onClick={(e) => e.stopPropagation()}
+            className="bg-card border border-border rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto"
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between p-5 border-b border-border sticky top-0 bg-card z-10">
+              <div className="flex items-center gap-3">
+                <div
+                  className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                    isIncoming(selected.type) ? "bg-green-500/10" : "bg-red-500/10"
+                  }`}
+                >
+                  {isIncoming(selected.type) ? (
+                    <ArrowDownLeft className="w-5 h-5 text-green-500" />
+                  ) : (
+                    <ArrowUpRight className="w-5 h-5 text-red-500" />
+                  )}
+                </div>
+                <div>
+                  <p className="font-semibold text-foreground">
+                    {getTypeLabel(selected.type)}
+                  </p>
+                  <div className="flex items-center gap-1.5">
+                    {getStatusIcon(selected.status)}
+                    <span className="text-xs text-muted-foreground">
+                      {getStatusLabel(selected.status)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <button
+                onClick={() => setSelected(null)}
+                className="p-2 hover:bg-secondary rounded-lg transition-colors"
+                aria-label="Fechar"
+              >
+                <X className="w-5 h-5 text-muted-foreground" />
+              </button>
+            </div>
+
+            <div className="p-5 space-y-5">
+              {/* Valores */}
+              <div className="text-center py-2">
+                <p
+                  className={`text-3xl font-bold ${
+                    isIncoming(selected.type) ? "text-green-500" : "text-red-500"
+                  }`}
+                >
+                  {isIncoming(selected.type) ? "+" : "-"}
+                  {formatCurrency(selected.amount)}
+                </p>
+                <div className="flex justify-center gap-4 mt-2 text-xs text-muted-foreground">
+                  <span>Taxa: {formatCurrency(selected.fee || 0)}</span>
+                  {selected.net_amount != null && (
+                    <span>Liquido: {formatCurrency(Number(selected.net_amount))}</span>
+                  )}
+                </div>
+              </div>
+
+              {/* QR Code (apenas depositos pendentes com codigo PIX) */}
+              {isIncoming(selected.type) &&
+                selected.status === "pending" &&
+                typeof selected.metadata?.copy_paste === "string" &&
+                (selected.metadata.copy_paste as string).length > 0 && (
+                  <div className="flex flex-col items-center gap-3 p-4 rounded-xl bg-secondary/50 border border-border">
+                    <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                      <QrCode className="w-4 h-4" /> Pague com PIX
+                    </div>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(
+                        selected.metadata.copy_paste as string,
+                      )}`}
+                      alt="QR Code PIX"
+                      width={180}
+                      height={180}
+                      className="rounded-lg bg-white p-2"
+                    />
+                    <button
+                      onClick={() =>
+                        navigator.clipboard.writeText(
+                          selected.metadata!.copy_paste as string,
+                        )
+                      }
+                      className="flex items-center gap-2 text-xs px-3 py-2 rounded-lg bg-primary text-primary-foreground hover:opacity-90 transition-opacity"
+                    >
+                      <Copy className="w-3.5 h-3.5" /> Copiar codigo PIX
+                    </button>
+                  </div>
+                )}
+
+              {/* Dados de quem pagou */}
+              {(selected.payer_name ||
+                selected.payer_document ||
+                selected.payer_email ||
+                selected.payer_phone) && (
+                <div className="space-y-2">
+                  <p className="text-xs font-medium text-muted-foreground flex items-center gap-1.5 uppercase tracking-wide">
+                    <User className="w-3.5 h-3.5" /> Pagador
+                  </p>
+                  <div className="rounded-xl border border-border divide-y divide-border">
+                    {selected.payer_name && (
+                      <DetailRow label="Nome" value={selected.payer_name} />
+                    )}
+                    {selected.payer_document && (
+                      <DetailRow label="Documento" value={selected.payer_document} />
+                    )}
+                    {selected.payer_email && (
+                      <DetailRow label="E-mail" value={selected.payer_email} />
+                    )}
+                    {selected.payer_phone && (
+                      <DetailRow label="Telefone" value={selected.payer_phone} />
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Chave PIX (saques) */}
+              {selected.pix_key && (
+                <div className="space-y-2">
+                  <p className="text-xs font-medium text-muted-foreground flex items-center gap-1.5 uppercase tracking-wide">
+                    <Receipt className="w-3.5 h-3.5" /> Chave PIX
+                  </p>
+                  <div className="rounded-xl border border-border divide-y divide-border">
+                    <DetailRow label="Chave" value={selected.pix_key} copyable />
+                    {selected.pix_key_type && (
+                      <DetailRow label="Tipo" value={selected.pix_key_type} />
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Informacoes da transacao */}
+              <div className="space-y-2">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                  Detalhes
+                </p>
+                <div className="rounded-xl border border-border divide-y divide-border">
+                  <DetailRow label="ID" value={selected.id} copyable />
+                  {selected.external_id && (
+                    <DetailRow label="Ref. externa" value={selected.external_id} copyable />
+                  )}
+                  {typeof selected.metadata?.end_to_end === "string" && (
+                    <DetailRow
+                      label="End-to-End"
+                      value={selected.metadata.end_to_end as string}
+                      copyable
+                    />
+                  )}
+                  {selected.description && (
+                    <DetailRow label="Descricao" value={selected.description} />
+                  )}
+                  <DetailRow label="Criado em" value={formatDate(selected.created_at)} />
+                  {selected.paid_at && (
+                    <DetailRow label="Pago em" value={formatDate(selected.paid_at)} />
+                  )}
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function DetailRow({
+  label,
+  value,
+  copyable,
+}: {
+  label: string;
+  value: string;
+  copyable?: boolean;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-3 px-4 py-2.5">
+      <span className="text-xs text-muted-foreground flex-shrink-0">{label}</span>
+      <div className="flex items-center gap-2 min-w-0">
+        <span className="text-sm text-foreground truncate text-right">{value}</span>
+        {copyable && (
+          <button
+            onClick={() => navigator.clipboard.writeText(value)}
+            className="p-1 hover:bg-secondary rounded transition-colors flex-shrink-0"
+            title="Copiar"
+          >
+            <Copy className="w-3.5 h-3.5 text-muted-foreground" />
+          </button>
+        )}
+      </div>
     </div>
   );
 }
