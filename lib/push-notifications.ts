@@ -1,13 +1,10 @@
 import webpush from "web-push";
 import { sql } from "@/lib/db";
+import { VAPID_PUBLIC_KEY } from "@/lib/vapid";
 
-// Configurar VAPID keys (você precisa gerar essas chaves)
-// Para gerar: npx web-push generate-vapid-keys
-// Chave publica NAO e secreta (vai ao navegador). Fica fixa como padrao do projeto.
-// A chave PRIVADA e secreta e deve vir SEMPRE da variavel de ambiente VAPID_PRIVATE_KEY.
-const VAPID_PUBLIC_KEY =
-  process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ||
-  "BDdXqzuofQqXUg2BS_JouTkhzzZZf4NG96GINkHv_i2x8WvI40WhmYHlCKwCOuBdRx3dSxmt8a5H-a24hsU9Uws";
+// Configurar VAPID keys.
+// A chave PUBLICA vem de lib/vapid (fonte unica, forma par com a privada).
+// A chave PRIVADA e secreta e vem SEMPRE da variavel de ambiente VAPID_PRIVATE_KEY.
 const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY || "";
 const VAPID_SUBJECT = process.env.VAPID_SUBJECT || "mailto:contato@hyperionpay.com.br";
 

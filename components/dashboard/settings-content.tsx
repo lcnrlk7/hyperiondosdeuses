@@ -8,6 +8,7 @@ import { ThemeToggleWithLabel } from "@/components/theme-toggle";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { VAPID_PUBLIC_KEY } from "@/lib/vapid";
 
 // Converte a chave VAPID (base64 url-safe) para o formato exigido pelo pushManager.
 // Usa um ArrayBuffer explicito para garantir o tipo BufferSource aceito pelo TS.
@@ -429,10 +430,8 @@ export function SettingsContent() {
         : "Permissao de notificacao nao concedida. Tente novamente e toque em Permitir.";
     }
 
-    // Chave VAPID publica (nao secreta). Usa a env ou o valor padrao do projeto.
-    const vapidKey =
-      process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ||
-      "BDdXqzuofQqXUg2BS_JouTkhzzZZf4NG96GINkHv_i2x8WvI40WhmYHlCKwCOuBdRx3dSxmt8a5H-a24hsU9Uws";
+    // Chave VAPID publica (fonte unica, forma par com a chave privada do servidor)
+    const vapidKey = VAPID_PUBLIC_KEY;
 
     const registration = await navigator.serviceWorker.register("/sw.js");
     await navigator.serviceWorker.ready;
