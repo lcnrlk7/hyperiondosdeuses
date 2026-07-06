@@ -412,6 +412,68 @@ export function SettingsContent() {
     setSessions(sessions.filter(s => s.id !== sessionId));
   };
 
+  // Cria/renova a inscricao de push com a chave VAPID correta e registra no servidor.
+  // Retorna null em sucesso ou uma mensagem de erro amigavel em falha.
+  const ensurePushSubscription = async (): Promise<string | null> => {
+    if (!("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) {
+      return iosNeedsInstall
+        ? "No iPhone/iPad, instale o app na tela inicial (Compartilhar > Adicionar a Tela de Inicio) e abra por la para ativar as notificacoes."
+        : "Seu navegador nao suporta notificacoes push.";
+    }
+
+    const permission = await Notification.requestPermission();
+    setPushPermission(permission);
+    if (permission !== "granted") {
+      return permission === "denied"
+        ? "Permissao bloqueada. Habilite as notificacoes para este site nas configuracoes do navegador/celular."
+        : "Permissao de notificacao nao concedida. Tente novamente e toque em Permitir.";
+    }
+
+    // Chave VAPID publica (nao secreta). Usa a env ou o valor padrao do projeto.
+    const vapidKey =
+      process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ||
+      "BDdXqzuofQqXUg2BS_JouTkhzzZZf4NG96GINkHv_i2x8WvI40WhmYHlCKwCOuBdRx3dSxmt8a5H-a24hsU9Uws";
+
+    const registration = await navigator.serviceWorker.register("/sw.js");
+    await navigator.serviceWorker.ready;
+
+    // Sempre cancela a assinatura antiga (pode ter sido criada com chave diferente) e recria.
+    const existing = await registration.pushManager.getSubscription();
+    if (existing) {
+      try { await existing.unsubscribe(); } catch { /* ignora */ }
+    }
+
+    const subscription = await registration.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(vapidKey),
+    });
+    const subJSON = subscription.toJSON();
+
+    const subscribeRes = await fetch("/api/push/subscribe", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        endpoint: subJSON.endpoint,
+        p256dh: subJSON.keys?.p256dh,
+        auth: subJSON.keys?.auth,
+      }),
+    });
+
+    if (!subscribeRes.ok) {
+      const errData = await subscribeRes.json().catch(() => ({}));
+      return errData.error || "Nao foi possivel registrar as notificacoes no servidor. Tente novamente.";
+    }
+
+    // Salva a preferencia e o objeto de inscricao no perfil
+    await fetch("/api/user/notifications/settings", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ notifications_push: true, push_subscription: subJSON }),
+    });
+
+    return null;
+  };
+
   // Notification functions
   const handleTogglePush = async (enabled: boolean) => {
     setNotificationLoading(true);
@@ -419,87 +481,12 @@ export function SettingsContent() {
     
     try {
       if (enabled) {
-        // Verificacoes de suporte antes de tentar ativar (evita erro generico no celular)
-        if (!("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) {
-          if (iosNeedsInstall) {
-            setNotificationMessage({
-              type: "error",
-              text: "No iPhone/iPad, instale o app na tela inicial (Compartilhar > Adicionar a Tela de Inicio) e abra por la para ativar as notificacoes.",
-            });
-          } else {
-            setNotificationMessage({ type: "error", text: "Seu navegador nao suporta notificacoes push." });
-          }
+        const error = await ensurePushSubscription();
+        if (error) {
+          setNotificationMessage({ type: "error", text: error });
           setNotificationLoading(false);
           return;
         }
-
-        // Pedir permissao e registrar service worker
-        const permission = await Notification.requestPermission();
-        setPushPermission(permission);
-        
-        if (permission !== "granted") {
-          setNotificationMessage({
-            type: "error",
-            text: permission === "denied"
-              ? "Permissao bloqueada. Habilite as notificacoes para este site nas configuracoes do navegador/celular."
-              : "Permissao de notificacao nao concedida. Tente novamente e toque em Permitir.",
-          });
-          setNotificationLoading(false);
-          return;
-        }
-
-        // Chave VAPID publica (nao secreta). Usa a env ou o valor padrao do projeto.
-        const vapidKey =
-          process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ||
-          "BDdXqzuofQqXUg2BS_JouTkhzzZZf4NG96GINkHv_i2x8WvI40WhmYHlCKwCOuBdRx3dSxmt8a5H-a24hsU9Uws";
-
-        // Registrar service worker
-        const registration = await navigator.serviceWorker.register("/sw.js");
-        await navigator.serviceWorker.ready;
-
-        // Cancelar qualquer assinatura antiga (pode ter sido criada com chave diferente)
-        const existing = await registration.pushManager.getSubscription();
-        if (existing) {
-          try { await existing.unsubscribe(); } catch { /* ignora */ }
-        }
-
-        // Criar subscription com a chave correta (convertida para Uint8Array)
-        const subscription = await registration.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey: urlBase64ToUint8Array(vapidKey),
-        });
-        const subJSON = subscription.toJSON();
-
-        // Registrar na tabela push_subscriptions (usada para enviar os pushes)
-        const subscribeRes = await fetch("/api/push/subscribe", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            endpoint: subJSON.endpoint,
-            p256dh: subJSON.keys?.p256dh,
-            auth: subJSON.keys?.auth,
-          }),
-        });
-
-        if (!subscribeRes.ok) {
-          const errData = await subscribeRes.json().catch(() => ({}));
-          setNotificationMessage({
-            type: "error",
-            text: errData.error || "Nao foi possivel registrar as notificacoes no servidor. Tente novamente.",
-          });
-          setNotificationLoading(false);
-          return;
-        }
-
-        // Salvar preferencia (flag) no perfil
-        await fetch("/api/user/notifications/settings", {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            notifications_push: true,
-            push_subscription: subJSON
-          })
-        });
 
         setNotificationsPush(true);
         setNotificationMessage({ type: "success", text: "Notificacoes push ativadas com sucesso!" });
@@ -573,6 +560,17 @@ export function SettingsContent() {
     setNotificationMessage(null);
     
     try {
+      // Para push, renova a inscricao antes de testar. Isso garante que a chave VAPID
+      // esteja correta (corrige inscricoes antigas criadas com chave diferente).
+      if (type === "push") {
+        const subError = await ensurePushSubscription();
+        if (subError) {
+          setNotificationMessage({ type: "error", text: subError });
+          setNotificationTestLoading(null);
+          return;
+        }
+      }
+
       const response = await fetch("/api/user/notifications/test", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -584,9 +582,10 @@ export function SettingsContent() {
       if (response.ok) {
         setNotificationMessage({ type: "success", text: data.message });
       } else {
-        setNotificationMessage({ type: "error", text: data.error });
+        setNotificationMessage({ type: "error", text: data.error || "Erro ao enviar teste" });
       }
     } catch (err) {
+      console.error("Erro ao enviar teste:", err);
       setNotificationMessage({ type: "error", text: "Erro ao enviar teste" });
     } finally {
       setNotificationTestLoading(null);
