@@ -170,8 +170,9 @@ export async function POST(request: NextRequest) {
 
     const transaction = result[0];
 
-    // Notificar usuario que PIX foi criado (sino + push), igual ao fluxo do painel
-    const userId = user.user_id;
+    // Notificar usuario que PIX foi criado (sino + push), igual ao fluxo do painel.
+    // A tabela profiles usa a coluna "id" (nao existe "user_id"), por isso usamos user.id.
+    const userId = user.id;
     if (userId) {
       try {
         await notifyPixCreated(userId, amount, transaction.id);
