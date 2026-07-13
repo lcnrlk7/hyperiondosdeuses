@@ -2,7 +2,7 @@ import { sql } from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
 import { getAcquirerForUser, getSystemFeesForUser } from "@/lib/acquirers";
 import { createPixPayment } from "@/lib/acquirers";
-import { notifyNewTransaction } from "@/lib/push-notifications";
+import { notifyPixCreated } from "@/lib/notifications";
 
 // Funcao para extrair credenciais do request
 function extractCredentials(request: NextRequest): { clientId: string | null; clientSecret: string | null } {
@@ -170,19 +170,14 @@ export async function POST(request: NextRequest) {
 
     const transaction = result[0];
 
-    // Enviar notificacao push
+    // Notificar usuario que PIX foi criado (sino + push), igual ao fluxo do painel
     const userId = user.user_id;
-    console.log("[v0] Sending push notification for PIX generated:", { userId, amount, transactionId: transaction.id });
-    
     if (userId) {
       try {
-        const pushResult = await notifyNewTransaction(userId, amount, transaction.id);
-        console.log("[v0] Push notification result:", pushResult);
+        await notifyPixCreated(userId, amount, transaction.id);
       } catch (err) {
-        console.error("[v0] Error sending push notification:", err);
+        console.error("[v1 PIX Create] Erro ao enviar notificacao:", err);
       }
-    } else {
-      console.error("[v0] Cannot send push notification - user_id is undefined");
     }
 
     return NextResponse.json({
