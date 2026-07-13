@@ -639,20 +639,8 @@ export async function POST(request: NextRequest) {
         )
       `;
 
-      // Criar notificação para o usuário
-      await sql`
-        INSERT INTO user_notifications (id, user_id, title, message, type, created_at)
-        VALUES (
-          ${crypto.randomUUID()},
-          ${transaction.user_id},
-          'Pagamento Recebido!',
-          ${`Você recebeu R$ ${netAmount.toFixed(2)} via PIX.`},
-          'success',
-          NOW()
-        )
-      `;
-
-      // Enviar push notification (ja enviado pelo notifyPixPaid acima)
+      // Notificacao (sino) e push ja foram criados por notifyPixPaid acima.
+      // Nao inserir outra notificacao aqui para evitar duplicidade.
 
       // Enviar para UTMify se o usuario tiver a integracao configurada
       try {
