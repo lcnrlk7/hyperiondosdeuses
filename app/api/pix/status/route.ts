@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { sql } from "@/lib/db";
 import { MedusaPayments, MEDUSA_STATUS_MAP } from "@/lib/acquirers/medusa";
+import { notifyPixPaid } from "@/lib/notifications";
 
 export async function GET(request: NextRequest) {
   try {
@@ -165,19 +166,11 @@ export async function GET(request: NextRequest) {
 
             await sql`UPDATE profiles SET balance = ${currentBalance + netAmount} WHERE id = ${userId}`;
 
-            // Criar notificação para o usuário
+            // Notificacao (sino + push) idempotente por transacao - evita duplicidade
+            // caso o webhook tambem detecte este pagamento.
             try {
-              await sql`
-                INSERT INTO user_notifications (id, user_id, title, message, type, created_at)
-                VALUES (
-                  ${crypto.randomUUID()},
-                  ${userId},
-                  'Pagamento Recebido!',
-                  ${`Você recebeu R$ ${netAmount.toFixed(2)} via PIX.`},
-                  'success',
-                  NOW()
-                )
-              `;
+              const grossAmount = Number(transaction.amount) || netAmount;
+              await notifyPixPaid(userId, grossAmount, netAmount, transaction.payer_name || undefined, transactionId);
             } catch (notifError) {
               console.error("Error creating notification:", notifError);
             }

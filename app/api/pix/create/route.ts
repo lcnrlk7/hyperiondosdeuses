@@ -355,10 +355,10 @@ export async function POST(request: NextRequest) {
       status: "pending",
     });
 
-    // Notificar usuario que PIX foi criado (sem nome, pois ainda nao foi pago)
-    notifyPixCreated(profile.id, amount, transactionId).catch(err => {
-      console.error("[PIX Create] Erro ao enviar notificacao:", err);
-    });
+    // Notificar usuario que PIX foi criado (sem nome, pois ainda nao foi pago).
+    // Precisa ser AWAIT: em serverless a funcao encerra ao retornar a resposta e
+    // mataria a promise antes de salvar/enviar o push. createNotification ja trata erros.
+    await notifyPixCreated(profile.id, amount, transactionId);
 
     return NextResponse.json({
       success: true,
