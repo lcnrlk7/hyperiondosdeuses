@@ -797,7 +797,7 @@ export default function ReportsPage() {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-[#0f172a] border border-border rounded-2xl w-full max-w-md max-h-[90vh] overflow-y-auto"
+              className="bg-card border border-border rounded-2xl w-full max-w-md max-h-[90vh] overflow-y-auto"
             >
               {/* Modal Header */}
               <div className="p-6 pb-0">
