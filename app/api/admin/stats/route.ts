@@ -96,14 +96,21 @@ export async function GET() {
         ORDER BY created_at DESC
         LIMIT 5
       `,
-      // Serie temporal: volume, taxas e transacoes aprovadas por dia (ultimos 7 dias)
+      // Serie temporal: volume, taxas e transacoes aprovadas por dia.
+      // A janela de 7 dias e ancorada na data da transacao mais recente (nao em CURRENT_DATE),
+      // garantindo que o grafico sempre mostre a atividade real mesmo que a ultima
+      // transacao tenha sido ha alguns dias.
       sql`
+        WITH anchor AS (
+          SELECT COALESCE(MAX(created_at)::date, CURRENT_DATE) AS ref FROM transactions
+        )
         SELECT 
           d.day::date as day,
           COALESCE(SUM(t.amount) FILTER (WHERE t.status = 'completed' AND t.type IN ('pix_in', 'deposit')), 0) as volume,
           COALESCE(SUM(t.fee) FILTER (WHERE t.status = 'completed'), 0) as fees,
           COUNT(t.id) FILTER (WHERE t.status = 'completed') as approved
-        FROM generate_series(CURRENT_DATE - INTERVAL '6 days', CURRENT_DATE, INTERVAL '1 day') d(day)
+        FROM anchor a
+        CROSS JOIN generate_series(a.ref - INTERVAL '6 days', a.ref, INTERVAL '1 day') d(day)
         LEFT JOIN transactions t ON t.created_at::date = d.day::date
         GROUP BY d.day
         ORDER BY d.day ASC

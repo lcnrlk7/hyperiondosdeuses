@@ -31,7 +31,7 @@ export function MethodsDonut({ data }: { data: Slice[] }) {
       ) : (
         <>
           <div className="flex items-center gap-4">
-            <div className="relative h-40 w-40 shrink-0">
+            <div className="relative h-36 w-36 shrink-0">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
@@ -57,7 +57,7 @@ export function MethodsDonut({ data }: { data: Slice[] }) {
               </div>
             </div>
 
-            <div className="flex-1 space-y-2">
+            <div className="min-w-0 flex-1 space-y-2">
               {sorted.map((s, i) => {
                 const pct = total > 0 ? (s.value / total) * 100 : 0;
                 return (
@@ -66,9 +66,11 @@ export function MethodsDonut({ data }: { data: Slice[] }) {
                       className="h-2.5 w-2.5 shrink-0 rounded-full"
                       style={{ background: COLORS[i % COLORS.length] }}
                     />
-                    <span className="flex-1 truncate text-foreground">{s.name}</span>
-                    <span className="font-medium text-muted-foreground">{pct.toFixed(1)}%</span>
-                    <span className="w-8 text-right font-semibold text-foreground">{s.value}</span>
+                    <span className="min-w-0 flex-1 truncate text-foreground">{s.name}</span>
+                    <span className="shrink-0 font-medium text-muted-foreground">{pct.toFixed(1)}%</span>
+                    <span className="shrink-0 text-right font-semibold text-foreground tabular-nums">
+                      {s.value}
+                    </span>
                   </div>
                 );
               })}

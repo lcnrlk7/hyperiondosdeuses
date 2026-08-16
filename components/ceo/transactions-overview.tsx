@@ -56,7 +56,7 @@ export function TransactionsOverview({ data }: { data: Point[] }) {
           </div>
           <div>
             <h2 className="text-sm font-semibold text-foreground">Visão Geral de Transações</h2>
-            <p className="text-xs text-muted-foreground">Valores em R$ · últimos 7 dias</p>
+            <p className="text-xs text-muted-foreground">Valores em R$ · últimos 7 dias com atividade</p>
           </div>
         </div>
       </div>
