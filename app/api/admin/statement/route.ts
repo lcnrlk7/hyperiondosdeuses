@@ -116,9 +116,86 @@ export async function GET(request: NextRequest) {
     const refundedNet = Number(totals[0].refunded_net);
     const available = receivedNet - refundedNet - withdrawnTotal;
 
+    // Dias no formato consumido pela pagina
+    const daysOut = ledger.map((r) => ({
+      date: r.day,
+      inflow: r.inGross,
+      fees: r.fees,
+      withdrawals: r.withdrawals,
+      refunds: r.refunds,
+      net: r.net,
+    }));
+
+    // Lancamentos recentes (entradas, estornos e saques individuais)
+    const inEntries = await sql`
+      SELECT t.id, COALESCE(t.paid_at, t.created_at) AS date, t.net_amount, t.status,
+             p.name AS user_name, p.email AS user_email
+      FROM transactions t
+      LEFT JOIN profiles p ON p.id = t.user_id
+      WHERE t.type = ANY(${INCOMING}) AND t.status = ANY(${APPROVED})
+      ORDER BY COALESCE(t.paid_at, t.created_at) DESC
+      LIMIT 20
+    `;
+
+    const refundEntries = await sql`
+      SELECT t.id, t.updated_at AS date, t.net_amount,
+             p.name AS user_name, p.email AS user_email
+      FROM transactions t
+      LEFT JOIN profiles p ON p.id = t.user_id
+      WHERE t.status IN ('refunded','chargeback','reversed')
+      ORDER BY t.updated_at DESC
+      LIMIT 10
+    `;
+
+    let withdrawalEntries: Record<string, unknown>[] = [];
+    try {
+      withdrawalEntries = await sql`
+        SELECT w.id, COALESCE(w.completed_at, w.created_at) AS date, w.net_amount,
+               p.name AS user_name, p.email AS user_email
+        FROM withdrawals w
+        LEFT JOIN profiles p ON p.id = w.user_id
+        WHERE w.status IN ('completed','approved','paid')
+        ORDER BY COALESCE(w.completed_at, w.created_at) DESC
+        LIMIT 10
+      `;
+    } catch {
+      withdrawalEntries = [];
+    }
+
+    const entries = [
+      ...inEntries.map((e) => ({
+        id: `in-${e.id}`,
+        date: e.date,
+        label: `Recebimento de ${e.user_name || e.user_email || "cliente"}`,
+        category: "Entrada PIX",
+        direction: "in" as const,
+        amount: Number(e.net_amount) || 0,
+      })),
+      ...refundEntries.map((e) => ({
+        id: `rf-${e.id}`,
+        date: e.date,
+        label: `Estorno para ${e.user_name || e.user_email || "cliente"}`,
+        category: "Estorno",
+        direction: "out" as const,
+        amount: Number(e.net_amount) || 0,
+      })),
+      ...withdrawalEntries.map((e) => ({
+        id: `wd-${e.id}`,
+        date: e.date,
+        label: `Saque de ${e.user_name || e.user_email || "cliente"}`,
+        category: "Saque",
+        direction: "out" as const,
+        amount: Number(e.net_amount) || 0,
+      })),
+    ]
+      .filter((e) => e.date)
+      .sort((a, b) => (new Date(a.date as string) < new Date(b.date as string) ? 1 : -1))
+      .slice(0, 25);
+
     return NextResponse.json(
       {
-        ledger,
+        days: daysOut,
+        entries,
         balances: {
           available,
           pending: pendingNet,

@@ -31,12 +31,17 @@ export async function GET(
     const transaction = txResult[0];
 
     // Historico real de eventos vindo de audit_logs
-    const events = await sql`
-      SELECT id, action, description, old_value, new_value, created_at
-      FROM audit_logs
-      WHERE entity_id = ${id}
-      ORDER BY created_at ASC
-    `;
+    let events: Record<string, unknown>[] = [];
+    try {
+      events = await sql`
+        SELECT id, action, old_value, new_value, created_at
+        FROM audit_logs
+        WHERE entity_id = ${id} AND entity_type = 'transaction'
+        ORDER BY created_at ASC
+      `;
+    } catch {
+      events = [];
+    }
 
     // Logs de webhook relacionados
     let webhooks: Record<string, unknown>[] = [];
@@ -104,11 +109,10 @@ export async function POST(
       `;
 
       await sql`
-        INSERT INTO audit_logs (id, user_id, action, entity_id, entity_type, description, old_value, new_value, metadata, created_at)
+        INSERT INTO audit_logs (id, user_id, action, entity_id, entity_type, old_value, new_value, created_at)
         VALUES (
-          ${crypto.randomUUID()}, ${transaction.user_id}, 'transaction_cancel', ${id}, 'transaction',
-          ${`Transação cancelada${reason ? `: ${reason}` : ""}`}, ${status}, 'cancelled',
-          ${JSON.stringify({ transaction_id: id, reason: reason || null })}, NOW()
+          ${crypto.randomUUID()}, ${admin.userId}, 'transaction_cancel', ${id}, 'transaction',
+          ${status}, ${`cancelled${reason ? ` — ${reason}` : ""}`}, NOW()
         )
       `;
 
@@ -142,12 +146,11 @@ export async function POST(
       `;
 
       await sql`
-        INSERT INTO audit_logs (id, user_id, action, entity_id, entity_type, description, old_value, new_value, metadata, created_at)
+        INSERT INTO audit_logs (id, user_id, action, entity_id, entity_type, old_value, new_value, created_at)
         VALUES (
-          ${crypto.randomUUID()}, ${transaction.user_id}, 'transaction_refund', ${id}, 'transaction',
-          ${`Transação estornada${reason ? `: ${reason}` : ""}. Valor: R$ ${netAmount.toFixed(2)}`},
-          ${previousBalance.toString()}, ${newBalance.toString()},
-          ${JSON.stringify({ transaction_id: id, refunded_amount: netAmount, reason: reason || null, balance_debited: isIncoming })},
+          ${crypto.randomUUID()}, ${admin.userId}, 'transaction_refund', ${id}, 'transaction',
+          ${`saldo ${previousBalance.toFixed(2)} / status ${status}`},
+          ${`saldo ${newBalance.toFixed(2)} / estornado R$ ${netAmount.toFixed(2)}${reason ? ` — ${reason}` : ""}`},
           NOW()
         )
       `;

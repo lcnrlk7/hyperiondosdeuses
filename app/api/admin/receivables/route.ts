@@ -23,7 +23,8 @@ export async function GET() {
 
     // Recebido ontem
     const yesterday = await sql`
-      SELECT COALESCE(SUM(amount),0) AS gross, COUNT(*) AS count
+      SELECT COALESCE(SUM(amount),0) AS gross, COALESCE(SUM(net_amount),0) AS net,
+             COALESCE(SUM(fee),0) AS fees, COUNT(*) AS count
       FROM transactions
       WHERE type = ANY(${INCOMING}) AND status = ANY(${APPROVED})
         AND COALESCE(paid_at, created_at) >= date_trunc('day', now()) - interval '1 day'
@@ -69,7 +70,7 @@ export async function GET() {
     // Ultimos recebimentos aprovados
     const recent = await sql`
       SELECT t.id, t.amount, t.net_amount, t.fee, t.status, t.type,
-             COALESCE(t.paid_at, t.created_at) AS at,
+             t.created_at, t.paid_at,
              p.name AS user_name, p.email AS user_email
       FROM transactions t
       LEFT JOIN profiles p ON p.id = t.user_id
@@ -78,13 +79,39 @@ export async function GET() {
       LIMIT 15
     `;
 
+    const n = (v: unknown) => Number(v) || 0;
+
     return NextResponse.json(
       {
-        today: today[0],
-        yesterday: yesterday[0],
-        month: month[0],
-        pending: pending[0],
-        byStatus,
+        summary: {
+          today: {
+            count: n(today[0].count),
+            gross: n(today[0].gross),
+            net: n(today[0].net),
+            fees: n(today[0].fees),
+          },
+          yesterday: {
+            count: n(yesterday[0].count),
+            gross: n(yesterday[0].gross),
+            net: n(yesterday[0].net),
+            fees: n(yesterday[0].fees),
+          },
+          month: {
+            count: n(month[0].count),
+            gross: n(month[0].gross),
+            net: n(month[0].net),
+            fees: n(month[0].fees),
+          },
+          pending: {
+            count: n(pending[0].count),
+            amount: n(pending[0].gross),
+          },
+        },
+        byStatus: byStatus.map((s) => ({
+          status: s.status,
+          count: n(s.count),
+          amount: n(s.gross),
+        })),
         daily,
         recent,
       },
