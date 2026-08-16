@@ -221,7 +221,7 @@ export default function TransactionsPage() {
       {/* Header */}
       <div className="flex flex-col gap-4">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-white mb-1">Transacoes</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground mb-1">Transacoes</h1>
           <p className="text-sm text-muted-foreground">
             Monitore todas as transacoes do sistema
           </p>
@@ -234,14 +234,14 @@ export default function TransactionsPage() {
               placeholder="Buscar..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full sm:w-48 pl-10 pr-4 py-2.5 bg-secondary border border-border rounded-xl text-white placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
+              className="w-full sm:w-48 pl-10 pr-4 py-2.5 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
             />
           </div>
           <div className="flex gap-2">
             <select
               value={typeFilter}
               onChange={(e) => setTypeFilter(e.target.value)}
-              className="flex-1 sm:flex-none px-3 py-2.5 bg-secondary border border-border rounded-xl text-white text-sm focus:outline-none focus:border-primary/50"
+              className="flex-1 sm:flex-none px-3 py-2.5 bg-secondary border border-border rounded-xl text-foreground text-sm focus:outline-none focus:border-primary/50"
             >
               <option value="all" className="bg-card">Todos</option>
               <option value="pix_in" className="bg-card">PIX In</option>
@@ -250,7 +250,7 @@ export default function TransactionsPage() {
             <select
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
-              className="flex-1 sm:flex-none px-3 py-2.5 bg-secondary border border-border rounded-xl text-white text-sm focus:outline-none focus:border-primary/50"
+              className="flex-1 sm:flex-none px-3 py-2.5 bg-secondary border border-border rounded-xl text-foreground text-sm focus:outline-none focus:border-primary/50"
             >
               <option value="all" className="bg-card">Todos</option>
               <option value="completed" className="bg-card">Concluido</option>
@@ -264,7 +264,7 @@ export default function TransactionsPage() {
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="glass rounded-xl p-4">
-          <p className="text-2xl font-bold text-white">{stats.total}</p>
+          <p className="text-2xl font-bold text-foreground">{stats.total}</p>
           <p className="text-sm text-muted-foreground">
             {typeFilter === "all" ? "Total" : typeFilter === "pix_in" ? "PIX In" : "PIX Out"}
             {filter !== "all" && ` (${filter})`}
@@ -337,7 +337,7 @@ export default function TransactionsPage() {
                     )}
                   </div>
                   <div>
-                    <p className="font-medium text-white text-sm">{getTypeLabel(transaction.type)}</p>
+                    <p className="font-medium text-foreground text-sm">{getTypeLabel(transaction.type)}</p>
                     <p className="text-xs text-muted-foreground">{formatDate(transaction.created_at)}</p>
                   </div>
                 </div>
@@ -347,7 +347,7 @@ export default function TransactionsPage() {
               </div>
               <div className="flex items-center justify-between mb-3">
                 <div>
-                  <p className="text-sm text-white truncate max-w-[150px]">{transaction.user_name || "Sem nome"}</p>
+                  <p className="text-sm text-foreground truncate max-w-[150px]">{transaction.user_name || "Sem nome"}</p>
                   <p className="text-xs text-muted-foreground truncate max-w-[150px]">{transaction.user_email}</p>
                 </div>
                 <div className="text-right">
@@ -465,13 +465,13 @@ export default function TransactionsPage() {
                             <ArrowUpRight className="w-4 h-4 text-red-400" />
                           )}
                         </div>
-                        <span className="text-white">
+                        <span className="text-foreground">
                           {getTypeLabel(transaction.type)}
                         </span>
                       </div>
                     </td>
                     <td className="p-4">
-                      <p className="text-white">
+                      <p className="text-foreground">
                         {transaction.user_name || "Sem nome"}
                       </p>
                       <p className="text-xs text-muted-foreground">

@@ -149,7 +149,7 @@ export default function AdminFeesPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white">Taxas Coletadas</h1>
+          <h1 className="text-2xl font-bold text-foreground">Taxas Coletadas</h1>
           <p className="text-muted-foreground">
             Receita gerada pelas taxas das transações aprovadas
           </p>
@@ -210,7 +210,7 @@ export default function AdminFeesPage() {
             </div>
             <span className="text-sm text-green-400">Total em Taxas</span>
           </div>
-          <p className="text-2xl font-bold text-white">
+          <p className="text-2xl font-bold text-foreground">
             {formatCurrency(summary?.totalFeesCollected || 0)}
           </p>
           <div className="mt-2 space-y-1">
@@ -237,17 +237,17 @@ export default function AdminFeesPage() {
             </div>
             <span className="text-sm text-blue-400">Volume Total</span>
           </div>
-          <p className="text-2xl font-bold text-white">
+          <p className="text-2xl font-bold text-foreground">
             {formatCurrency(summary?.totalVolume || 0)}
           </p>
           <div className="mt-2 space-y-1">
             <div className="flex justify-between text-xs">
               <span className="text-muted-foreground">Depositos:</span>
-              <span className="text-white">{formatCurrency(summary?.totalDepositVolume || 0)}</span>
+              <span className="text-foreground">{formatCurrency(summary?.totalDepositVolume || 0)}</span>
             </div>
             <div className="flex justify-between text-xs">
               <span className="text-muted-foreground">Saques:</span>
-              <span className="text-white">{formatCurrency(summary?.totalWithdrawalVolume || 0)}</span>
+              <span className="text-foreground">{formatCurrency(summary?.totalWithdrawalVolume || 0)}</span>
             </div>
           </div>
         </motion.div>
@@ -264,17 +264,17 @@ export default function AdminFeesPage() {
             </div>
             <span className="text-sm text-purple-400">Transacoes</span>
           </div>
-          <p className="text-2xl font-bold text-white">
+          <p className="text-2xl font-bold text-foreground">
             {summary?.totalTransactions || 0}
           </p>
           <div className="mt-2 space-y-1">
             <div className="flex justify-between text-xs">
               <span className="text-muted-foreground">Depositos:</span>
-              <span className="text-white">{summary?.totalDepositTransactions || 0}</span>
+              <span className="text-foreground">{summary?.totalDepositTransactions || 0}</span>
             </div>
             <div className="flex justify-between text-xs">
               <span className="text-muted-foreground">Saques:</span>
-              <span className="text-white">{summary?.totalWithdrawalTransactions || 0}</span>
+              <span className="text-foreground">{summary?.totalWithdrawalTransactions || 0}</span>
             </div>
           </div>
         </motion.div>
@@ -291,7 +291,7 @@ export default function AdminFeesPage() {
             </div>
             <span className="text-sm text-indigo-400">Taxa Media</span>
           </div>
-          <p className="text-2xl font-bold text-white">
+          <p className="text-2xl font-bold text-foreground">
             {(summary?.averageFeePercentage || 0).toFixed(2)}%
           </p>
           <p className="text-xs text-muted-foreground mt-1">
@@ -309,7 +309,7 @@ export default function AdminFeesPage() {
             placeholder="Buscar por nome ou email..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-12 pr-4 py-3 bg-secondary border border-border rounded-xl text-white placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
+            className="w-full pl-12 pr-4 py-3 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
           />
         </div>
         
@@ -322,7 +322,7 @@ export default function AdminFeesPage() {
               className={`px-4 py-2 text-sm font-medium transition-colors ${
                 feeTypeFilter === "all"
                   ? "bg-primary text-primary-foreground"
-                  : "bg-secondary text-muted-foreground hover:text-white"
+                  : "bg-secondary text-muted-foreground hover:text-foreground"
               }`}
             >
               Todas
@@ -332,7 +332,7 @@ export default function AdminFeesPage() {
               className={`px-4 py-2 text-sm font-medium transition-colors flex items-center gap-1 ${
                 feeTypeFilter === "deposit"
                   ? "bg-blue-500 text-white"
-                  : "bg-secondary text-muted-foreground hover:text-white"
+                  : "bg-secondary text-muted-foreground hover:text-foreground"
               }`}
             >
               <ArrowDownLeft className="w-3 h-3" />
@@ -342,8 +342,8 @@ export default function AdminFeesPage() {
               onClick={() => setFeeTypeFilter("withdrawal")}
               className={`px-4 py-2 text-sm font-medium transition-colors flex items-center gap-1 ${
                 feeTypeFilter === "withdrawal"
-                  ? "bg-indigo-500 text-white"
-                  : "bg-secondary text-muted-foreground hover:text-white"
+                  ? "bg-indigo-500 text-foreground"
+                  : "bg-secondary text-muted-foreground hover:text-foreground"
               }`}
             >
               <ArrowUpRight className="w-3 h-3" />
@@ -417,7 +417,7 @@ export default function AdminFeesPage() {
                           </span>
                         </div>
                         <div>
-                          <p className="font-medium text-white">
+                          <p className="font-medium text-foreground">
                             {user.name || "Sem nome"}
                           </p>
                           <p className="text-sm text-muted-foreground">
@@ -439,8 +439,8 @@ export default function AdminFeesPage() {
                                   {user.route_type && (
                                     <span className={`px-2 py-0.5 rounded text-xs ${
                                       user.route_type === 'black' 
-                                        ? 'bg-black text-white border border-white/20' 
-                                        : 'bg-white/10 text-white'
+                                        ? 'bg-black text-foreground border border-white/20' 
+                                        : 'bg-white/10 text-foreground'
                                     }`}>
                                       {user.route_type === 'black' ? 'Black' : 'White'}
                                     </span>
@@ -477,7 +477,7 @@ export default function AdminFeesPage() {
                         )}
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-right text-white font-medium">
+                    <td className="px-6 py-4 text-right text-foreground font-medium">
                       {formatCurrency(
                         feeTypeFilter === "deposit" 
                           ? user.deposit_volume 
@@ -487,7 +487,7 @@ export default function AdminFeesPage() {
                       )}
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <span className="px-2 py-1 rounded-full bg-secondary text-white text-sm">
+                      <span className="px-2 py-1 rounded-full bg-secondary text-foreground text-sm">
                         {feeTypeFilter === "deposit" 
                           ? user.deposit_transactions 
                           : feeTypeFilter === "withdrawal" 
@@ -537,7 +537,7 @@ export default function AdminFeesPage() {
               </div>
               <div className="text-right">
                 <p className="text-xs text-muted-foreground mb-1">Total Volume</p>
-                <p className="text-white font-bold text-lg">
+                <p className="text-foreground font-bold text-lg">
                   {formatCurrency(
                     filteredUsers.reduce((acc, u) => acc + (
                       feeTypeFilter === "deposit" 
@@ -551,7 +551,7 @@ export default function AdminFeesPage() {
               </div>
               <div className="text-right">
                 <p className="text-xs text-muted-foreground mb-1">Total Transacoes</p>
-                <p className="text-white font-bold text-lg">
+                <p className="text-foreground font-bold text-lg">
                   {filteredUsers.reduce((acc, u) => acc + (
                     feeTypeFilter === "deposit" 
                       ? u.deposit_transactions 

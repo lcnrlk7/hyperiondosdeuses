@@ -267,7 +267,7 @@ export default function TeamPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white mb-2">
+          <h1 className="text-2xl font-bold text-foreground mb-2">
             Gestao de Equipe
           </h1>
           <p className="text-muted-foreground">
@@ -305,7 +305,7 @@ export default function TeamPage() {
                   {roleIcons[role]}
                 </div>
                 <div>
-                  <p className="text-xl font-bold text-white">{count}</p>
+                  <p className="text-xl font-bold text-foreground">{count}</p>
                   <p className="text-xs text-muted-foreground">
                     {roleLabels[role]}
                   </p>
@@ -319,7 +319,7 @@ export default function TeamPage() {
       {/* Members List */}
       <div className="glass rounded-2xl overflow-hidden">
         <div className="p-4 border-b border-border">
-          <h2 className="font-semibold text-white">Membros da Equipe</h2>
+          <h2 className="font-semibold text-foreground">Membros da Equipe</h2>
         </div>
 
         {members.length === 0 ? (
@@ -348,7 +348,7 @@ export default function TeamPage() {
                   <div>
                     <p
                       className={`font-medium ${
-                        member.is_active ? "text-white" : "text-muted-foreground"
+                        member.is_active ? "text-foreground" : "text-muted-foreground"
                       }`}
                     >
                       {member.name}
@@ -450,7 +450,7 @@ export default function TeamPage() {
               className="w-full max-w-md bg-card rounded-2xl border border-border p-6"
             >
               <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-semibold text-white">
+                <h3 className="text-lg font-semibold text-foreground">
                   {editingMember ? "Editar Membro" : "Novo Membro"}
                 </h3>
                 <Button variant="ghost" size="sm" onClick={closeModal}>

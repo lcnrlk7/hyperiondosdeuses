@@ -354,7 +354,7 @@ export default function AdminTicketsPage() {
                 <MessageCircle className="w-5 h-5 text-green-400" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-white">{stats.open_count}</p>
+                <p className="text-2xl font-bold text-foreground">{stats.open_count}</p>
                 <p className="text-xs text-muted-foreground">Abertos</p>
               </div>
             </div>
@@ -365,7 +365,7 @@ export default function AdminTicketsPage() {
                 <Clock className="w-5 h-5 text-blue-400" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-white">{stats.in_progress_count}</p>
+                <p className="text-2xl font-bold text-foreground">{stats.in_progress_count}</p>
                 <p className="text-xs text-muted-foreground">Em Atendimento</p>
               </div>
             </div>
@@ -376,7 +376,7 @@ export default function AdminTicketsPage() {
                 <AlertTriangle className="w-5 h-5 text-orange-400" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-white">{stats.unassigned_count}</p>
+                <p className="text-2xl font-bold text-foreground">{stats.unassigned_count}</p>
                 <p className="text-xs text-muted-foreground">Sem Atribuicao</p>
               </div>
             </div>
@@ -387,7 +387,7 @@ export default function AdminTicketsPage() {
                 <CheckCircle className="w-5 h-5 text-muted-foreground" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-white">{stats.closed_count}</p>
+                <p className="text-2xl font-bold text-foreground">{stats.closed_count}</p>
                 <p className="text-xs text-muted-foreground">Encerrados</p>
               </div>
             </div>
@@ -442,7 +442,7 @@ export default function AdminTicketsPage() {
                           </div>
                           <p className="font-medium text-foreground truncate">{ticket.subject}</p>
                           <div className="mt-1">
-                            <p className="text-xs text-white font-medium">{ticket.user_name || "Sem nome"}</p>
+                            <p className="text-xs text-foreground font-medium">{ticket.user_name || "Sem nome"}</p>
                             <p className="text-xs text-muted-foreground">{ticket.user_email}</p>
                           </div>
                           <div className="flex items-center gap-2 mt-1">
@@ -482,7 +482,7 @@ export default function AdminTicketsPage() {
                       </div>
                       <div>
                         <h2 className="font-semibold text-foreground">{selectedTicket.subject}</h2>
-                        <p className="text-xs text-white">{selectedTicket.user_name || "Sem nome"}</p>
+                        <p className="text-xs text-foreground">{selectedTicket.user_name || "Sem nome"}</p>
                         <p className="text-xs text-muted-foreground">{selectedTicket.user_email}</p>
                       </div>
                     </div>

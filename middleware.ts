@@ -252,36 +252,9 @@ export async function middleware(request: NextRequest) {
     return NextResponse.rewrite(url)
   }
   
-  // Se for dominio principal (www.hyperionpay.com.br) - APENAS landing page
+  // Dominio principal - serve TUDO no mesmo dominio (landing, auth, dashboard, admin).
+  // Sem redirecionamento para subdominios app./ceo.
   if (isMainDomain(hostname)) {
-    // Ignora arquivos estaticos e API
-    if (
-      pathname.startsWith('/_next') ||
-      pathname.startsWith('/api') ||
-      pathname.includes('.') // arquivos com extensao
-    ) {
-      return await handleAuth(request)
-    }
-    
-    // Redireciona rotas de auth para app.hyperionpay.com.br
-    if (pathname.startsWith('/auth/')) {
-      const url = new URL(`https://app.hyperionpay.com.br${pathname}${request.nextUrl.search}`)
-      return NextResponse.redirect(url)
-    }
-    
-    // Redireciona dashboard para app.hyperionpay.com.br
-    if (pathname.startsWith('/dashboard')) {
-      const url = new URL(`https://app.hyperionpay.com.br${pathname}${request.nextUrl.search}`)
-      return NextResponse.redirect(url)
-    }
-    
-    // Redireciona painel admin para ceo.hyperionpay.com.br
-    if (pathname.startsWith('/lp-x7k9m2-internal')) {
-      const url = new URL(`https://ceo.hyperionpay.com.br${pathname}${request.nextUrl.search}`)
-      return NextResponse.redirect(url)
-    }
-    
-    // Outras rotas da landing page seguem normalmente
     return await handleAuth(request)
   }
   

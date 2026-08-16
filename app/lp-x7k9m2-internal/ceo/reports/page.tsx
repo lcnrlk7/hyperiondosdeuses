@@ -622,7 +622,7 @@ export default function AdminReportsPage() {
             <FileText className="w-4 h-4" />
             <span className="text-xs">Transações</span>
           </div>
-          <p className="text-2xl font-bold text-white">{filteredStats.count}</p>
+          <p className="text-2xl font-bold text-foreground">{filteredStats.count}</p>
         </motion.div>
 
         <motion.div
@@ -635,7 +635,7 @@ export default function AdminReportsPage() {
             <TrendingUp className="w-4 h-4" />
             <span className="text-xs">Volume</span>
           </div>
-          <p className="text-xl font-bold text-white">{formatCurrency(filteredStats.volume)}</p>
+          <p className="text-xl font-bold text-foreground">{formatCurrency(filteredStats.volume)}</p>
         </motion.div>
 
         <motion.div
@@ -661,7 +661,7 @@ export default function AdminReportsPage() {
             <CheckCircle className="w-4 h-4" />
             <span className="text-xs">Aprovadas</span>
           </div>
-          <p className="text-2xl font-bold text-white">{filteredStats.completedCount}</p>
+          <p className="text-2xl font-bold text-foreground">{filteredStats.completedCount}</p>
         </motion.div>
 
         <motion.div
@@ -674,7 +674,7 @@ export default function AdminReportsPage() {
             <Clock className="w-4 h-4" />
             <span className="text-xs">Pendentes</span>
           </div>
-          <p className="text-2xl font-bold text-white">{filteredStats.pendingCount}</p>
+          <p className="text-2xl font-bold text-foreground">{filteredStats.pendingCount}</p>
         </motion.div>
 
         <motion.div
@@ -687,7 +687,7 @@ export default function AdminReportsPage() {
             <XCircle className="w-4 h-4" />
             <span className="text-xs">Canceladas</span>
           </div>
-          <p className="text-2xl font-bold text-white">{filteredStats.cancelledCount}</p>
+          <p className="text-2xl font-bold text-foreground">{filteredStats.cancelledCount}</p>
         </motion.div>
       </div>
 
@@ -828,7 +828,7 @@ export default function AdminReportsPage() {
             {/* Modal Header */}
             <div className="flex items-center justify-between p-4 border-b border-border">
               <div className="flex items-center gap-3">
-                <h3 className="text-lg font-bold text-white">
+                <h3 className="text-lg font-bold text-foreground">
                   Detalhes da Transação
                 </h3>
                 {getStatusBadge(selectedTransaction.status)}

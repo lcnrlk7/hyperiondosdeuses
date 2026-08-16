@@ -188,7 +188,7 @@ export default function NotificationsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white mb-2">Notificações</h1>
+          <h1 className="text-2xl font-bold text-foreground mb-2">Notificações</h1>
           <p className="text-muted-foreground">
             Envie notificações para usuários do sistema
           </p>
@@ -210,7 +210,7 @@ export default function NotificationsPage() {
               <Bell className="w-6 h-6 text-primary" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-white">
+              <p className="text-2xl font-bold text-foreground">
                 {notifications.length}
               </p>
               <p className="text-sm text-muted-foreground">Total Enviadas</p>
@@ -223,7 +223,7 @@ export default function NotificationsPage() {
               <Globe className="w-6 h-6 text-blue-400" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-white">
+              <p className="text-2xl font-bold text-foreground">
                 {notifications.filter((n) => !n.user_id).length}
               </p>
               <p className="text-sm text-muted-foreground">Globais</p>
@@ -236,7 +236,7 @@ export default function NotificationsPage() {
               <User className="w-6 h-6 text-green-400" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-white">
+              <p className="text-2xl font-bold text-foreground">
                 {notifications.filter((n) => n.user_id).length}
               </p>
               <p className="text-sm text-muted-foreground">Individuais</p>
@@ -248,7 +248,7 @@ export default function NotificationsPage() {
       {/* Notifications List */}
       <div className="glass rounded-2xl overflow-hidden">
         <div className="p-6 border-b border-border">
-          <h2 className="text-lg font-semibold text-white">
+          <h2 className="text-lg font-semibold text-foreground">
             Notificações Enviadas
           </h2>
         </div>
@@ -273,7 +273,7 @@ export default function NotificationsPage() {
                     </div>
                     <div>
                       <div className="flex items-center gap-2 mb-1">
-                        <p className="font-medium text-white">
+                        <p className="font-medium text-foreground">
                           {notification.title}
                         </p>
                         {!notification.user_id ? (
@@ -334,7 +334,7 @@ export default function NotificationsPage() {
               className="w-full max-w-md bg-card rounded-2xl border border-border p-6"
             >
               <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-semibold text-white">
+                <h3 className="text-lg font-semibold text-foreground">
                   Nova Notificação
                 </h3>
                 <Button variant="ghost" size="sm" onClick={closeModal}>
@@ -433,7 +433,7 @@ export default function NotificationsPage() {
                             onClick={() => selectUser(user)}
                             className="w-full px-4 py-2 text-left hover:bg-secondary transition-colors"
                           >
-                            <p className="text-sm font-medium text-white">
+                            <p className="text-sm font-medium text-foreground">
                               {user.name || "Sem nome"}
                             </p>
                             <p className="text-xs text-muted-foreground">
