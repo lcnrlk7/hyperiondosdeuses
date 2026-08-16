@@ -4,6 +4,7 @@ import bcrypt from 'bcryptjs'
 import { isAllowedAdmin } from '@/lib/admin-auth'
 import { createLoginCode } from '@/lib/login-code'
 import { sendLoginCodeEmail } from '@/lib/email'
+import { rateLimit, getClientIP, logSuspiciousActivity } from '@/lib/security'
 
 export async function POST(request: NextRequest) {
   try {
@@ -17,9 +18,23 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // SEGURANCA: rate limiting contra forca bruta no painel admin.
+    // Limita tentativas por IP (independente do email informado).
+    const ip = await getClientIP()
+    const bruteLimit = rateLimit(`adminlogin_${ip}`, 5, 15 * 60 * 1000) // 5 tentativas / 15 min
+    if (!bruteLimit.allowed) {
+      await logSuspiciousActivity(null, 'ADMIN_LOGIN_RATE_LIMITED', `IP: ${ip}, email: ${email}`, ip)
+      return NextResponse.json(
+        { error: 'Muitas tentativas de acesso. Aguarde 15 minutos e tente novamente.' },
+        { status: 429 }
+      )
+    }
+
     // SEGURANCA: apenas o admin autorizado pode acessar o painel interno.
-    // Qualquer outro email e recusado com mensagem generica.
+    // Qualquer outro email e recusado com mensagem generica. Toda tentativa
+    // com email diferente do dono e registrada como atividade suspeita.
     if (!isAllowedAdmin(email)) {
+      await logSuspiciousActivity(null, 'ADMIN_LOGIN_FORBIDDEN_EMAIL', `IP: ${ip}, email: ${email}`, ip)
       return NextResponse.json(
         { error: 'Email ou senha incorretos' },
         { status: 401 }

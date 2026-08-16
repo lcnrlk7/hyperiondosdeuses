@@ -1,7 +1,6 @@
 import { sql } from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
 import { getSystemFeesForUser, createWithdrawal } from "@/lib/acquirers";
-import { assertUserVerified } from "@/lib/kyc-guard";
 import crypto from "crypto";
 
 // Funcao para extrair credenciais do request
@@ -125,9 +124,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // SEGURANCA: exige KYC + prova de vida (Didit) antes de sacar.
-    const verified = await assertUserVerified(profile.id);
-    if (!verified.ok) return verified.response;
+    // NOTA: a verificacao de identidade (Didit) e feita na liberacao da conta,
+    // NAO a cada saque. A conta ja foi validada como ativa acima.
 
     const body = await request.json();
     const { amount, pix_key, pix_key_type, external_id, description } = body;

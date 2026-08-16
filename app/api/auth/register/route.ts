@@ -6,6 +6,7 @@ import { rateLimit, getClientIP, logSuspiciousActivity } from "@/lib/security";
 import { logNewUser } from "@/lib/discord-webhook";
 import { detectAttack, sanitizeName, isValidName, isValidEmailStrict, isValidPhone, isValidCPFStrict } from "@/lib/sanitize";
 import { logAttack } from "@/lib/attack-logger";
+import { consumeEmailVerified } from "@/lib/email-verification";
 
 const COOKIE_NAME = "auth-token";
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 7; // 7 days
@@ -158,6 +159,18 @@ export async function POST(request: NextRequest) {
           { status: 400 }
         );
       }
+    }
+
+    // SEGURANCA: exigir que o email tenha sido verificado por codigo.
+    // Sem uma prova valida (gerada em /api/auth/verify-code), o cadastro e
+    // recusado — impede criar conta pulando a verificacao de email chamando
+    // esta API diretamente. A prova e de uso unico (consumida aqui).
+    const emailVerified = await consumeEmailVerified(email);
+    if (!emailVerified) {
+      return NextResponse.json(
+        { error: "Verifique seu email com o código antes de criar a conta." },
+        { status: 403 }
+      );
     }
 
     // Registrar usuario (usando nome sanitizado)

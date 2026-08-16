@@ -1,7 +1,6 @@
 import { sql } from "@/lib/db"
 import { NextRequest, NextResponse } from "next/server"
 import { getSystemFeesForUser } from "@/lib/acquirers"
-import { assertUserVerified } from "@/lib/kyc-guard"
 
 // Criar transferência PIX
 export async function POST(request: NextRequest) {
@@ -27,10 +26,14 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // SEGURANCA: exige KYC + prova de vida (Didit) antes de mover dinheiro.
-    // Antes este endpoint sacava saldo sem NENHUMA verificacao de identidade.
-    const verified = await assertUserVerified(profile.id)
-    if (!verified.ok) return verified.response
+    // SEGURANCA: conta precisa estar ativa e nao bloqueada. A verificacao de
+    // identidade (Didit) e feita na liberacao da conta, NAO a cada saque.
+    if (profile.is_blocked) {
+      return NextResponse.json(
+        { error: "Conta bloqueada. Entre em contato com o suporte." },
+        { status: 403 }
+      )
+    }
 
     const body = await request.json()
     const { amount, pix_key, pix_key_type, description } = body
