@@ -101,6 +101,7 @@ export default function Home() {
                   width={400} 
                   height={500}
                   className="w-[280px] md:w-[350px] lg:w-[400px] h-auto drop-shadow-2xl"
+                  style={{ height: "auto" }}
                   priority
                 />
               </div>
