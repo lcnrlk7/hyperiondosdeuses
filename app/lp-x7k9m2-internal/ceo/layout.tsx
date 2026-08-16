@@ -82,7 +82,7 @@ const menuCategories: MenuCategory[] = [
       { label: "Saques", href: "/lp-x7k9m2-internal/ceo/withdrawals", icon: Wallet, permission: "view_withdrawals" },
       { label: "Taxas", href: "/lp-x7k9m2-internal/ceo/fees", icon: Percent, permission: "view_fees" },
       { label: "Adquirentes", href: "/lp-x7k9m2-internal/ceo/acquirers", icon: Server, permission: "view_acquirers" },
-      { label: "Limites", href: "/lp-x7k9m2-internal/ceo/limits", icon: SlidersHorizontal, permission: "view_fees", comingSoon: true },
+      { label: "Limites", href: "/lp-x7k9m2-internal/ceo/limits", icon: SlidersHorizontal, permission: "view_fees" },
     ],
   },
   {
@@ -92,16 +92,16 @@ const menuCategories: MenuCategory[] = [
       { label: "Todos Usuários", href: "/lp-x7k9m2-internal/ceo/users", icon: Users, permission: "view_users" },
       { label: "Verificação KYC", href: "/lp-x7k9m2-internal/ceo/kyc", icon: FileCheck, permission: "view_kyc" },
       { label: "Equipe Admin", href: "/lp-x7k9m2-internal/ceo/team", icon: UserCog, permission: "view_team" },
-      { label: "Cargos & Permissões", href: "/lp-x7k9m2-internal/ceo/roles", icon: Shield, permission: "view_team", comingSoon: true },
+      { label: "Cargos & Permissões", href: "/lp-x7k9m2-internal/ceo/roles", icon: Shield, permission: "view_team" },
     ],
   },
   {
     title: "Segurança",
     color: "red",
     items: [
-      { label: "Antifraude", href: "/lp-x7k9m2-internal/ceo/antifraud", icon: ShieldAlert, permission: "view_logs", comingSoon: true },
-      { label: "Sessões", href: "/lp-x7k9m2-internal/ceo/sessions", icon: MonitorSmartphone, permission: "view_logs", comingSoon: true },
-      { label: "Bloqueios", href: "/lp-x7k9m2-internal/ceo/blocks", icon: Ban, permission: "view_logs", comingSoon: true },
+      { label: "Antifraude", href: "/lp-x7k9m2-internal/ceo/antifraud", icon: ShieldAlert, permission: "view_logs" },
+      { label: "Sessões", href: "/lp-x7k9m2-internal/ceo/sessions", icon: MonitorSmartphone, permission: "view_logs" },
+      { label: "Bloqueios", href: "/lp-x7k9m2-internal/ceo/blocks", icon: Ban, permission: "view_logs" },
       { label: "Logs", href: "/lp-x7k9m2-internal/ceo/logs", icon: Activity, permission: "view_logs" },
     ],
   },
@@ -109,9 +109,9 @@ const menuCategories: MenuCategory[] = [
     title: "Desenvolvedores",
     color: "purple",
     items: [
-      { label: "API Keys", href: "/lp-x7k9m2-internal/ceo/api-keys", icon: KeyRound, permission: "view_settings", comingSoon: true },
-      { label: "Webhooks", href: "/lp-x7k9m2-internal/ceo/webhooks", icon: Webhook, permission: "view_settings", comingSoon: true },
-      { label: "Integrações", href: "/lp-x7k9m2-internal/ceo/integrations", icon: Blocks, permission: "view_settings", comingSoon: true },
+      { label: "API Keys", href: "/lp-x7k9m2-internal/ceo/api-keys", icon: KeyRound, permission: "view_settings" },
+      { label: "Webhooks", href: "/lp-x7k9m2-internal/ceo/webhooks", icon: Webhook, permission: "view_settings" },
+      { label: "Integrações", href: "/lp-x7k9m2-internal/ceo/integrations", icon: Blocks, permission: "view_settings" },
     ],
   },
   {
