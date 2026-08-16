@@ -74,15 +74,19 @@ const formatCurrency = (value: number) =>
 
 const formatNumber = (value: number) => new Intl.NumberFormat("pt-BR").format(value || 0);
 
-const formatDateTime = (date: string) =>
-  new Intl.DateTimeFormat("pt-BR", {
+const formatDateTime = (date: string) => {
+  if (!date) return "—";
+  const d = new Date(date);
+  if (isNaN(d.getTime())) return "—";
+  return new Intl.DateTimeFormat("pt-BR", {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
     hour: "2-digit",
     minute: "2-digit",
     timeZone: "America/Sao_Paulo",
-  }).format(new Date(date));
+  }).format(d);
+};
 
 const shortDate = (d: Date) =>
   `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}`;
@@ -149,7 +153,10 @@ export function DashboardContent({ profile, transactions, pixKeys }: DashboardCo
     }
     const index = new Map(buckets.map((b) => [b.key, b]));
     for (const t of transactions) {
-      const key = new Date(t.created_at).toISOString().slice(0, 10);
+      if (!t.created_at) continue;
+      const parsed = new Date(t.created_at);
+      if (isNaN(parsed.getTime())) continue;
+      const key = parsed.toISOString().slice(0, 10);
       const bucket = index.get(key);
       if (!bucket) continue;
       bucket.transacoes += 1;

@@ -16,13 +16,17 @@ export interface Customer {
 const formatCurrency = (value: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(Number(value || 0));
 
-const formatDate = (date: string) =>
-  new Intl.DateTimeFormat("pt-BR", {
+const formatDate = (date: string | null) => {
+  if (!date) return "—";
+  const d = new Date(date);
+  if (isNaN(d.getTime())) return "—";
+  return new Intl.DateTimeFormat("pt-BR", {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
     timeZone: "America/Sao_Paulo",
-  }).format(new Date(date));
+  }).format(d);
+};
 
 const maskDoc = (doc: string | null) => {
   if (!doc) return "—";

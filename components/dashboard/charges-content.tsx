@@ -20,15 +20,19 @@ export interface Charge {
 const formatCurrency = (value: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(Number(value || 0));
 
-const formatDateTime = (date: string) =>
-  new Intl.DateTimeFormat("pt-BR", {
+const formatDateTime = (date: string | null) => {
+  if (!date) return "—";
+  const d = new Date(date);
+  if (isNaN(d.getTime())) return "—";
+  return new Intl.DateTimeFormat("pt-BR", {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
     hour: "2-digit",
     minute: "2-digit",
     timeZone: "America/Sao_Paulo",
-  }).format(new Date(date));
+  }).format(d);
+};
 
 function StatusBadge({ status }: { status: string }) {
   const map: Record<string, { label: string; cls: string }> = {
