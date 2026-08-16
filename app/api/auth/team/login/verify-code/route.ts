@@ -150,8 +150,8 @@ export async function POST(request: NextRequest) {
 
     response.cookies.set(TEAM_COOKIE_NAME, token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      secure: true,
+      sameSite: 'none',
       maxAge: 60 * 60 * 24,
       path: '/',
     })
