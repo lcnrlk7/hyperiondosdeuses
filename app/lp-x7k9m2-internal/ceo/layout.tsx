@@ -339,8 +339,8 @@ export default function CEOLayout({ children }: { children: React.ReactNode }) {
       {/* Mobile Header */}
       <header className="lg:hidden glass sticky top-0 z-50 px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-xl bg-slate-950 flex items-center justify-center overflow-hidden ring-1 ring-primary/30">
-            <Image src="/images/logo-hyperion.png" alt="Hyperion Pay" width={32} height={32} className="scale-125" />
+          <div className="w-8 h-8 rounded-xl flex items-center justify-center overflow-hidden">
+            <Image src="/images/hp-logo.png" alt="Hyperion Pay" width={32} height={32} className="object-contain" />
           </div>
           <span className="font-semibold text-foreground">Admin CEO</span>
         </div>
@@ -368,13 +368,13 @@ export default function CEOLayout({ children }: { children: React.ReactNode }) {
         <aside className="hidden lg:flex lg:flex-col lg:w-64 lg:min-h-screen bg-card border-r border-border sticky top-0">
           <div className="p-6 border-b border-border">
             <div className="flex items-center gap-3">
-              <div className="relative w-11 h-11 rounded-2xl bg-slate-950 flex items-center justify-center overflow-hidden ring-1 ring-primary/30 shadow-lg shadow-primary/20">
+              <div className="relative w-11 h-11 rounded-2xl flex items-center justify-center overflow-hidden">
                 <Image
-                  src="/images/logo-hyperion.png"
+                  src="/images/hp-logo.png"
                   alt="Hyperion Pay"
                   width={44}
                   height={44}
-                  className="relative scale-125"
+                  className="relative object-contain"
                 />
               </div>
               <div>
@@ -478,13 +478,13 @@ export default function CEOLayout({ children }: { children: React.ReactNode }) {
               >
                 <div className="p-6 border-b border-border">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-2xl bg-slate-950 flex items-center justify-center overflow-hidden ring-1 ring-primary/30">
+                    <div className="w-10 h-10 rounded-2xl flex items-center justify-center overflow-hidden">
                       <Image
-                        src="/images/logo-hyperion.png"
+                        src="/images/hp-logo.png"
                         alt="Hyperion Pay"
                         width={40}
                         height={40}
-                        className="scale-125"
+                        className="object-contain"
                       />
                     </div>
                     <div>
