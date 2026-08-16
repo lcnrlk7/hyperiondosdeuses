@@ -27,8 +27,18 @@ import {
   DollarSign,
   Headphones,
   Gauge,
+  ArrowDownCircle,
+  ScrollText,
+  SlidersHorizontal,
+  KeyRound,
+  Webhook,
+  Blocks,
+  ShieldAlert,
+  MonitorSmartphone,
+  Ban,
   type LucideIcon,
 } from "lucide-react";
+import { AdminTopbar } from "@/components/ceo/admin-topbar";
 
 // Tipo para item de menu
 interface MenuItem {
@@ -36,6 +46,7 @@ interface MenuItem {
   href: string;
   icon: LucideIcon;
   permission?: string; // Permissao necessaria para ver este item
+  comingSoon?: boolean; // Item de fase futura (desabilitado com selo "Em breve")
 }
 
 interface MenuCategory {
@@ -44,34 +55,63 @@ interface MenuCategory {
   items: MenuItem[];
 }
 
-// Menu completo com permissoes
+// Menu completo com permissoes - 8 categorias
 const menuCategories: MenuCategory[] = [
   {
-    title: "Visao Geral",
+    title: "Visão Geral",
     color: "primary",
     items: [
       { label: "Dashboard", href: "/lp-x7k9m2-internal/ceo", icon: LayoutDashboard, permission: "view_dashboard" },
       { label: "Financeiro", href: "/lp-x7k9m2-internal/ceo/financial", icon: DollarSign, permission: "view_financial" },
-      { label: "Relatorios", href: "/lp-x7k9m2-internal/ceo/reports", icon: FileBarChart, permission: "view_reports" },
+      { label: "Relatórios", href: "/lp-x7k9m2-internal/ceo/reports", icon: FileBarChart, permission: "view_reports" },
     ],
   },
   {
-    title: "Usuarios",
-    color: "blue",
+    title: "Operações",
+    color: "emerald",
     items: [
-      { label: "Todos Usuarios", href: "/lp-x7k9m2-internal/ceo/users", icon: Users, permission: "view_users" },
-      { label: "Verificacao KYC", href: "/lp-x7k9m2-internal/ceo/kyc", icon: FileCheck, permission: "view_kyc" },
-      { label: "Equipe Admin", href: "/lp-x7k9m2-internal/ceo/team", icon: UserCog, permission: "view_team" },
+      { label: "Transações", href: "/lp-x7k9m2-internal/ceo/transactions", icon: ArrowLeftRight, permission: "view_transactions" },
+      { label: "Recebimentos", href: "/lp-x7k9m2-internal/ceo/receivables", icon: ArrowDownCircle, permission: "view_transactions" },
+      { label: "Extrato", href: "/lp-x7k9m2-internal/ceo/statement", icon: ScrollText, permission: "view_transactions" },
     ],
   },
   {
     title: "Financeiro",
-    color: "emerald",
+    color: "green",
     items: [
-      { label: "Transacoes", href: "/lp-x7k9m2-internal/ceo/transactions", icon: ArrowLeftRight, permission: "view_transactions" },
       { label: "Saques", href: "/lp-x7k9m2-internal/ceo/withdrawals", icon: Wallet, permission: "view_withdrawals" },
       { label: "Taxas", href: "/lp-x7k9m2-internal/ceo/fees", icon: Percent, permission: "view_fees" },
       { label: "Adquirentes", href: "/lp-x7k9m2-internal/ceo/acquirers", icon: Server, permission: "view_acquirers" },
+      { label: "Limites", href: "/lp-x7k9m2-internal/ceo/limits", icon: SlidersHorizontal, permission: "view_fees", comingSoon: true },
+    ],
+  },
+  {
+    title: "Usuários",
+    color: "blue",
+    items: [
+      { label: "Todos Usuários", href: "/lp-x7k9m2-internal/ceo/users", icon: Users, permission: "view_users" },
+      { label: "Verificação KYC", href: "/lp-x7k9m2-internal/ceo/kyc", icon: FileCheck, permission: "view_kyc" },
+      { label: "Equipe Admin", href: "/lp-x7k9m2-internal/ceo/team", icon: UserCog, permission: "view_team" },
+      { label: "Cargos & Permissões", href: "/lp-x7k9m2-internal/ceo/roles", icon: Shield, permission: "view_team", comingSoon: true },
+    ],
+  },
+  {
+    title: "Segurança",
+    color: "red",
+    items: [
+      { label: "Antifraude", href: "/lp-x7k9m2-internal/ceo/antifraud", icon: ShieldAlert, permission: "view_logs", comingSoon: true },
+      { label: "Sessões", href: "/lp-x7k9m2-internal/ceo/sessions", icon: MonitorSmartphone, permission: "view_logs", comingSoon: true },
+      { label: "Bloqueios", href: "/lp-x7k9m2-internal/ceo/blocks", icon: Ban, permission: "view_logs", comingSoon: true },
+      { label: "Logs", href: "/lp-x7k9m2-internal/ceo/logs", icon: Activity, permission: "view_logs" },
+    ],
+  },
+  {
+    title: "Desenvolvedores",
+    color: "purple",
+    items: [
+      { label: "API Keys", href: "/lp-x7k9m2-internal/ceo/api-keys", icon: KeyRound, permission: "view_settings", comingSoon: true },
+      { label: "Webhooks", href: "/lp-x7k9m2-internal/ceo/webhooks", icon: Webhook, permission: "view_settings", comingSoon: true },
+      { label: "Integrações", href: "/lp-x7k9m2-internal/ceo/integrations", icon: Blocks, permission: "view_settings", comingSoon: true },
     ],
   },
   {
@@ -79,17 +119,16 @@ const menuCategories: MenuCategory[] = [
     color: "cyan",
     items: [
       { label: "Tickets", href: "/lp-x7k9m2-internal/ceo/tickets", icon: Headphones, permission: "view_tickets" },
-      { label: "Notificacoes", href: "/lp-x7k9m2-internal/ceo/notifications", icon: Bell, permission: "view_notifications" },
-      { label: "Premiacoes", href: "/lp-x7k9m2-internal/ceo/rewards", icon: Gift, permission: "view_rewards" },
+      { label: "Notificações", href: "/lp-x7k9m2-internal/ceo/notifications", icon: Bell, permission: "view_notifications" },
+      { label: "Premiações", href: "/lp-x7k9m2-internal/ceo/rewards", icon: Gift, permission: "view_rewards" },
     ],
   },
   {
-    title: "Sistema",
-    color: "purple",
+    title: "Configurações",
+    color: "slate",
     items: [
       { label: "Status", href: "/lp-x7k9m2-internal/ceo/status", icon: Gauge, permission: "view_status" },
-      { label: "Logs", href: "/lp-x7k9m2-internal/ceo/logs", icon: Activity, permission: "view_logs" },
-      { label: "Configuracoes", href: "/lp-x7k9m2-internal/ceo/settings", icon: Settings, permission: "view_settings" },
+      { label: "Configurações", href: "/lp-x7k9m2-internal/ceo/settings", icon: Settings, permission: "view_settings" },
     ],
   },
 ];
@@ -135,6 +174,24 @@ const getColorClasses = (color: string, isActive: boolean) => {
       active: "bg-gradient-to-r from-purple-500/20 to-purple-500/5 text-purple-400 border-l-2 border-purple-500",
       hover: "hover:bg-purple-500/5 hover:text-purple-400",
       icon: "text-purple-400",
+    },
+    green: {
+      label: "text-green-500/70",
+      active: "bg-gradient-to-r from-green-500/20 to-green-500/5 text-green-400 border-l-2 border-green-500",
+      hover: "hover:bg-green-500/5 hover:text-green-400",
+      icon: "text-green-400",
+    },
+    red: {
+      label: "text-red-500/70",
+      active: "bg-gradient-to-r from-red-500/20 to-red-500/5 text-red-400 border-l-2 border-red-500",
+      hover: "hover:bg-red-500/5 hover:text-red-400",
+      icon: "text-red-400",
+    },
+    slate: {
+      label: "text-slate-400/70",
+      active: "bg-gradient-to-r from-slate-500/20 to-slate-500/5 text-slate-300 border-l-2 border-slate-400",
+      hover: "hover:bg-slate-500/5 hover:text-slate-300",
+      icon: "text-slate-300",
     },
   }
   return colors[color] || colors.primary
@@ -328,15 +385,6 @@ export default function CEOLayout({ children }: { children: React.ReactNode }) {
                 <span className="text-xs text-muted-foreground font-medium">Painel CEO</span>
               </div>
             </div>
-            
-            {/* Timer de Sessao - TOPO */}
-            <div className="flex items-center gap-2 px-3 py-2 mt-4 rounded-xl bg-gradient-to-r from-yellow-500/10 to-yellow-500/5 border border-yellow-500/20">
-              <Clock className="w-4 h-4 text-yellow-500" />
-              <div className="flex-1">
-                <p className="text-[10px] text-yellow-500 font-medium">Sessao expira em</p>
-                <p className="text-sm font-bold text-yellow-400">{sessionTimeLeft || "24h 00m"}</p>
-              </div>
-            </div>
           </div>
 
           <nav className="flex-1 p-4 space-y-1 overflow-y-auto scrollbar-hide">
@@ -350,6 +398,21 @@ export default function CEOLayout({ children }: { children: React.ReactNode }) {
                     </span>
                   </div>
                   {category.items.map((item) => {
+                    if (item.comingSoon) {
+                      return (
+                        <div
+                          key={item.href}
+                          className="group flex items-center gap-3 px-4 py-2.5 rounded-xl text-muted-foreground/40 cursor-not-allowed"
+                          title="Em breve"
+                        >
+                          <item.icon className="w-5 h-5" />
+                          <span className="font-medium text-sm">{item.label}</span>
+                          <span className="ml-auto rounded-full bg-secondary px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-muted-foreground/60">
+                            Em breve
+                          </span>
+                        </div>
+                      );
+                    }
                     const isActive = item.href === "/lp-x7k9m2-internal/ceo" 
                       ? pathname === item.href 
                       : pathname.startsWith(item.href);
@@ -456,6 +519,20 @@ export default function CEOLayout({ children }: { children: React.ReactNode }) {
                           </span>
                         </div>
                         {category.items.map((item) => {
+                          if (item.comingSoon) {
+                            return (
+                              <div
+                                key={item.href}
+                                className="group flex items-center gap-3 px-4 py-2.5 rounded-xl text-muted-foreground/40"
+                              >
+                                <item.icon className="w-5 h-5" />
+                                <span className="font-medium text-sm">{item.label}</span>
+                                <span className="ml-auto rounded-full bg-secondary px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-muted-foreground/60">
+                                  Em breve
+                                </span>
+                              </div>
+                            );
+                          }
                           const isActive = item.href === "/lp-x7k9m2-internal/ceo" 
                             ? pathname === item.href 
                             : pathname.startsWith(item.href);
@@ -507,7 +584,15 @@ export default function CEOLayout({ children }: { children: React.ReactNode }) {
         </AnimatePresence>
 
         {/* Main Content */}
-        <main className="flex-1 min-h-screen p-4 sm:p-6 lg:p-8">{children}</main>
+        <div className="flex flex-1 flex-col min-h-screen">
+          <AdminTopbar
+            adminUser={adminUser}
+            adminRole={adminRole}
+            sessionTimeLeft={sessionTimeLeft}
+            onLogout={handleLogout}
+          />
+          <main className="flex-1 p-4 sm:p-6 lg:p-8">{children}</main>
+        </div>
       </div>
     </div>
   );
