@@ -178,11 +178,7 @@ export function SalesChart({ transactions }: SalesChartProps) {
             <defs>
               <linearGradient id="colorVendas" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor="#2563eb" stopOpacity={0.35} />
-<<<<<<< HEAD
                 <stop offset="95%" stopColor="#2563eb" stopOpacity={0.05} />
-=======
-                <stop offset="95%" stopColor="#2563eb" stopOpacity={0.03} />
->>>>>>> origin/v0/zaslerpozlas-8915-b0b6e971
               </linearGradient>
             </defs>
             <CartesianGrid 
@@ -209,19 +205,12 @@ export function SalesChart({ transactions }: SalesChartProps) {
               contentStyle={{
                 backgroundColor: '#ffffff',
                 border: '1px solid #e2e8f0',
-<<<<<<< HEAD
                 borderRadius: '8px',
-=======
-                borderRadius: '10px',
->>>>>>> origin/v0/zaslerpozlas-8915-b0b6e971
                 padding: '10px 12px',
                 boxShadow: '0 4px 12px rgba(15,23,42,0.08)',
               }}
               labelStyle={{ color: '#0f172a', fontWeight: '600', marginBottom: '4px' }}
-<<<<<<< HEAD
               itemStyle={{ color: '#0f172a' }}
-=======
->>>>>>> origin/v0/zaslerpozlas-8915-b0b6e971
               formatter={(value: number) => [
                 new Intl.NumberFormat("pt-BR", {
                   style: "currency",

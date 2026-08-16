@@ -70,8 +70,8 @@ export async function POST(request: NextRequest) {
     }
 
     // SEGURANCA: exige KYC + prova de vida (Didit) antes de gerar cobranca.
-    const verified = await assertUserVerified(user.id);
-    if (!verified.ok) return verified.response;
+    const denied = await assertUserVerified(user.id);
+    if (denied) return denied;
 
     const body = await request.json();
     const { amount, external_id, description, payer } = body;

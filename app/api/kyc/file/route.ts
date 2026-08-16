@@ -1,8 +1,8 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { getSession } from '@/lib/auth'
+import { sql } from '@/lib/db'
 import { cookies } from 'next/headers'
 import { jwtVerify } from 'jose'
-import { NextResponse, type NextRequest } from 'next/server'
 import { getJwtSecret } from '@/lib/jwt-secret'
 
 const JWT_SECRET = getJwtSecret()
