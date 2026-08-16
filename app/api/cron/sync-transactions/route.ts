@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { sql } from "@/lib/db";
+import { notifyPixPaid } from "@/lib/notifications";
 
 // Mapeamento de status da Medusa para status interno
 const MEDUSA_STATUS_MAP: Record<string, string> = {
@@ -199,18 +200,10 @@ export async function GET(request: Request) {
               WHERE id = ${transaction.user_id}
             `;
 
-            // Notificar usuário
-            await sql`
-              INSERT INTO user_notifications (id, user_id, title, message, type, created_at)
-              VALUES (
-                ${crypto.randomUUID()},
-                ${transaction.user_id},
-                'Pagamento Recebido!',
-                ${`Seu depósito de R$ ${Number(transaction.amount).toFixed(2)} foi confirmado. Saldo: R$ ${newBalance.toFixed(2)}`},
-                'success',
-                NOW()
-              )
-            `;
+            // Notificacao (sino + push) idempotente por transacao - evita duplicidade
+            // caso o webhook ou o polling tambem detectem este pagamento.
+            const grossAmount = Number(transaction.amount) || netAmount;
+            await notifyPixPaid(transaction.user_id, grossAmount, netAmount, transaction.payer_name || undefined, transaction.id);
 
             console.log(`[Sync Transactions] Creditado R$ ${netAmount.toFixed(2)} para usuário ${transaction.user_id}`);
           } else if (internalStatus === "failed" || internalStatus === "refunded") {

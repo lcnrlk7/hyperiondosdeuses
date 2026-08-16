@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sql } from "@/lib/db";
-import { notifyTransactionApproved } from "@/lib/push-notifications";
+import { notifyPixPaid } from "@/lib/notifications";
 import { notifyDeposit, notifyWithdrawal, notifyUserTransaction } from "@/lib/telegram/notify";
 
 export async function POST(request: NextRequest) {
@@ -54,12 +54,9 @@ export async function POST(request: NextRequest) {
             VALUES (${crypto.randomUUID()}, ${transaction.user_id}, 'PAYMENT_CONFIRMED', ${transaction.id}, 'transaction', ${`Pagamento de R$ ${transaction.amount.toFixed(2)} confirmado`}, ${JSON.stringify({ transaction_id: transaction.id, payer: data.payer })}, NOW())
           `;
 
-          await sql`
-            INSERT INTO user_notifications (id, user_id, title, message, type, created_at)
-            VALUES (${crypto.randomUUID()}, ${transaction.user_id}, ${'Pagamento Recebido!'}, ${`Você recebeu R$ ${transaction.net_amount.toFixed(2)} via PIX.`}, ${'success'}, NOW())
-          `;
-
-          await notifyTransactionApproved(transaction.user_id, Number(transaction.amount), Number(transaction.net_amount), transaction.id, data.payer?.name || undefined);
+          // Notificacao (sino + push) idempotente por transacao - evita duplicidade
+          // caso o webhook Medusa, o polling ou o cron tambem detectem este pagamento.
+          await notifyPixPaid(transaction.user_id, Number(transaction.amount), Number(transaction.net_amount), data.payer?.name || undefined, transaction.id);
           
           // Notificar no Telegram
           const fee = Number(transaction.amount) - Number(transaction.net_amount);

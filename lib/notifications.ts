@@ -97,7 +97,23 @@ export async function notifyPixCreated(userId: string, amount: number, externalI
 /**
  * Notifica sobre um PIX pago com valor bruto e liquido
  */
-export async function notifyPixPaid(userId: string, grossAmount: number, netAmount: number, payerName?: string): Promise<void> {
+export async function notifyPixPaid(userId: string, grossAmount: number, netAmount: number, payerName?: string, transactionId?: string): Promise<void> {
+  // Idempotencia: garante que a notificacao de "pagamento recebido" seja criada
+  // apenas UMA vez por transacao, mesmo que varios webhooks/crons/polling detectem
+  // o mesmo pagamento. Marca a transacao atomicamente e sai se ja foi notificada.
+  if (transactionId) {
+    const marked = await sql`
+      UPDATE transactions
+      SET metadata = COALESCE(metadata, '{}'::jsonb) || '{"paid_notified": true}'::jsonb
+      WHERE id = ${transactionId}
+        AND COALESCE((metadata->>'paid_notified')::boolean, false) = false
+      RETURNING id
+    `;
+    if (marked.length === 0) {
+      return;
+    }
+  }
+
   const formattedGross = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(grossAmount);
   const formattedNet = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(netAmount);
   const payerPart = payerName && payerName.trim() ? `de ${payerName.trim()} ` : '';

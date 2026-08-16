@@ -75,7 +75,7 @@ export async function POST(request: NextRequest) {
     // Enviar notificacao com push para o usuario
     try {
       const grossAmount = Number(transaction.amount) || netAmount;
-      await notifyPixPaid(transaction.user_id, grossAmount, netAmount, transaction.payer_name || undefined);
+      await notifyPixPaid(transaction.user_id, grossAmount, netAmount, transaction.payer_name || undefined, transaction.id);
       console.log(`[Admin Confirm] Push notification enviado para usuario ${transaction.user_id}`);
     } catch (notifError) {
       console.error("[Admin Confirm] Error sending notification:", notifError);
