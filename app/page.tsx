@@ -18,9 +18,9 @@ import {
 } from "lucide-react";
 import { DocsShowcase } from "@/components/landing/docs-showcase";
 
-const REGISTER_URL = "https://app.hyperionpay.com.br/auth/register";
-const LOGIN_URL = "https://app.hyperionpay.com.br/auth/login";
-const DOCS_URL = "https://app.hyperionpay.com.br/dashboard/integration";
+const REGISTER_URL = "/auth/register";
+const LOGIN_URL = "/auth/login";
+const DOCS_URL = "/dashboard/integration";
 
 export default function Home() {
   return (
