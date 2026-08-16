@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { neon } from "@neondatabase/serverless";
+import { verifyAdmin, accessDeniedResponse } from "@/lib/admin-auth";
 
 function getDb() {
   if (!process.env.DATABASE_URL) {
@@ -10,6 +11,9 @@ function getDb() {
 
 export async function GET() {
   try {
+    const admin = await verifyAdmin();
+    if (!admin) return accessDeniedResponse();
+
     const sql = getDb();
     const results: string[] = [];
 

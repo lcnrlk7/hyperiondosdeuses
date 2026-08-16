@@ -13,7 +13,6 @@ import { logWithdrawalRequest } from "@/lib/discord-webhook";
 import { detectAttack } from "@/lib/sanitize";
 import { logAttack } from "@/lib/attack-logger";
   import { notifyWithdrawalRequested } from "@/lib/notifications";
-  import { consumeApprovedChallenge } from "@/lib/face-auth";
 
 export async function POST(request: NextRequest) {
   try {
@@ -39,23 +38,12 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { amount, pixKey, pixKeyType, faceChallengeId } = body;
+    const { amount, pixKey, pixKeyType } = body;
 
-    // SEGURANCA: Exige verificacao facial (Didit) aprovada para liberar o saque.
-    const faceOk = await consumeApprovedChallenge({
-      userId: sessionUser.id,
-      purpose: "withdrawal",
-      challengeId: faceChallengeId,
-    });
-    if (!faceOk) {
-      return NextResponse.json(
-        {
-          error: "Verificacao facial necessaria para confirmar o saque.",
-          requiresFaceAuth: true,
-        },
-        { status: 403 },
-      );
-    }
+    // NOTA: a verificacao de identidade (Didit) e feita UMA vez, na liberacao
+    // da conta (bloqueio de prova de vida no dashboard). O saque NAO exige um
+    // novo scan facial — as protecoes abaixo (anti-fraude, limites, conta
+    // bloqueada/nova) continuam valendo normalmente.
 
     // SEGURANCA: Verificar ataques na chave PIX
     const attack = detectAttack(pixKey || "");

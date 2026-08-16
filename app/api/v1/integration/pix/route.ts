@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createPixPayment, getSystemFeesForUser } from "@/lib/acquirers";
 import crypto from "crypto";
 import { logNewTransaction, logAPIUsage } from "@/lib/discord-webhook";
+import { assertUserVerified } from "@/lib/kyc-guard";
 
 // Funcao para extrair credenciais do request
 function extractCredentials(request: NextRequest): { clientId: string | null; clientSecret: string | null } {
@@ -128,13 +129,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verificar KYC do proprietário
-    if (profile.kyc_status !== "approved") {
-      return NextResponse.json(
-        { success: false, error: "KYC não aprovado. Complete a verificação de identidade no dashboard.", code: "KYC_REQUIRED" },
-        { status: 403 }
-      );
-    }
+    // SEGURANCA: exige KYC + prova de vida (Didit) antes de gerar cobranca.
+    const verified = await assertUserVerified(profile.id);
+    if (!verified.ok) return verified.response;
 
     // Parsear body
     const body = await request.json();

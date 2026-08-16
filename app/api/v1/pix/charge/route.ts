@@ -1,6 +1,7 @@
 import { sql } from "@/lib/db"
 import { NextRequest, NextResponse } from "next/server"
 import { createPixPayment, getSystemFeesForUser } from "@/lib/acquirers"
+import { assertUserVerified } from "@/lib/kyc-guard"
 
 // Funcao para extrair credenciais do request
 function extractCredentials(request: NextRequest): { clientId: string | null; clientSecret: string | null; apiKey: string | null } {
@@ -65,13 +66,9 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Verificar KYC
-    if (profile.kyc_status !== "approved") {
-      return NextResponse.json(
-        { error: "KYC não aprovado. Complete a verificação no dashboard." },
-        { status: 403 }
-      )
-    }
+    // SEGURANCA: exige KYC + prova de vida (Didit) antes de gerar cobranca.
+    const verified = await assertUserVerified(profile.id)
+    if (!verified.ok) return verified.response
 
     const body = await request.json()
     const { amount, description, payer_name, payer_document } = body

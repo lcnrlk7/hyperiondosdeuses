@@ -9,6 +9,38 @@ import {
 import { logTransactionStatusUpdate, logWithdrawalStatusUpdate, logWebhookReceived } from "@/lib/discord-webhook";
 import { sendMerchantWebhook } from "@/lib/merchant-webhook";
   import { sendPixEventToUtmify } from "@/lib/utmify";
+import { MedusaPayments } from "@/lib/acquirers/medusa";
+
+/**
+ * SEGURANCA: confirma com a Medusa (server-to-server) que a transacao foi
+ * realmente paga antes de creditar saldo. Isso impede que um webhook forjado
+ * ("charge.paid" com um ID valido) credite saldo sem pagamento real, ja que o
+ * atacante nao consegue falsificar a resposta da API da adquirente.
+ * Retorna true SOMENTE se a adquirente confirmar o pagamento como concluido.
+ */
+async function verifyPaidWithMedusa(acquirerTxId: string | null | undefined): Promise<boolean> {
+  if (!acquirerTxId) return false;
+  try {
+    // Tenta com todas as credenciais Medusa ativas (rota white e black).
+    const configs = await sql`
+      SELECT api_key, api_secret FROM acquirers
+      WHERE LOWER(code) IN ('medusa', 'medusa_white') AND is_active = true
+    `;
+    for (const cfg of configs) {
+      try {
+        const client = new MedusaPayments({ secretKey: cfg.api_key, licenseKey: cfg.api_secret });
+        const result = await client.getTransaction(String(acquirerTxId));
+        const status = (result?.status || (result?.transaction as { status?: string })?.status || "").toLowerCase();
+        if (["paid", "approved", "completed"].includes(status)) return true;
+      } catch {
+        // tenta a proxima credencial
+      }
+    }
+  } catch (err) {
+    console.error("[Medusa Webhook] Erro ao verificar pagamento com a adquirente:", err);
+  }
+  return false;
+}
 
 /**
  * Webhook para receber notificações da Medusa Payments
@@ -553,12 +585,29 @@ export async function POST(request: NextRequest) {
       ...(realPayerName ? { medusa_payer_name: realPayerName } : {}),
     });
 
+    // SEGURANCA: se o webhook alega pagamento concluido, confirmamos com a
+    // adquirente antes de marcar como pago/creditar. Se nao confirmar, mantemos
+    // o status atual (pendente); o polling (pix/status) e o cron reconciliam
+    // depois quando o pagamento for realmente confirmado.
+    let effectiveStatus = internalStatus;
+    if (internalStatus === "completed" && !alreadyCredited) {
+      const confirmed = await verifyPaidWithMedusa(
+        transaction.acquirer_transaction_id || transaction.external_id || String(transactionId)
+      );
+      if (!confirmed) {
+        console.warn(
+          `[Medusa Webhook] Pagamento ${transactionId} NAO confirmado pela adquirente. Ignorando credito (possivel webhook forjado).`
+        );
+        effectiveStatus = transaction.status;
+      }
+    }
+
     // Atualizar status da transação com os dados do pagador reais da Medusa.
     await sql`
       UPDATE transactions 
       SET 
-        status = ${internalStatus},
-        paid_at = COALESCE(paid_at, ${paidAt ? new Date(paidAt) : (internalStatus === 'completed' ? new Date() : null)}),
+        status = ${effectiveStatus},
+        paid_at = COALESCE(paid_at, ${paidAt ? new Date(paidAt) : (effectiveStatus === 'completed' ? new Date() : null)}),
         payer_name = COALESCE(${realPayerName}, payer_name),
         payer_document = COALESCE(${realPayerDocument}, payer_document),
         payer_email = COALESCE(${realPayerEmail}, payer_email),
@@ -588,8 +637,9 @@ export async function POST(request: NextRequest) {
       console.error("[Medusa Webhook] Erro ao logar webhook:", logErr);
     }
 
-    // Se pagamento confirmado E saldo ainda nao foi creditado, creditar saldo do usuario
-    if (internalStatus === "completed" && transaction.user_id && !alreadyCredited) {
+    // Se pagamento confirmado (E verificado com a adquirente) E saldo ainda nao
+    // foi creditado, creditar saldo do usuario
+    if (effectiveStatus === "completed" && transaction.user_id && !alreadyCredited) {
       const netAmount = Number(transaction.net_amount) || (Number(transaction.amount) - Number(transaction.fee || 0));
       const currentBalance = Number(transaction.profile_balance) || 0;
       const newBalance = currentBalance + netAmount;

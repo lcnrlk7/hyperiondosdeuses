@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAcquirerForUser, getSystemFeesForUser } from "@/lib/acquirers";
 import { createPixPayment } from "@/lib/acquirers";
 import { notifyPixCreated } from "@/lib/notifications";
+import { assertUserVerified } from "@/lib/kyc-guard";
 
 // Funcao para extrair credenciais do request
 function extractCredentials(request: NextRequest): { clientId: string | null; clientSecret: string | null } {
@@ -68,12 +69,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (user.kyc_status !== "approved") {
-      return NextResponse.json(
-        { error: "KYC nao aprovado. Complete a verificação de identidade.", code: "KYC_REQUIRED" },
-        { status: 403 }
-      );
-    }
+    // SEGURANCA: exige KYC + prova de vida (Didit) antes de gerar cobranca.
+    const verified = await assertUserVerified(user.id);
+    if (!verified.ok) return verified.response;
 
     const body = await request.json();
     const { amount, external_id, description, payer } = body;

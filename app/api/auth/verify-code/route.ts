@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { sql } from "@/lib/db"
+import { markEmailVerified } from "@/lib/email-verification"
 
 export async function POST(request: Request) {
   try {
@@ -36,6 +37,11 @@ export async function POST(request: Request) {
     await sql`
       UPDATE email_verification_codes SET used = true WHERE id = ${verificationCode.id}
     `
+
+    // SEGURANCA: gravar prova server-side de que este email foi verificado.
+    // O /api/auth/register exige essa prova, impedindo que alguem pule a
+    // verificacao de email chamando a API de cadastro diretamente.
+    await markEmailVerified(email)
 
     return NextResponse.json({
       success: true,

@@ -2,11 +2,10 @@ import { type NextRequest, NextResponse } from 'next/server'
 import { getSession } from '@/lib/auth'
 import { cookies } from 'next/headers'
 import { jwtVerify } from 'jose'
-import { sql } from '@/lib/db'
+import { NextResponse, type NextRequest } from 'next/server'
+import { getJwtSecret } from '@/lib/jwt-secret'
 
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || 'fallback-secret-change-in-production'
-)
+const JWT_SECRET = getJwtSecret()
 
 // Verificar se é membro da equipe interna
 async function getTeamSession(): Promise<{ id: string; role: string } | null> {

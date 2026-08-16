@@ -1,344 +1,296 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
 import { motion } from "framer-motion";
 import {
-  Users,
   Wallet,
   DollarSign,
-  Activity,
-  CheckCircle,
+  Users,
+  CheckCircle2,
+  Calendar,
+  Download,
   Clock,
-  ArrowUpRight,
-  ArrowDownRight,
+  FileCheck,
+  AlertTriangle,
 } from "lucide-react";
+import { StatCard } from "@/components/ceo/stat-card";
+import { TransactionsOverview } from "@/components/ceo/transactions-overview";
+import { MethodsDonut } from "@/components/ceo/methods-donut";
+import { RecentTransactions } from "@/components/ceo/recent-transactions";
+
+interface Growth {
+  volume: number;
+  fees: number;
+  users: number;
+  transactions: number;
+}
 
 interface Stats {
-  totalProcessed: number;
-  totalFees: number;
-  dailyVolume: number;
-  activeUsers: number;
+  totalVolumeRaw: number;
+  totalFeesRaw: number;
+  totalUsers: number;
+  completedTransactions: number;
+  pendingTransactions: number;
+  failedTransactions: number;
   pendingKyc: number;
   pendingWithdrawals: number;
-  approvalRate: number;
-  completedTransactions: number;
+  growth: Growth;
+}
+
+interface SeriesPoint {
+  date: string;
+  volume: number;
+  fees: number;
+  approved: number;
 }
 
 interface Transaction {
   id: string;
   type: string;
-  amount: number;
-  fee: number;
-  net_amount: number;
+  amount: number | string;
+  fee: number | string;
   status: string;
   created_at: string;
-  user_name: string | null;
-  user_email: string | null;
-  payer_name: string | null;
+  user_name?: string | null;
+  user_email?: string | null;
+  payer_name?: string | null;
 }
 
+const emptyStats: Stats = {
+  totalVolumeRaw: 0,
+  totalFeesRaw: 0,
+  totalUsers: 0,
+  completedTransactions: 0,
+  pendingTransactions: 0,
+  failedTransactions: 0,
+  pendingKyc: 0,
+  pendingWithdrawals: 0,
+  growth: { volume: 0, fees: 0, users: 0, transactions: 0 },
+};
+
+const formatBRL = (v: number) =>
+  new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
+
 export default function CEODashboard() {
-  const [stats, setStats] = useState<Stats>({
-    totalProcessed: 0,
-    totalFees: 0,
-    dailyVolume: 0,
-    activeUsers: 0,
-    pendingKyc: 0,
-    pendingWithdrawals: 0,
-    approvalRate: 0,
-    completedTransactions: 0,
-  });
-  const [recentTransactions, setRecentTransactions] = useState<Transaction[]>([]);
+  const [stats, setStats] = useState<Stats>(emptyStats);
+  const [series, setSeries] = useState<SeriesPoint[]>([]);
+  const [methods, setMethods] = useState<{ name: string; value: number }[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [range, setRange] = useState("");
 
-  useEffect(() => {
-    loadDashboardData();
-  }, []);
-
-  async function loadDashboardData() {
+  const loadData = useCallback(async () => {
     try {
       setIsLoading(true);
-      
-      const response = await fetch("/api/admin/stats");
-      
-      // Se acesso negado, redirecionar para login
-      if (response.status === 403 || response.status === 401) {
-        console.log("[v0] Acesso negado, redirecionando para login");
+      const res = await fetch("/api/admin/stats");
+      if (res.status === 401 || res.status === 403) {
         window.location.href = "/lp-x7k9m2-internal";
         return;
       }
-      
-      const data = await response.json();
+      const data = await res.json();
 
       if (data.stats) {
         setStats({
-          totalProcessed: Number(data.stats.totalVolumeRaw) || 0,
-          totalFees: Number(data.stats.totalFeesRaw) || 0,
-          dailyVolume: 0,
-          activeUsers: Number(data.stats.totalUsers) || 0,
-          pendingKyc: 0,
-          pendingWithdrawals: 0,
-          approvalRate: 0,
+          totalVolumeRaw: Number(data.stats.totalVolumeRaw) || 0,
+          totalFeesRaw: Number(data.stats.totalFeesRaw) || 0,
+          totalUsers: Number(data.stats.totalUsers) || 0,
           completedTransactions: Number(data.stats.completedTransactions) || 0,
+          pendingTransactions: Number(data.stats.pendingTransactions) || 0,
+          failedTransactions: Number(data.stats.failedTransactions) || 0,
+          pendingKyc: Number(data.stats.pendingKyc) || 0,
+          pendingWithdrawals: Number(data.stats.pendingWithdrawals) || 0,
+          growth: data.stats.growth || emptyStats.growth,
         });
       }
+      if (Array.isArray(data.timeSeries)) setSeries(data.timeSeries);
+      if (Array.isArray(data.methodDistribution)) setMethods(data.methodDistribution);
 
-      // Buscar transacoes separadamente
-      const txResponse = await fetch("/api/admin/transactions");
-      
-      // Se acesso negado, redirecionar para login
-      if (txResponse.status === 403 || txResponse.status === 401) {
-        console.log("[v0] Acesso negado em transactions, redirecionando para login");
-        window.location.href = "/lp-x7k9m2-internal";
-        return;
+      const txRes = await fetch("/api/admin/transactions?limit=6");
+      if (txRes.ok) {
+        const txData = await txRes.json();
+        if (Array.isArray(txData.transactions)) setTransactions(txData.transactions);
       }
-      
-      const txData = await txResponse.json();
-      if (txData.transactions && Array.isArray(txData.transactions)) {
-        setRecentTransactions(txData.transactions);
-      }
-    } catch (error) {
-      console.error("Error loading dashboard data:", error);
+    } catch (err) {
+      console.error("Error loading dashboard:", err);
     } finally {
       setIsLoading(false);
     }
-  }
+  }, []);
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("pt-BR", {
-      style: "currency",
-      currency: "BRL",
-    }).format(value);
+  useEffect(() => {
+    loadData();
+    // Rotulo do periodo: ultimos 7 dias
+    const end = new Date();
+    const start = new Date();
+    start.setDate(end.getDate() - 6);
+    const fmt = (d: Date) =>
+      d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
+    setRange(`${fmt(start)} - ${fmt(end)}`);
+  }, [loadData]);
+
+  const exportCSV = () => {
+    const header = ["ID", "Tipo", "Valor", "Taxa", "Status", "Data"];
+    const rows = transactions.map((t) => [
+      t.id,
+      t.type,
+      Number(t.amount).toFixed(2),
+      Number(t.fee).toFixed(2),
+      t.status,
+      new Date(t.created_at).toISOString(),
+    ]);
+    const csv = [header, ...rows].map((r) => r.join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `hyperionpay-transacoes-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
   };
-
-  const formatDate = (date: string) => {
-    return new Date(date).toLocaleString("pt-BR", {
-      day: "2-digit",
-      month: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
-
-  const statCards = [
-    {
-      label: "Volume Total",
-      value: formatCurrency(stats.totalProcessed),
-      icon: Wallet,
-      color: "text-blue-400",
-      bgColor: "bg-blue-400/10",
-      description: "Total de transações aprovadas",
-    },
-    {
-      label: "Taxas Arrecadadas",
-      value: formatCurrency(stats.totalFees),
-      icon: DollarSign,
-      color: "text-green-400",
-      bgColor: "bg-green-400/10",
-      description: "Receita total em taxas",
-    },
-    {
-      label: "Usuários Cadastrados",
-      value: stats.activeUsers.toString(),
-      icon: Users,
-      color: "text-purple-400",
-      bgColor: "bg-purple-400/10",
-      description: "Total de usuários",
-    },
-    {
-      label: "Transações Aprovadas",
-      value: stats.completedTransactions.toString(),
-      icon: CheckCircle,
-      color: "text-emerald-400",
-      bgColor: "bg-emerald-400/10",
-      description: "Transações concluídas",
-    },
-  ];
-
-  const pendingCards = [
-    {
-      label: "KYC Pendentes",
-      value: stats.pendingKyc,
-      icon: Clock,
-      href: "/lp-x7k9m2-internal/ceo/kyc",
-    },
-    {
-      label: "Saques Pendentes",
-      value: stats.pendingWithdrawals,
-      icon: Wallet,
-      href: "/lp-x7k9m2-internal/ceo/withdrawals",
-    },
-  ];
 
   if (isLoading) {
     return (
-      <div className="p-6 lg:p-8">
-        <div className="animate-pulse space-y-6">
-          <div className="h-8 w-48 bg-secondary rounded-lg" />
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {[...Array(4)].map((_, i) => (
-              <div key={i} className="h-32 bg-secondary rounded-2xl" />
-            ))}
-          </div>
+      <div className="space-y-6">
+        <div className="h-10 w-64 animate-pulse rounded-lg bg-secondary" />
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="h-40 animate-pulse rounded-2xl bg-secondary" />
+          ))}
+        </div>
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+          <div className="h-80 animate-pulse rounded-2xl bg-secondary lg:col-span-2" />
+          <div className="h-80 animate-pulse rounded-2xl bg-secondary" />
         </div>
       </div>
     );
   }
 
+  const sparkVolume = series.map((s) => ({ v: s.volume }));
+  const sparkFees = series.map((s) => ({ v: s.fees }));
+  const sparkApproved = series.map((s) => ({ v: s.approved }));
+
+  const alerts = [
+    stats.pendingKyc > 0 && {
+      icon: FileCheck,
+      label: `${stats.pendingKyc} verificação(ões) KYC aguardando análise`,
+      href: "/lp-x7k9m2-internal/ceo/kyc",
+      color: "text-amber-600 bg-amber-500/10",
+    },
+    stats.pendingWithdrawals > 0 && {
+      icon: Wallet,
+      label: `${stats.pendingWithdrawals} saque(s) pendente(s) de aprovação`,
+      href: "/lp-x7k9m2-internal/ceo/withdrawals",
+      color: "text-blue-600 bg-blue-500/10",
+    },
+    stats.pendingTransactions > 0 && {
+      icon: Clock,
+      label: `${stats.pendingTransactions} transação(ões) pendente(s)`,
+      href: "/lp-x7k9m2-internal/ceo/transactions",
+      color: "text-purple-600 bg-purple-500/10",
+    },
+  ].filter(Boolean) as { icon: typeof FileCheck; label: string; href: string; color: string }[];
+
   return (
-    <div className="p-4 sm:p-6 lg:p-8 space-y-6">
+    <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-xl sm:text-2xl font-bold text-foreground mb-1">Dashboard CEO</h1>
-        <p className="text-sm text-muted-foreground">
-          Visao geral do sistema Hyperion Pay
-        </p>
-      </div>
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        {statCards.map((stat, index) => (
-          <motion.div
-            key={stat.label}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1 }}
-            className="bg-card border border-border rounded-lg p-3 sm:p-5"
-          >
-            <div className="flex items-start justify-between">
-              <div className="min-w-0">
-                <p className={`text-lg sm:text-2xl font-bold mb-1 ${stat.color} truncate`}>{stat.value}</p>
-                <p className="text-xs sm:text-sm font-medium text-foreground">{stat.label}</p>
-                <p className="text-[10px] sm:text-xs text-muted-foreground mt-1 hidden sm:block">{stat.description}</p>
-              </div>
-              <div className={`p-2 sm:p-2.5 rounded-full ${stat.bgColor} flex-shrink-0`}>
-                <stat.icon className={`w-4 h-4 sm:w-5 sm:h-5 ${stat.color}`} />
-              </div>
-            </div>
-          </motion.div>
-        ))}
-      </div>
-
-      {/* Pending Actions */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-        {pendingCards.map((card, index) => (
-          <motion.a
-            key={card.label}
-            href={card.href}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 + index * 0.1 }}
-            className="bg-card border border-border rounded-lg p-4 sm:p-5 flex items-center justify-between group"
-          >
-            <div className="flex items-center gap-3">
-              <div className="p-2 sm:p-2.5 rounded-full bg-primary/15">
-                <card.icon className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
-              </div>
-              <div>
-                <p className="text-base sm:text-lg font-semibold text-foreground">{card.value}</p>
-                <p className="text-xs sm:text-sm text-muted-foreground">{card.label}</p>
-              </div>
-            </div>
-            <ArrowUpRight className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
-          </motion.a>
-        ))}
-      </div>
-
-      {/* Recent Transactions */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.6 }}
-        className="bg-card border border-border rounded-lg overflow-hidden"
-      >
-        <div className="p-4 sm:p-5 border-b border-border">
-          <h2 className="text-sm sm:text-base font-semibold text-foreground">
-            Transacoes Recentes
-          </h2>
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div>
+          <h1 className="flex items-center gap-2 text-2xl font-bold text-foreground">
+            Olá, CEO <span className="animate-float-delay-1">👋</span>
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Aqui está o resumo geral da sua plataforma Hyperion Pay.
+          </p>
         </div>
-        <div className="divide-y divide-border">
-          {recentTransactions.length === 0 ? (
-            <div className="p-6 sm:p-8 text-center text-muted-foreground text-sm">
-              Nenhuma transacao encontrada
-            </div>
-          ) : (
-            recentTransactions.map((transaction) => {
-              const isDeposit = transaction.type === "deposit" || transaction.type === "pix_in" || transaction.type === "transfer_in";
-              const userName = transaction.user_name || transaction.payer_name || "Usuario";
-              const userEmail = transaction.user_email || "";
-              const typeLabel = transaction.type === "pix_in" ? "PIX In" 
-                : transaction.type === "deposit" ? "Deposito"
-                : transaction.type === "withdrawal" ? "Saque"
-                : transaction.type === "pix_out" ? "PIX Out"
-                : transaction.type === "transfer_in" ? "Receb"
-                : "Transfer";
-              
-              return (
-                <div
-                  key={transaction.id}
-                  className="p-3 sm:p-4 flex items-center justify-between hover:bg-secondary transition-colors"
-                >
-                  <div className="flex items-center gap-3">
-                    <div
-                      className={`p-1.5 sm:p-2 rounded-lg ${
-                        isDeposit ? "bg-green-400/10" : "bg-red-400/10"
-                      }`}
-                    >
-                      {isDeposit ? (
-                        <ArrowDownRight className="w-4 h-4 sm:w-5 sm:h-5 text-green-400" />
-                      ) : (
-                        <ArrowUpRight className="w-4 h-4 sm:w-5 sm:h-5 text-red-400" />
-                      )}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="font-medium text-foreground text-sm sm:text-base truncate max-w-[120px] sm:max-w-none">{userName}</p>
-                      <div className="flex items-center gap-1 sm:gap-2">
-                        <span className="text-[10px] sm:text-xs text-muted-foreground truncate max-w-[80px] sm:max-w-none">{userEmail}</span>
-                        <span className="text-[10px] sm:text-xs px-1 sm:px-1.5 py-0.5 rounded bg-white/5 text-muted-foreground">
-                          {typeLabel}
-                        </span>
-                      </div>
-                      <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5">
-                        {formatDate(transaction.created_at)}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="text-right flex-shrink-0">
-                    <p
-                      className={`font-semibold text-sm sm:text-base ${
-                        isDeposit ? "text-green-400" : "text-red-400"
-                      }`}
-                    >
-                      {isDeposit ? "+" : "-"}
-                      {formatCurrency(Number(transaction.amount))}
-                    </p>
-                    {transaction.fee > 0 && (
-                      <p className="text-[10px] sm:text-xs text-muted-foreground">
-                        Taxa: {formatCurrency(Number(transaction.fee))}
-                      </p>
-                    )}
-                    <span
-                      className={`text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full ${
-                        transaction.status === "completed"
-                          ? "bg-green-400/10 text-green-400"
-                          : transaction.status === "pending"
-                          ? "bg-yellow-400/10 text-yellow-400"
-                          : "bg-red-400/10 text-red-400"
-                      }`}
-                    >
-                      {transaction.status === "completed"
-                        ? "OK"
-                        : transaction.status === "pending"
-                        ? "Pend"
-                        : "Falhou"}
-                    </span>
-                  </div>
-                </div>
-              );
-            })
-          )}
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 rounded-xl border border-border bg-card px-3.5 py-2 text-sm text-foreground shadow-sm">
+            <Calendar className="h-4 w-4 text-muted-foreground" />
+            <span className="font-medium">{range}</span>
+          </div>
+          <button
+            onClick={exportCSV}
+            className="flex items-center gap-2 rounded-xl border border-border bg-card px-3.5 py-2 text-sm font-medium text-foreground shadow-sm transition-colors hover:bg-secondary"
+          >
+            <Download className="h-4 w-4" />
+            Exportar
+          </button>
         </div>
-      </motion.div>
+      </div>
+
+      {/* Stat cards */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard
+          index={0}
+          label="Volume Total"
+          value={formatBRL(stats.totalVolumeRaw)}
+          description="Total de transações aprovadas"
+          icon={Wallet}
+          growth={stats.growth.volume}
+          sparkData={sparkVolume}
+          color="blue"
+        />
+        <StatCard
+          index={1}
+          label="Taxas Arrecadadas"
+          value={formatBRL(stats.totalFeesRaw)}
+          description="Receita total em taxas"
+          icon={DollarSign}
+          growth={stats.growth.fees}
+          sparkData={sparkFees}
+          color="green"
+        />
+        <StatCard
+          index={2}
+          label="Usuários Cadastrados"
+          value={stats.totalUsers.toString()}
+          description="Total de usuários"
+          icon={Users}
+          growth={stats.growth.users}
+          sparkData={sparkApproved}
+          color="purple"
+        />
+        <StatCard
+          index={3}
+          label="Transações Aprovadas"
+          value={stats.completedTransactions.toString()}
+          description="Transações concluídas"
+          icon={CheckCircle2}
+          growth={stats.growth.transactions}
+          sparkData={sparkApproved}
+          color="emerald"
+        />
+      </div>
+
+      {/* Alerts */}
+      {alerts.length > 0 && (
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {alerts.map((a, i) => (
+            <Link
+              key={i}
+              href={a.href}
+              className="group flex items-center gap-3 rounded-xl border border-border bg-card px-4 py-3 shadow-sm transition-all hover:border-primary/30 hover:shadow-md"
+            >
+              <span className={`flex h-9 w-9 items-center justify-center rounded-lg ${a.color}`}>
+                <a.icon className="h-5 w-5" />
+              </span>
+              <span className="flex-1 text-sm font-medium text-foreground">{a.label}</span>
+              <AlertTriangle className="h-4 w-4 text-muted-foreground transition-transform group-hover:scale-110" />
+            </Link>
+          ))}
+        </div>
+      )}
+
+      {/* Charts */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <div className="lg:col-span-2">
+          <TransactionsOverview data={series} />
+        </div>
+        <MethodsDonut data={methods} />
+      </div>
+
+      {/* Recent transactions */}
+      <RecentTransactions transactions={transactions} />
     </div>
   );
 }

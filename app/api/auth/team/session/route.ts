@@ -1,10 +1,9 @@
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { jwtVerify } from 'jose'
+import { getJwtSecret } from '@/lib/jwt-secret'
 
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || 'fallback-secret-change-in-production'
-)
+const JWT_SECRET = getJwtSecret()
 
 const TEAM_COOKIE_NAME = 'team_session'
 

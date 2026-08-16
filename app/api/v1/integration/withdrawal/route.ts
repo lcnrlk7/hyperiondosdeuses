@@ -124,13 +124,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verificar KYC
-    if (profile.kyc_status !== "approved") {
-      return NextResponse.json(
-        { success: false, error: "KYC pendente ou nao aprovado", code: "KYC_REQUIRED" },
-        { status: 403 }
-      );
-    }
+    // NOTA: a verificacao de identidade (Didit) e feita na liberacao da conta,
+    // NAO a cada saque. A conta ja foi validada como ativa acima.
 
     const body = await request.json();
     const { amount, pix_key, pix_key_type, external_id, description } = body;
