@@ -5,18 +5,22 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import Image from "next/image";
-import { Mail, Lock, Loader2, ArrowLeft, KeyRound, ArrowRight } from "lucide-react";
+import { Mail, Lock, Loader2, ArrowLeft, KeyRound, ArrowRight, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+
+type Step = "credentials" | "2fa" | "email-code";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [requires2FA, setRequires2FA] = useState(false);
+  const [step, setStep] = useState<Step>("credentials");
   const [twoFactorCode, setTwoFactorCode] = useState("");
   const [isBackupCode, setIsBackupCode] = useState(false);
+  const [emailCode, setEmailCode] = useState("");
+  const [resendCooldown, setResendCooldown] = useState(false);
   const router = useRouter();
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -28,30 +32,28 @@ export default function LoginPage() {
       const response = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          email, 
+        body: JSON.stringify({
+          email,
           password,
-          twoFactorCode: requires2FA ? twoFactorCode : undefined,
-          isBackupCode: requires2FA ? isBackupCode : undefined,
+          twoFactorCode: step === "2fa" ? twoFactorCode : undefined,
+          isBackupCode: step === "2fa" ? isBackupCode : undefined,
         }),
       });
 
       const data = await response.json();
 
       // Verificar se precisa de 2FA
-      if (data.requires2FA && !requires2FA) {
-        setRequires2FA(true);
+      if (data.requires2FA && step !== "2fa") {
+        setStep("2fa");
         setLoading(false);
         return;
       }
 
-      // Verificar se precisa de reconhecimento facial (dispositivo novo)
-      if (data.requiresFaceAuth && data.faceUrl) {
-        sessionStorage.setItem(
-          "face_login",
-          JSON.stringify({ ticket: data.ticket, challengeId: data.challengeId }),
-        );
-        window.location.href = data.faceUrl;
+      // Verificar se precisa do codigo de acesso por email
+      if (data.requiresEmailCode) {
+        setStep("email-code");
+        setEmailCode("");
+        setLoading(false);
         return;
       }
 
@@ -63,15 +65,7 @@ export default function LoginPage() {
         return;
       }
 
-      // Salvar token e dados do usuario no localStorage
-      if (data.token && data.user) {
-        localStorage.setItem("auth-token", data.token);
-        localStorage.setItem("auth-user", JSON.stringify(data.user));
-        // Ir direto para dashboard - o AuthProvider vai ler do localStorage
-        window.location.href = "/dashboard";
-      } else {
-        setError("Resposta invalida do servidor");
-      }
+      setError("Resposta invalida do servidor");
     } catch {
       setError("Ocorreu um erro ao fazer login");
     } finally {
@@ -79,10 +73,66 @@ export default function LoginPage() {
     }
   };
 
-  const handleBack = () => {
-    setRequires2FA(false);
+  const handleVerifyEmailCode = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch("/api/auth/login/verify-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, code: emailCode }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.error || "Codigo invalido");
+        return;
+      }
+
+      // Salvar token e dados do usuario no localStorage
+      if (data.token && data.user) {
+        localStorage.setItem("auth-token", data.token);
+        localStorage.setItem("auth-user", JSON.stringify(data.user));
+        window.location.href = "/dashboard";
+      } else {
+        setError("Resposta invalida do servidor");
+      }
+    } catch {
+      setError("Ocorreu um erro ao verificar o codigo");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResendCode = async () => {
+    if (resendCooldown || loading) return;
+    setError(null);
+    setResendCooldown(true);
+    setTimeout(() => setResendCooldown(false), 30000);
+
+    try {
+      const response = await fetch("/api/auth/login/verify-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password, resend: true }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        setError(data.error || "Nao foi possivel reenviar o codigo");
+      }
+    } catch {
+      setError("Erro ao reenviar o codigo");
+    }
+  };
+
+  const handleBackToCredentials = () => {
+    setStep("credentials");
     setTwoFactorCode("");
     setIsBackupCode(false);
+    setEmailCode("");
     setError(null);
   };
 
@@ -90,8 +140,8 @@ export default function LoginPage() {
     <div className="min-h-screen bg-background flex items-center justify-center p-4 relative overflow-hidden">
       {/* Background Effects */}
       <div className="absolute inset-0 grid-pattern" />
-      <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-primary/20 rounded-full blur-[128px]" />
-      <div className="absolute bottom-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-[128px]" />
+      <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-primary/10 rounded-full blur-[128px]" />
+      <div className="absolute bottom-1/4 left-1/4 w-96 h-96 bg-primary/5 rounded-full blur-[128px]" />
 
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -108,7 +158,7 @@ export default function LoginPage() {
         </Link>
 
         {/* Card */}
-        <div className="bg-card border border-border rounded-2xl p-8">
+        <div className="bg-card border border-border rounded-2xl p-8 shadow-sm">
           {/* Logo */}
           <div className="flex items-center justify-center gap-3 mb-8">
             <Image src="/images/logo-hyperion.png" alt="Hyperion Pay" width={48} height={48} />
@@ -118,7 +168,7 @@ export default function LoginPage() {
             </div>
           </div>
 
-          {!requires2FA ? (
+          {step === "credentials" && (
             <>
               <h1 className="text-2xl font-bold text-foreground text-center mb-2">
                 Bem-vindo de volta
@@ -135,9 +185,7 @@ export default function LoginPage() {
 
               <form onSubmit={handleLogin} className="space-y-4">
                 <div className="space-y-2">
-                  <label className="text-sm text-foreground font-medium">
-                    Email
-                  </label>
+                  <label className="text-sm text-foreground font-medium">Email</label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                     <Input
@@ -153,13 +201,8 @@ export default function LoginPage() {
 
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <label className="text-sm text-foreground font-medium">
-                      Senha
-                    </label>
-                    <Link
-                      href="/auth/forgot-password"
-                      className="text-sm text-primary hover:underline"
-                    >
+                    <label className="text-sm text-foreground font-medium">Senha</label>
+                    <Link href="/auth/forgot-password" className="text-sm text-primary hover:underline">
                       Esqueceu a senha?
                     </Link>
                   </div>
@@ -179,20 +222,18 @@ export default function LoginPage() {
                 <Button
                   type="submit"
                   disabled={loading}
-                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground glow-primary-sm"
+                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
                 >
-                  {loading ? (
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                  ) : (
-                    "Entrar"
-                  )}
+                  {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Entrar"}
                 </Button>
               </form>
             </>
-          ) : (
+          )}
+
+          {step === "2fa" && (
             <>
               <button
-                onClick={handleBack}
+                onClick={handleBackToCredentials}
                 className="flex items-center gap-2 text-muted-foreground hover:text-foreground mb-6 transition-colors"
               >
                 <ArrowLeft className="w-4 h-4" />
@@ -228,7 +269,13 @@ export default function LoginPage() {
                     <Input
                       type="text"
                       value={twoFactorCode}
-                      onChange={(e) => setTwoFactorCode(isBackupCode ? e.target.value.toUpperCase() : e.target.value.replace(/\D/g, "").slice(0, 6))}
+                      onChange={(e) =>
+                        setTwoFactorCode(
+                          isBackupCode
+                            ? e.target.value.toUpperCase()
+                            : e.target.value.replace(/\D/g, "").slice(0, 6)
+                        )
+                      }
                       placeholder={isBackupCode ? "XXXX-XXXX" : "000000"}
                       className="pl-10 bg-secondary border-border text-center text-lg tracking-widest"
                       maxLength={isBackupCode ? 9 : 6}
@@ -241,13 +288,13 @@ export default function LoginPage() {
                 <Button
                   type="submit"
                   disabled={loading || (!isBackupCode && twoFactorCode.length !== 6)}
-                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground glow-primary-sm"
+                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
                 >
                   {loading ? (
                     <Loader2 className="w-5 h-5 animate-spin" />
                   ) : (
                     <>
-                      Verificar
+                      Continuar
                       <ArrowRight className="w-4 h-4 ml-2" />
                     </>
                   )}
@@ -267,12 +314,90 @@ export default function LoginPage() {
             </>
           )}
 
-          <p className="text-center text-muted-foreground text-sm mt-6">
-            Não tem uma conta?{" "}
-            <Link href="/auth/register" className="text-primary hover:underline">
-              Criar conta
-            </Link>
-          </p>
+          {step === "email-code" && (
+            <>
+              <button
+                onClick={handleBackToCredentials}
+                className="flex items-center gap-2 text-muted-foreground hover:text-foreground mb-6 transition-colors"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                Voltar
+              </button>
+
+              <div className="flex items-center justify-center mb-6">
+                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+                  <ShieldCheck className="w-8 h-8 text-primary" />
+                </div>
+              </div>
+
+              <h1 className="text-2xl font-bold text-foreground text-center mb-2">
+                Codigo de Acesso
+              </h1>
+              <p className="text-muted-foreground text-center mb-8">
+                Enviamos um codigo de 6 digitos para{" "}
+                <span className="text-foreground font-medium">{email}</span>
+              </p>
+
+              {error && (
+                <div className="bg-destructive/10 border border-destructive/20 text-destructive text-sm rounded-lg p-3 mb-6">
+                  {error}
+                </div>
+              )}
+
+              <form onSubmit={handleVerifyEmailCode} className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-sm text-foreground font-medium">Codigo de 6 digitos</label>
+                  <div className="relative">
+                    <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                    <Input
+                      type="text"
+                      inputMode="numeric"
+                      value={emailCode}
+                      onChange={(e) => setEmailCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                      placeholder="000000"
+                      className="pl-10 bg-secondary border-border text-center text-lg tracking-widest"
+                      maxLength={6}
+                      required
+                      autoFocus
+                    />
+                  </div>
+                </div>
+
+                <Button
+                  type="submit"
+                  disabled={loading || emailCode.length !== 6}
+                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
+                >
+                  {loading ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : (
+                    <>
+                      Verificar e entrar
+                      <ArrowRight className="w-4 h-4 ml-2" />
+                    </>
+                  )}
+                </Button>
+
+                <button
+                  type="button"
+                  onClick={handleResendCode}
+                  disabled={resendCooldown}
+                  className="w-full text-sm text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+                >
+                  {resendCooldown ? "Aguarde para reenviar o codigo" : "Reenviar codigo"}
+                </button>
+              </form>
+            </>
+          )}
+
+          {step === "credentials" && (
+            <p className="text-center text-muted-foreground text-sm mt-6">
+              Não tem uma conta?{" "}
+              <Link href="/auth/register" className="text-primary hover:underline">
+                Criar conta
+              </Link>
+            </p>
+          )}
         </div>
       </motion.div>
     </div>

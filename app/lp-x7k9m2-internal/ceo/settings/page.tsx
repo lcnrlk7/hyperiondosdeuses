@@ -95,7 +95,7 @@ export default function SettingsPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white mb-2">Configurações</h1>
+          <h1 className="text-2xl font-bold text-foreground mb-2">Configurações</h1>
           <p className="text-muted-foreground">
             Configure as taxas e limites do sistema
           </p>
@@ -135,7 +135,7 @@ export default function SettingsPage() {
             <DollarSign className="w-6 h-6 text-green-400" />
           </div>
           <div>
-            <h2 className="text-lg font-semibold text-white">Taxas de Deposito (PIX In)</h2>
+            <h2 className="text-lg font-semibold text-foreground">Taxas de Deposito (PIX In)</h2>
             <p className="text-sm text-muted-foreground">
               Taxas cobradas quando o cliente faz um pagamento PIX
             </p>
@@ -147,7 +147,7 @@ export default function SettingsPage() {
             <label className="text-sm text-muted-foreground mb-2 block">
               Taxa Percentual (%)
             </label>
-            <div className="w-full px-4 py-2.5 bg-secondary border border-border rounded-xl text-white opacity-70">
+            <div className="w-full px-4 py-2.5 bg-secondary border border-border rounded-xl text-foreground opacity-70">
               {DEPOSIT_PERCENTAGE_FEE.toFixed(2)}
             </div>
           </div>
@@ -155,7 +155,7 @@ export default function SettingsPage() {
             <label className="text-sm text-muted-foreground mb-2 block">
               Valor Fixo (R$)
             </label>
-            <div className="w-full px-4 py-2.5 bg-secondary border border-border rounded-xl text-white opacity-70">
+            <div className="w-full px-4 py-2.5 bg-secondary border border-border rounded-xl text-foreground opacity-70">
               {DEPOSIT_FIXED_FEE.toFixed(2)}
             </div>
           </div>
@@ -178,7 +178,7 @@ export default function SettingsPage() {
             <Percent className="w-6 h-6 text-indigo-400" />
           </div>
           <div>
-            <h2 className="text-lg font-semibold text-white">Taxas de Saque (PIX Out)</h2>
+            <h2 className="text-lg font-semibold text-foreground">Taxas de Saque (PIX Out)</h2>
             <p className="text-sm text-muted-foreground">
               Taxas cobradas quando o usuario solicita saque
             </p>
@@ -200,7 +200,7 @@ export default function SettingsPage() {
                   withdrawal_fee: e.target.value,
                 })
               }
-              className="w-full px-4 py-2.5 bg-secondary border border-border rounded-xl text-white focus:outline-none focus:border-primary/50"
+              className="w-full px-4 py-2.5 bg-secondary border border-border rounded-xl text-foreground focus:outline-none focus:border-primary/50"
             />
             <p className="text-xs text-muted-foreground mt-2">
               Valor fixo cobrado por saque. Vale para todos os usuarios.
@@ -221,7 +221,7 @@ export default function SettingsPage() {
             <DollarSign className="w-6 h-6 text-blue-400" />
           </div>
           <div>
-            <h2 className="text-lg font-semibold text-white">Limites de Depósito</h2>
+            <h2 className="text-lg font-semibold text-foreground">Limites de Depósito</h2>
             <p className="text-sm text-muted-foreground">
               Configure os limites para depósitos PIX
             </p>
@@ -240,7 +240,7 @@ export default function SettingsPage() {
               onChange={(e) =>
                 setSettings({ ...settings, min_deposit: e.target.value })
               }
-              className="w-full px-4 py-2.5 bg-secondary border border-border rounded-xl text-white focus:outline-none focus:border-primary/50"
+              className="w-full px-4 py-2.5 bg-secondary border border-border rounded-xl text-foreground focus:outline-none focus:border-primary/50"
             />
           </div>
           <div>
@@ -254,7 +254,7 @@ export default function SettingsPage() {
               onChange={(e) =>
                 setSettings({ ...settings, max_deposit: e.target.value })
               }
-              className="w-full px-4 py-2.5 bg-secondary border border-border rounded-xl text-white focus:outline-none focus:border-primary/50"
+              className="w-full px-4 py-2.5 bg-secondary border border-border rounded-xl text-foreground focus:outline-none focus:border-primary/50"
             />
           </div>
         </div>
@@ -272,7 +272,7 @@ export default function SettingsPage() {
             <DollarSign className="w-6 h-6 text-purple-400" />
           </div>
           <div>
-            <h2 className="text-lg font-semibold text-white">Limites de Saque</h2>
+            <h2 className="text-lg font-semibold text-foreground">Limites de Saque</h2>
             <p className="text-sm text-muted-foreground">
               Configure os limites para solicitacoes de saque
             </p>
@@ -291,7 +291,7 @@ export default function SettingsPage() {
               onChange={(e) =>
                 setSettings({ ...settings, min_withdrawal: e.target.value })
               }
-              className="w-full px-4 py-2.5 bg-secondary border border-border rounded-xl text-white focus:outline-none focus:border-primary/50"
+              className="w-full px-4 py-2.5 bg-secondary border border-border rounded-xl text-foreground focus:outline-none focus:border-primary/50"
             />
           </div>
           <div>
@@ -305,7 +305,7 @@ export default function SettingsPage() {
               onChange={(e) =>
                 setSettings({ ...settings, max_withdrawal: e.target.value })
               }
-              className="w-full px-4 py-2.5 bg-secondary border border-border rounded-xl text-white focus:outline-none focus:border-primary/50"
+              className="w-full px-4 py-2.5 bg-secondary border border-border rounded-xl text-foreground focus:outline-none focus:border-primary/50"
             />
           </div>
           <div>
@@ -322,7 +322,7 @@ export default function SettingsPage() {
                   daily_withdrawal_limit: e.target.value,
                 })
               }
-              className="w-full px-4 py-2.5 bg-secondary border border-border rounded-xl text-white focus:outline-none focus:border-primary/50"
+              className="w-full px-4 py-2.5 bg-secondary border border-border rounded-xl text-foreground focus:outline-none focus:border-primary/50"
             />
           </div>
           <div>
@@ -339,7 +339,7 @@ export default function SettingsPage() {
                   auto_withdraw_limit: e.target.value,
                 })
               }
-              className="w-full px-4 py-2.5 bg-secondary border border-border rounded-xl text-white focus:outline-none focus:border-primary/50"
+              className="w-full px-4 py-2.5 bg-secondary border border-border rounded-xl text-foreground focus:outline-none focus:border-primary/50"
             />
             <p className="text-xs text-muted-foreground mt-1">
               Acima deste valor requer aprovacao

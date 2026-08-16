@@ -1,13 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { sql } from '@/lib/db'
 import bcrypt from 'bcryptjs'
-import { SignJWT } from 'jose'
-
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || 'fallback-secret-change-in-production'
-)
-
-const TEAM_COOKIE_NAME = 'team_session'
+import { isAllowedAdmin } from '@/lib/admin-auth'
+import { createLoginCode } from '@/lib/login-code'
+import { sendLoginCodeEmail } from '@/lib/email'
 
 export async function POST(request: NextRequest) {
   try {
@@ -18,6 +14,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: 'Email e senha sao obrigatorios' },
         { status: 400 }
+      )
+    }
+
+    // SEGURANCA: apenas o admin autorizado pode acessar o painel interno.
+    // Qualquer outro email e recusado com mensagem generica.
+    if (!isAllowedAdmin(email)) {
+      return NextResponse.json(
+        { error: 'Email ou senha incorretos' },
+        { status: 401 }
       )
     }
 
@@ -54,7 +59,7 @@ export async function POST(request: NextRequest) {
     }
 
     const isValid = await bcrypt.compare(password, member.password_hash)
-    
+
     if (!isValid) {
       return NextResponse.json(
         { error: 'Email ou senha incorretos' },
@@ -62,50 +67,33 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Atualizar ultimo login
-    await sql`
-      UPDATE team_members 
-      SET last_login = NOW(), updated_at = NOW() 
-      WHERE id = ${member.id}
-    `
+    // SEGURANCA: codigo de acesso por email (login em 2 etapas OBRIGATORIO).
+    // A sessao (cookie team_session) so e emitida em
+    // /api/auth/team/login/verify-code apos validar o codigo.
+    const { code, cooldown } = await createLoginCode(member.email)
 
-    // Criar token JWT
-    const token = await new SignJWT({
-      id: member.id,
+    if (!code && !cooldown) {
+      return NextResponse.json(
+        { error: 'Nao foi possivel gerar o codigo de acesso. Tente novamente.' },
+        { status: 500 }
+      )
+    }
+
+    if (code) {
+      const sent = await sendLoginCodeEmail(member.email, code, member.name || undefined)
+      if (!sent) {
+        return NextResponse.json(
+          { error: 'Erro ao enviar o codigo de acesso. Tente novamente.' },
+          { status: 500 }
+        )
+      }
+    }
+
+    return NextResponse.json({
+      requiresEmailCode: true,
       email: member.email,
-      name: member.name,
-      role: member.role,
-      permissions: member.permissions,
-      isTeamMember: true,
+      message: 'Enviamos um codigo de acesso para o seu email.',
     })
-      .setProtectedHeader({ alg: 'HS256' })
-      .setExpirationTime('24h')
-      .sign(JWT_SECRET)
-
-    // Criar response com dados do membro
-    const response = NextResponse.json({
-      success: true,
-      member: {
-        id: member.id,
-        name: member.name,
-        email: member.email,
-        role: member.role,
-        permissions: member.permissions || {},
-      },
-      redirectUrl: '/lp-x7k9m2-internal/ceo',
-      loginTime: Date.now(),
-    })
-
-    // Definir cookie
-    response.cookies.set(TEAM_COOKIE_NAME, token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 60 * 60 * 24,
-      path: '/',
-    })
-
-    return response
   } catch (error) {
     console.error('Team login error:', error)
     return NextResponse.json(

@@ -518,7 +518,7 @@ const openEditModal = (user: UserProfile) => {
       {/* Header */}
       <div className="flex flex-col gap-4">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-white mb-1">Usuarios</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground mb-1">Usuarios</h1>
           <p className="text-sm text-muted-foreground">
             Gerencie todos os usuarios do sistema
           </p>
@@ -531,7 +531,7 @@ const openEditModal = (user: UserProfile) => {
               placeholder="Buscar usuario..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full sm:w-64 pl-10 pr-4 py-2.5 bg-secondary border border-border rounded-xl text-white placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
+              className="w-full sm:w-64 pl-10 pr-4 py-2.5 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
             />
           </div>
           <button
@@ -539,7 +539,7 @@ const openEditModal = (user: UserProfile) => {
             className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border transition-colors ${
               hasActiveFilters 
                 ? "bg-primary/10 border-primary text-primary" 
-                : "bg-secondary border-border text-white hover:border-primary/50"
+                : "bg-secondary border-border text-foreground hover:border-primary/50"
             }`}
           >
             <Filter className="w-4 h-4" />
@@ -566,7 +566,7 @@ const openEditModal = (user: UserProfile) => {
               <select
                 value={filters.kyc}
                 onChange={(e) => setFilters({ ...filters, kyc: e.target.value as Filters["kyc"] })}
-                className="px-3 py-2 bg-secondary border border-border rounded-lg text-white text-sm focus:outline-none focus:border-primary/50"
+                className="px-3 py-2 bg-secondary border border-border rounded-lg text-foreground text-sm focus:outline-none focus:border-primary/50"
               >
                 <option value="all" className="bg-card">Todos</option>
                 <option value="approved" className="bg-card">Aprovado</option>
@@ -582,7 +582,7 @@ const openEditModal = (user: UserProfile) => {
               <select
                 value={filters.route}
                 onChange={(e) => setFilters({ ...filters, route: e.target.value as Filters["route"] })}
-                className="px-3 py-2 bg-secondary border border-border rounded-lg text-white text-sm focus:outline-none focus:border-primary/50"
+                className="px-3 py-2 bg-secondary border border-border rounded-lg text-foreground text-sm focus:outline-none focus:border-primary/50"
               >
                 <option value="all" className="bg-card">Todas</option>
                 <option value="black" className="bg-card">Black</option>
@@ -596,7 +596,7 @@ const openEditModal = (user: UserProfile) => {
               <select
                 value={filters.sortBalance}
                 onChange={(e) => setFilters({ ...filters, sortBalance: e.target.value as Filters["sortBalance"] })}
-                className="px-3 py-2 bg-secondary border border-border rounded-lg text-white text-sm focus:outline-none focus:border-primary/50"
+                className="px-3 py-2 bg-secondary border border-border rounded-lg text-foreground text-sm focus:outline-none focus:border-primary/50"
               >
                 <option value="none" className="bg-card">Sem ordem</option>
                 <option value="desc" className="bg-card">Maior</option>
@@ -645,7 +645,7 @@ const openEditModal = (user: UserProfile) => {
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="glass rounded-xl p-4">
-          <p className="text-2xl font-bold text-white">{users.length}</p>
+          <p className="text-2xl font-bold text-foreground">{users.length}</p>
           <p className="text-sm text-muted-foreground">Total de Usuários</p>
         </div>
         <div className="glass rounded-xl p-4">
@@ -681,7 +681,7 @@ const openEditModal = (user: UserProfile) => {
                 )}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-medium text-white truncate">{user.name || "Sem nome"}</p>
+                <p className="font-medium text-foreground truncate">{user.name || "Sem nome"}</p>
                 <p className="text-sm text-muted-foreground truncate">{user.email}</p>
                 <div className="flex flex-wrap gap-2 mt-2">
                   <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${user.kyc_status === "approved" ? "bg-green-400/10 text-green-400" : user.kyc_status === "pending" ? "bg-yellow-400/10 text-yellow-400" : user.kyc_status === "submitted" ? "bg-blue-400/10 text-blue-400" : "bg-red-400/10 text-red-400"}`}>
@@ -710,7 +710,7 @@ const openEditModal = (user: UserProfile) => {
               <button onClick={() => openBalanceModal(user)} className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-green-500/10 text-green-400 text-sm font-medium">
                 <DollarSign className="w-4 h-4" /> Saldo
               </button>
-              <button onClick={() => openEditModal(user)} className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-secondary text-white text-sm font-medium">
+              <button onClick={() => openEditModal(user)} className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-secondary text-foreground text-sm font-medium">
                 <Edit className="w-4 h-4" /> Editar
               </button>
               <button onClick={() => toggleUserStatus(user)} className={`px-3 py-2 rounded-lg text-sm font-medium ${user.is_active ? "bg-red-500/10 text-red-400" : "bg-green-500/10 text-green-400"}`}>
@@ -772,7 +772,7 @@ const openEditModal = (user: UserProfile) => {
                         )}
                       </div>
                       <div>
-                        <p className="font-medium text-white">
+                        <p className="font-medium text-foreground">
                           {user.name || "Sem nome"}
                         </p>
                         <p className="text-sm text-muted-foreground">
@@ -858,7 +858,7 @@ const openEditModal = (user: UserProfile) => {
                       </button>
                       <button
                         onClick={() => openEditModal(user)}
-                        className="p-2 rounded-lg hover:bg-secondary transition-colors text-muted-foreground hover:text-white"
+                        className="p-2 rounded-lg hover:bg-secondary transition-colors text-muted-foreground hover:text-foreground"
                         title="Editar"
                       >
                         <Edit className="w-4 h-4" />
@@ -935,7 +935,7 @@ const openEditModal = (user: UserProfile) => {
             animate={{ opacity: 1, scale: 1 }}
             className="glass rounded-2xl p-6 w-full max-w-md"
           >
-            <h2 className="text-xl font-semibold text-white mb-6">
+            <h2 className="text-xl font-semibold text-foreground mb-6">
               Editar Usuário
             </h2>
             <div className="space-y-4">
@@ -963,7 +963,7 @@ const openEditModal = (user: UserProfile) => {
                       daily_limit: Number(e.target.value),
                     })
                   }
-                  className="w-full px-4 py-2.5 bg-secondary border border-border rounded-xl text-white focus:outline-none focus:border-primary/50"
+                  className="w-full px-4 py-2.5 bg-secondary border border-border rounded-xl text-foreground focus:outline-none focus:border-primary/50"
                 />
               </div>
               {/* Taxas PIX In (Deposito) */}
@@ -990,7 +990,7 @@ const openEditModal = (user: UserProfile) => {
                           fee_percentage: e.target.value,
                         })
                       }
-                      className="w-full px-4 py-2.5 bg-secondary border border-border rounded-xl text-white placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
+                      className="w-full px-4 py-2.5 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
                     />
                     <p className="text-xs text-muted-foreground mt-1">
                       White: 0% | Black: 4%
@@ -1012,7 +1012,7 @@ const openEditModal = (user: UserProfile) => {
                           fixed_fee: e.target.value,
                         })
                       }
-                      className="w-full px-4 py-2.5 bg-secondary border border-border rounded-xl text-white placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
+                      className="w-full px-4 py-2.5 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
                     />
                     <p className="text-xs text-muted-foreground mt-1">
                       White: R$ 0,70 | Black: R$ 0,00
@@ -1043,7 +1043,7 @@ const openEditModal = (user: UserProfile) => {
                         withdrawal_fee: e.target.value,
                       })
                     }
-                    className="w-full px-4 py-2.5 bg-secondary border border-border rounded-xl text-white placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
+                    className="w-full px-4 py-2.5 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
                   />
                   <p className="text-xs text-muted-foreground mt-1">
                     White: 2% | Black: 5%
@@ -1069,7 +1069,7 @@ const openEditModal = (user: UserProfile) => {
                       });
                     }
                   }}
-                  className="w-full px-4 py-2.5 bg-secondary border border-border rounded-xl text-white focus:outline-none focus:border-primary/50"
+                  className="w-full px-4 py-2.5 bg-secondary border border-border rounded-xl text-foreground focus:outline-none focus:border-primary/50"
                 >
                   {acquirers.filter(a => a.route_type === "white").length > 0 && (
                     <optgroup label="WHITE" className="bg-card text-muted-foreground">
@@ -1082,7 +1082,7 @@ const openEditModal = (user: UserProfile) => {
                         if (!taxaEntrada) taxaEntrada = 'R$0,00';
                         const taxaSaque = acq.withdrawal_fee_is_percentage ? `${acq.withdrawal_fee}%` : `R$${Number(acq.withdrawal_fee).toFixed(2)}`;
                         return (
-                          <option key={acq.id} value={acq.id} className="bg-card text-white">
+                          <option key={acq.id} value={acq.id} className="bg-card text-foreground">
                             Rota White ({acq.name}) - Taxa: {taxaEntrada} | Saque: {taxaSaque}
                           </option>
                         );
@@ -1100,7 +1100,7 @@ const openEditModal = (user: UserProfile) => {
                         if (!taxaEntrada) taxaEntrada = 'R$0,00';
                         const taxaSaque = acq.withdrawal_fee_is_percentage ? `${acq.withdrawal_fee}%` : `R$${Number(acq.withdrawal_fee).toFixed(2)}`;
                         return (
-                          <option key={acq.id} value={acq.id} className="bg-card text-white">
+                          <option key={acq.id} value={acq.id} className="bg-card text-foreground">
                             Rota Black ({acq.name}) - Taxa: {taxaEntrada} | Saque: {taxaSaque}
                           </option>
                         );
@@ -1123,7 +1123,7 @@ const openEditModal = (user: UserProfile) => {
                   }
                   className="w-4 h-4 rounded border-border bg-secondary text-primary focus:ring-primary/50"
                 />
-                <label htmlFor="is_active" className="text-sm text-white">
+                <label htmlFor="is_active" className="text-sm text-foreground">
                   Usuário ativo
                 </label>
               </div>
@@ -1132,7 +1132,7 @@ const openEditModal = (user: UserProfile) => {
               <button
                 onClick={() => setShowModal(false)}
                 disabled={isUpdatingUser}
-                className="flex-1 px-4 py-2.5 rounded-xl border border-border text-white hover:bg-secondary transition-colors disabled:opacity-50"
+                className="flex-1 px-4 py-2.5 rounded-xl border border-border text-foreground hover:bg-secondary transition-colors disabled:opacity-50"
               >
                 Cancelar
               </button>
@@ -1163,17 +1163,17 @@ const openEditModal = (user: UserProfile) => {
             animate={{ opacity: 1, scale: 1 }}
             className="glass rounded-2xl p-6 w-full max-w-md"
           >
-            <h2 className="text-xl font-semibold text-white mb-2">
+            <h2 className="text-xl font-semibold text-foreground mb-2">
               Editar Saldo
             </h2>
             <p className="text-sm text-muted-foreground mb-6">
-              Usuário: <span className="text-white">{selectedUser.name || selectedUser.email}</span>
+              Usuário: <span className="text-foreground">{selectedUser.name || selectedUser.email}</span>
             </p>
             
             {/* Saldo atual */}
             <div className="glass rounded-xl p-4 mb-6">
               <p className="text-sm text-muted-foreground mb-1">Saldo Atual</p>
-              <p className="text-2xl font-bold text-white">
+              <p className="text-2xl font-bold text-foreground">
                 {formatCurrency(selectedUser.balance || 0)}
               </p>
             </div>
@@ -1190,7 +1190,7 @@ const openEditModal = (user: UserProfile) => {
                     className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl border transition-colors ${
                       balanceOperation === "add"
                         ? "bg-green-500/10 border-green-500 text-green-400"
-                        : "bg-secondary border-border text-white hover:border-green-500/50"
+                        : "bg-secondary border-border text-foreground hover:border-green-500/50"
                     }`}
                   >
                     <Plus className="w-4 h-4" />
@@ -1201,7 +1201,7 @@ const openEditModal = (user: UserProfile) => {
                     className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl border transition-colors ${
                       balanceOperation === "remove"
                         ? "bg-red-500/10 border-red-500 text-red-400"
-                        : "bg-secondary border-border text-white hover:border-red-500/50"
+                        : "bg-secondary border-border text-foreground hover:border-red-500/50"
                     }`}
                   >
                     <Minus className="w-4 h-4" />
@@ -1222,7 +1222,7 @@ const openEditModal = (user: UserProfile) => {
                   placeholder="0,00"
                   value={balanceAmount}
                   onChange={(e) => setBalanceAmount(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-secondary border border-border rounded-xl text-white placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
+                  className="w-full px-4 py-2.5 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
                 />
               </div>
 
@@ -1236,7 +1236,7 @@ const openEditModal = (user: UserProfile) => {
                   placeholder="Ex: Correção de saldo, bônus, etc."
                   value={balanceReason}
                   onChange={(e) => setBalanceReason(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-secondary border border-border rounded-xl text-white placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
+                  className="w-full px-4 py-2.5 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
                 />
               </div>
 
@@ -1266,7 +1266,7 @@ const openEditModal = (user: UserProfile) => {
                   setBalanceAmount("");
                   setBalanceReason("");
                 }}
-                className="flex-1 px-4 py-2.5 rounded-xl border border-border text-white hover:bg-secondary transition-colors"
+                className="flex-1 px-4 py-2.5 rounded-xl border border-border text-foreground hover:bg-secondary transition-colors"
               >
                 Cancelar
               </button>

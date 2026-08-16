@@ -182,7 +182,7 @@ export default function KYCPage() {
       <div className="flex items-start gap-3 rounded-xl border border-green-500/30 bg-green-500/10 p-4">
         <ShieldCheck className="w-5 h-5 text-green-500 shrink-0 mt-0.5" />
         <div>
-          <p className="text-sm font-semibold text-white">Verificação automática ativada</p>
+          <p className="text-sm font-semibold text-foreground">Verificação automática ativada</p>
           <p className="text-sm text-muted-foreground mt-0.5">
             O KYC agora é aprovado automaticamente pela verificação de prova de vida (biometria).
             Não é mais necessário analisar documentos manualmente — os usuários são liberados assim
@@ -194,7 +194,7 @@ export default function KYCPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white mb-2">Verificação KYC</h1>
+          <h1 className="text-2xl font-bold text-foreground mb-2">Verificação KYC</h1>
           <p className="text-muted-foreground">
             Analise e aprove documentos de verificação
           </p>
@@ -207,13 +207,13 @@ export default function KYCPage() {
               placeholder="Buscar..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 pr-4 py-2.5 bg-secondary border border-border rounded-xl text-white placeholder:text-muted-foreground focus:outline-none focus:border-primary/50 w-48"
+              className="pl-10 pr-4 py-2.5 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50 w-48"
             />
           </div>
           <select
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
-            className="px-4 py-2.5 bg-secondary border border-border rounded-xl text-white focus:outline-none focus:border-primary/50"
+            className="px-4 py-2.5 bg-secondary border border-border rounded-xl text-foreground focus:outline-none focus:border-primary/50"
           >
             <option value="all" className="bg-card">
               Todos
@@ -237,7 +237,7 @@ export default function KYCPage() {
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         <div className="glass rounded-xl p-4">
-          <p className="text-2xl font-bold text-white">{users.length}</p>
+          <p className="text-2xl font-bold text-foreground">{users.length}</p>
           <p className="text-sm text-muted-foreground">Total Usuários</p>
         </div>
         <div className="glass rounded-xl p-4">
@@ -300,7 +300,7 @@ export default function KYCPage() {
                     )}
                   </div>
                   <div>
-                    <p className="font-medium text-white">
+                    <p className="font-medium text-foreground">
                       {user.name || "Sem nome"}
                     </p>
                     <p className="text-sm text-muted-foreground">
@@ -336,7 +336,7 @@ export default function KYCPage() {
                       setSelectedUser(user);
                       setShowModal(true);
                     }}
-                    className="p-2 rounded-lg hover:bg-secondary transition-colors text-muted-foreground hover:text-white"
+                    className="p-2 rounded-lg hover:bg-secondary transition-colors text-muted-foreground hover:text-foreground"
                   >
                     <Eye className="w-5 h-5" />
                   </button>
@@ -356,7 +356,7 @@ export default function KYCPage() {
             className="glass rounded-2xl p-6 w-full max-w-3xl max-h-[90vh] overflow-y-auto"
           >
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-semibold text-white">
+              <h2 className="text-xl font-semibold text-foreground">
                 Verificação KYC - {selectedUser.name || selectedUser.email}
               </h2>
               <button
@@ -372,11 +372,11 @@ export default function KYCPage() {
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 <div>
                   <p className="text-sm text-muted-foreground mb-1">Nome</p>
-                  <p className="text-white">{selectedUser.name || "Não informado"}</p>
+                  <p className="text-foreground">{selectedUser.name || "Não informado"}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground mb-1">Email</p>
-                  <p className="text-white">{selectedUser.email}</p>
+                  <p className="text-foreground">{selectedUser.email}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground mb-1">Status</p>
@@ -425,7 +425,7 @@ export default function KYCPage() {
                         <div key={doc.id} className="rounded-xl bg-secondary border border-border overflow-hidden">
                           <div className="p-3 flex items-center justify-between border-b border-border">
                             <div>
-                              <p className="font-medium text-white text-sm">{getDocumentTypeLabel(doc.document_type)}</p>
+                              <p className="font-medium text-foreground text-sm">{getDocumentTypeLabel(doc.document_type)}</p>
                               <p className="text-xs text-muted-foreground">{formatDate(doc.created_at)}</p>
                             </div>
                             <div className="flex gap-2">
@@ -492,7 +492,7 @@ export default function KYCPage() {
                         value={rejectionReason}
                         onChange={(e) => setRejectionReason(e.target.value)}
                         placeholder="Informe o motivo caso rejeite a verificacao..."
-                        className="w-full px-4 py-3 bg-secondary border border-border rounded-xl text-white placeholder:text-muted-foreground focus:outline-none focus:border-primary/50 resize-none h-24"
+                        className="w-full px-4 py-3 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50 resize-none h-24"
                       />
                     </div>
                   )}
@@ -558,20 +558,20 @@ export default function KYCPage() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-white font-medium">{imagePreview.title}</h3>
+              <h3 className="text-foreground font-medium">{imagePreview.title}</h3>
               <div className="flex gap-2">
                 <a
                   href={imagePreview.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-2 px-3 py-2 bg-white/10 rounded-lg hover:bg-white/20 transition-colors text-white text-sm"
+                  className="flex items-center gap-2 px-3 py-2 bg-white/10 rounded-lg hover:bg-white/20 transition-colors text-foreground text-sm"
                 >
                   <ExternalLink className="w-4 h-4" />
                   Abrir em nova aba
                 </a>
                 <button
                   onClick={() => setImagePreview(null)}
-                  className="p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors text-white"
+                  className="p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors text-foreground"
                 >
                   <X className="w-5 h-5" />
                 </button>

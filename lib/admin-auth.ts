@@ -10,6 +10,17 @@ const JWT_SECRET = new TextEncoder().encode(
 
 const TEAM_COOKIE_NAME = 'team_session';
 
+/**
+ * Unico email autorizado a ter acesso administrativo.
+ * Qualquer outra conta e bloqueada, mesmo que exista na tabela team_members
+ * ou admin_team com role de admin/ceo. Fonte unica da verdade para o admin.
+ */
+export const ADMIN_EMAIL = 'elicecontadodiscord@gmail.com';
+
+export function isAllowedAdmin(email?: string | null): boolean {
+  return !!email && email.trim().toLowerCase() === ADMIN_EMAIL;
+}
+
 export interface AdminSession {
   userId: string;
   email: string;
@@ -44,7 +55,7 @@ export async function verifyAdmin(): Promise<AdminSession | null> {
           AND LOWER(role) IN ('ceo', 'admin', 'superadmin', 'manager', 'finance', 'attendant', 'support', 'tech')
         `;
 
-        if (memberCheck.length > 0) {
+        if (memberCheck.length > 0 && isAllowedAdmin(memberCheck[0].email)) {
           return {
             userId: memberCheck[0].id,
             email: memberCheck[0].email,
@@ -63,7 +74,7 @@ export async function verifyAdmin(): Promise<AdminSession | null> {
           AND LOWER(at.role) IN ('ceo', 'admin', 'superadmin', 'manager', 'finance', 'attendant')
         `;
         
-        if (teamCheck.length > 0) {
+        if (teamCheck.length > 0 && isAllowedAdmin(teamCheck[0].email)) {
           return {
             userId: teamCheck[0].user_id,
             email: teamCheck[0].email,
@@ -90,7 +101,7 @@ export async function verifyAdmin(): Promise<AdminSession | null> {
       WHERE id = ${session.userId} AND is_admin = true AND is_active = true
     `;
     
-    if (profileResult.length > 0) {
+    if (profileResult.length > 0 && isAllowedAdmin(profileResult[0].email)) {
       return {
         userId: profileResult[0].id,
         email: profileResult[0].email,
@@ -108,7 +119,7 @@ export async function verifyAdmin(): Promise<AdminSession | null> {
       AND LOWER(at.role) IN ('ceo', 'admin', 'superadmin', 'manager', 'finance', 'attendant')
     `;
     
-    if (teamResult.length > 0) {
+    if (teamResult.length > 0 && isAllowedAdmin(teamResult[0].email)) {
       return {
         userId: session.userId,
         email: teamResult[0].email,

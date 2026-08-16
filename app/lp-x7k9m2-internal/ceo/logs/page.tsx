@@ -43,7 +43,7 @@ interface AuditLog {
 type Category = "all" | "auth" | "transactions" | "users" | "errors" | "system";
 
 const categoryConfig: Record<Category, { label: string; icon: typeof Activity; color: string; bgColor: string }> = {
-  all: { label: "Todos", icon: Activity, color: "text-white", bgColor: "bg-white/10" },
+  all: { label: "Todos", icon: Activity, color: "text-foreground", bgColor: "bg-white/10" },
   auth: { label: "Autenticação", icon: Key, color: "text-blue-400", bgColor: "bg-blue-500/10" },
   transactions: { label: "Transações", icon: DollarSign, color: "text-green-400", bgColor: "bg-green-500/10" },
   users: { label: "Usuários", icon: Users, color: "text-purple-400", bgColor: "bg-purple-500/10" },
@@ -256,7 +256,7 @@ export default function LogsPage() {
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white mb-2">
+          <h1 className="text-2xl font-bold text-foreground mb-2">
             Logs de Auditoria
           </h1>
           <p className="text-muted-foreground">
@@ -305,7 +305,7 @@ export default function LogsPage() {
                 className={`flex items-center gap-2 px-4 py-2.5 rounded-xl transition-all ${
                   isActive
                     ? `${config.bgColor} ${config.color} ring-1 ring-current`
-                    : "text-muted-foreground hover:text-white hover:bg-secondary"
+                    : "text-muted-foreground hover:text-foreground hover:bg-secondary"
                 }`}
               >
                 <Icon className="w-4 h-4" />
@@ -336,7 +336,7 @@ export default function LogsPage() {
       <div className="glass rounded-2xl overflow-hidden">
         <div className="p-4 border-b border-border flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <h2 className="text-lg font-semibold text-white">
+            <h2 className="text-lg font-semibold text-foreground">
               {activeCategory === "all" ? "Todas as Atividades" : categoryConfig[activeCategory].label}
             </h2>
             {activeCategory !== "all" && (
@@ -383,7 +383,7 @@ export default function LogsPage() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1 flex-wrap">
-                        <p className="font-medium text-white">
+                        <p className="font-medium text-foreground">
                           {actionLabels[log.action] || log.action}
                         </p>
                         <span className={`text-xs px-2 py-0.5 rounded-full ${catConfig.bgColor} ${catConfig.color}`}>

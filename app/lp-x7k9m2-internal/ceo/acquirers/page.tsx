@@ -285,7 +285,7 @@ export default function AcquirersPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white mb-2">Adquirentes</h1>
+          <h1 className="text-2xl font-bold text-foreground mb-2">Adquirentes</h1>
           <p className="text-muted-foreground">
             Gerencie os gateways de pagamento
           </p>
@@ -304,7 +304,7 @@ export default function AcquirersPage() {
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="glass rounded-xl p-4">
-          <p className="text-2xl font-bold text-white">{acquirers.length}</p>
+          <p className="text-2xl font-bold text-foreground">{acquirers.length}</p>
           <p className="text-sm text-muted-foreground">Total</p>
         </div>
         <div className="glass rounded-xl p-4">
@@ -354,7 +354,7 @@ export default function AcquirersPage() {
                   </div>
                   <div>
                     <div className="flex items-center gap-3 mb-1">
-                      <h3 className="text-lg font-semibold text-white">
+                      <h3 className="text-lg font-semibold text-foreground">
                         {acquirer.name}
                       </h3>
                       <span
@@ -383,7 +383,7 @@ export default function AcquirersPage() {
                     </p>
                     <div className="flex flex-wrap items-center gap-4 text-sm">
                       <span className="text-muted-foreground">
-                        Código: <span className="text-white font-mono">{acquirer.code}</span>
+                        Código: <span className="text-foreground font-mono">{acquirer.code}</span>
                       </span>
                       <span className={`px-2 py-0.5 rounded text-xs font-medium ${
                         acquirer.route_type === "white" 
@@ -399,10 +399,10 @@ export default function AcquirersPage() {
                         Taxa Saque: <span className="text-green-400">{acquirer.withdrawal_fee_is_percentage ? `${acquirer.withdrawal_fee || 0}%` : `R$ ${Number(acquirer.withdrawal_fee || 0).toFixed(2)}`}</span>
                       </span>
                       <span className="text-muted-foreground">
-                        Min. Dep: <span className="text-white">R$ {Number(acquirer.min_deposit || 1).toFixed(2)}</span>
+                        Min. Dep: <span className="text-foreground">R$ {Number(acquirer.min_deposit || 1).toFixed(2)}</span>
                       </span>
                       <span className="text-muted-foreground">
-                        Min. Saque: <span className="text-white">R$ {Number(acquirer.min_withdrawal || 10).toFixed(2)}</span>
+                        Min. Saque: <span className="text-foreground">R$ {Number(acquirer.min_withdrawal || 10).toFixed(2)}</span>
                       </span>
                       <span className="text-muted-foreground">
                         Max. Saque: <span className="text-yellow-400">R$ {Number((acquirer as any).max_withdrawal || 10000).toLocaleString('pt-BR')}</span>
@@ -443,7 +443,7 @@ export default function AcquirersPage() {
                   </button>
                   <button
                     onClick={() => openEditModal(acquirer)}
-                    className="p-2 rounded-lg hover:bg-secondary transition-colors text-muted-foreground hover:text-white"
+                    className="p-2 rounded-lg hover:bg-secondary transition-colors text-muted-foreground hover:text-foreground"
                     title="Editar"
                   >
                     <Edit className="w-5 h-5" />
@@ -471,7 +471,7 @@ export default function AcquirersPage() {
             className="glass rounded-2xl p-6 w-full max-w-md"
           >
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-semibold text-white">
+              <h2 className="text-xl font-semibold text-foreground">
                 {editingAcquirer ? "Editar Adquirente" : "Novo Adquirente"}
               </h2>
               <button
@@ -492,7 +492,7 @@ export default function AcquirersPage() {
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
                   placeholder="Ex: MisticPay"
-                  className="w-full px-4 py-2.5 bg-secondary border border-border rounded-xl text-white placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
+                  className="w-full px-4 py-2.5 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
                 />
               </div>
               <div>
@@ -504,7 +504,7 @@ export default function AcquirersPage() {
                   value={form.code}
                   onChange={(e) => setForm({ ...form, code: e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, "") })}
                   placeholder="Ex: misticpay"
-                  className="w-full px-4 py-2.5 bg-secondary border border-border rounded-xl text-white placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
+                  className="w-full px-4 py-2.5 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
                 />
                 <p className="text-xs text-muted-foreground mt-1">
                   Usado para identificar a adquirente no código. Apenas letras minúsculas, números e underscore.
@@ -519,7 +519,7 @@ export default function AcquirersPage() {
                   value={form.api_url}
                   onChange={(e) => setForm({ ...form, api_url: e.target.value })}
                   placeholder="https://api.gateway.com"
-                  className="w-full px-4 py-2.5 bg-secondary border border-border rounded-xl text-white placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
+                  className="w-full px-4 py-2.5 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
                 />
               </div>
               <div>
@@ -531,7 +531,7 @@ export default function AcquirersPage() {
                   value={form.api_key}
                   onChange={(e) => setForm({ ...form, api_key: e.target.value })}
                   placeholder="Chave da API"
-                  className="w-full px-4 py-2.5 bg-secondary border border-border rounded-xl text-white placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
+                  className="w-full px-4 py-2.5 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
                 />
               </div>
               <div>
@@ -545,7 +545,7 @@ export default function AcquirersPage() {
                     setForm({ ...form, api_secret: e.target.value })
                   }
                   placeholder="Secret da API"
-                  className="w-full px-4 py-2.5 bg-secondary border border-border rounded-xl text-white placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
+                  className="w-full px-4 py-2.5 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
                 />
               </div>
               <div>
@@ -555,7 +555,7 @@ export default function AcquirersPage() {
                 <select
                   value={form.route_type}
                   onChange={(e) => setForm({ ...form, route_type: e.target.value as "white" | "black" })}
-                  className="w-full px-4 py-2.5 bg-secondary border border-border rounded-xl text-white focus:outline-none focus:border-primary/50"
+                  className="w-full px-4 py-2.5 bg-secondary border border-border rounded-xl text-foreground focus:outline-none focus:border-primary/50"
                 >
                   <option value="white">WHITE - Gateway Premium</option>
                   <option value="black">BLACK - Gateway Express</option>
@@ -575,7 +575,7 @@ export default function AcquirersPage() {
                     placeholder="2.5"
                     min="0"
                     step="0.1"
-                    className="w-full px-4 py-2.5 bg-secondary border border-border rounded-xl text-white placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
+                    className="w-full px-4 py-2.5 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
                   />
                 </div>
                 <div>
@@ -592,14 +592,14 @@ export default function AcquirersPage() {
                       placeholder="0"
                       min="0"
                       step="0.1"
-                      className="flex-1 px-4 py-2.5 bg-secondary border border-border rounded-xl text-white placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
+                      className="flex-1 px-4 py-2.5 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
                     />
                     <select
                       value={form.withdrawal_fee_is_percentage ? "percent" : "fixed"}
                       onChange={(e) =>
                         setForm({ ...form, withdrawal_fee_is_percentage: e.target.value === "percent" })
                       }
-                      className="px-3 py-2.5 bg-secondary border border-border rounded-xl text-white focus:outline-none focus:border-primary/50"
+                      className="px-3 py-2.5 bg-secondary border border-border rounded-xl text-foreground focus:outline-none focus:border-primary/50"
                     >
                       <option value="fixed">R$</option>
                       <option value="percent">%</option>
@@ -621,7 +621,7 @@ export default function AcquirersPage() {
                     placeholder="1"
                     min="0"
                     step="1"
-                    className="w-full px-4 py-2.5 bg-secondary border border-border rounded-xl text-white placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
+                    className="w-full px-4 py-2.5 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
                   />
                 </div>
                 <div>
@@ -637,7 +637,7 @@ export default function AcquirersPage() {
                     placeholder="10"
                     min="0"
                     step="1"
-                    className="w-full px-4 py-2.5 bg-secondary border border-border rounded-xl text-white placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
+                    className="w-full px-4 py-2.5 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
                   />
                 </div>
               </div>
@@ -655,7 +655,7 @@ export default function AcquirersPage() {
                     placeholder="10000"
                     min="0"
                     step="100"
-                    className="w-full px-4 py-2.5 bg-secondary border border-border rounded-xl text-white placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
+                    className="w-full px-4 py-2.5 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
                   />
                 </div>
                 <div>
@@ -671,7 +671,7 @@ export default function AcquirersPage() {
                     placeholder="10000"
                     min="0"
                     step="100"
-                    className="w-full px-4 py-2.5 bg-secondary border border-border rounded-xl text-white placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
+                    className="w-full px-4 py-2.5 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
                   />
                 </div>
               </div>
@@ -680,7 +680,7 @@ export default function AcquirersPage() {
             <div className="flex gap-3 mt-6">
               <button
                 onClick={closeModal}
-                className="flex-1 px-4 py-2.5 rounded-xl border border-border text-white hover:bg-secondary transition-colors"
+                className="flex-1 px-4 py-2.5 rounded-xl border border-border text-foreground hover:bg-secondary transition-colors"
               >
                 Cancelar
               </button>

@@ -714,7 +714,7 @@ export function GoalsRoadmap({ totalRevenue, userId }: GoalsRoadmapProps) {
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
               onClick={(e) => e.stopPropagation()}
-              className="w-full max-w-md bg-[#1a1a1a] rounded-2xl border border-border p-6"
+              className="w-full max-w-md bg-card rounded-2xl border border-border p-6"
             >
               {/* Header */}
               <div className="flex items-center justify-between mb-4">

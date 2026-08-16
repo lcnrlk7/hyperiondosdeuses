@@ -189,7 +189,7 @@ export default function CEODashboard() {
     <div className="p-4 sm:p-6 lg:p-8 space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-xl sm:text-2xl font-bold text-white mb-1">Dashboard CEO</h1>
+        <h1 className="text-xl sm:text-2xl font-bold text-foreground mb-1">Dashboard CEO</h1>
         <p className="text-sm text-muted-foreground">
           Visao geral do sistema Hyperion Pay
         </p>
@@ -291,7 +291,7 @@ export default function CEODashboard() {
                       )}
                     </div>
                     <div className="min-w-0">
-                      <p className="font-medium text-white text-sm sm:text-base truncate max-w-[120px] sm:max-w-none">{userName}</p>
+                      <p className="font-medium text-foreground text-sm sm:text-base truncate max-w-[120px] sm:max-w-none">{userName}</p>
                       <div className="flex items-center gap-1 sm:gap-2">
                         <span className="text-[10px] sm:text-xs text-muted-foreground truncate max-w-[80px] sm:max-w-none">{userEmail}</span>
                         <span className="text-[10px] sm:text-xs px-1 sm:px-1.5 py-0.5 rounded bg-white/5 text-muted-foreground">

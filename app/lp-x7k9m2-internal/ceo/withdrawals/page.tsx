@@ -305,7 +305,7 @@ export default function WithdrawalsPage() {
       <div className="flex flex-col gap-4">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-white mb-1">Saques</h1>
+            <h1 className="text-xl sm:text-2xl font-bold text-foreground mb-1">Saques</h1>
             <p className="text-sm text-muted-foreground">
               Gerencie as solicitacoes de saque
             </p>
@@ -342,13 +342,13 @@ export default function WithdrawalsPage() {
               placeholder="Buscar..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full sm:w-48 pl-10 pr-4 py-2.5 bg-secondary border border-border rounded-xl text-white placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
+              className="w-full sm:w-48 pl-10 pr-4 py-2.5 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
             />
           </div>
           <select
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
-            className="px-3 py-2.5 bg-secondary border border-border rounded-xl text-white text-sm focus:outline-none focus:border-primary/50"
+            className="px-3 py-2.5 bg-secondary border border-border rounded-xl text-foreground text-sm focus:outline-none focus:border-primary/50"
           >
             <option value="all" className="bg-card">Todos</option>
             <option value="pending" className="bg-card">Pendentes</option>
@@ -442,7 +442,7 @@ export default function WithdrawalsPage() {
                     <Wallet className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
                   </div>
                   <div className="min-w-0">
-                    <p className="font-medium text-white text-sm sm:text-base truncate">
+                    <p className="font-medium text-foreground text-sm sm:text-base truncate">
                       {withdrawal.user_name || withdrawal.user_email || "Usuario"}
                     </p>
                     <p className="text-xs sm:text-sm text-muted-foreground truncate">
@@ -455,7 +455,7 @@ export default function WithdrawalsPage() {
                 </div>
                 <div className="flex items-center justify-between sm:justify-end gap-3 sm:gap-4">
                   <div className="text-left sm:text-right">
-                    <p className="font-semibold text-white text-sm sm:text-base">
+                    <p className="font-semibold text-foreground text-sm sm:text-base">
                       {formatCurrency(withdrawal.amount)}
                     </p>
                     <p className="text-xs text-muted-foreground">
@@ -504,7 +504,7 @@ export default function WithdrawalsPage() {
             className="glass rounded-2xl p-6 w-full max-w-md"
           >
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-semibold text-white">
+              <h2 className="text-xl font-semibold text-foreground">
                 Detalhes do Saque
               </h2>
               <button
@@ -518,7 +518,7 @@ export default function WithdrawalsPage() {
             <div className="space-y-4">
               <div className="p-4 rounded-xl bg-secondary">
                 <p className="text-sm text-muted-foreground mb-1">Valor</p>
-                <p className="text-2xl font-bold text-white">
+                <p className="text-2xl font-bold text-foreground">
                   {formatCurrency(selectedWithdrawal.amount)}
                 </p>
                 <p className="text-sm text-muted-foreground">
@@ -530,7 +530,7 @@ export default function WithdrawalsPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-sm text-muted-foreground mb-1">Usuario</p>
-                  <p className="text-white">
+                  <p className="text-foreground">
                     {selectedWithdrawal.user_name || "Sem nome"}
                   </p>
                   <p className="text-xs text-muted-foreground">
@@ -541,7 +541,7 @@ export default function WithdrawalsPage() {
                   <p className="text-sm text-muted-foreground mb-1">
                     Saldo Atual
                   </p>
-                  <p className="text-white">
+                  <p className="text-foreground">
                     {formatCurrency(selectedWithdrawal.user_balance || 0)}
                   </p>
                 </div>
@@ -577,7 +577,7 @@ export default function WithdrawalsPage() {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground mb-1">Data</p>
-                  <p className="text-white text-sm">
+                  <p className="text-foreground text-sm">
                     {formatDate(selectedWithdrawal.created_at)}
                   </p>
                 </div>
@@ -589,7 +589,7 @@ export default function WithdrawalsPage() {
                   <p className="text-xs text-muted-foreground mb-1">
                     {getPixKeyTypeLabel(selectedWithdrawal.pix_key_type)}
                   </p>
-                  <p className="text-white font-mono">
+                  <p className="text-foreground font-mono">
                     {selectedWithdrawal.pix_key}
                   </p>
                 </div>
@@ -605,7 +605,7 @@ export default function WithdrawalsPage() {
                       value={rejectionReason}
                       onChange={(e) => setRejectionReason(e.target.value)}
                       placeholder="Informe o motivo..."
-                      className="w-full px-4 py-3 bg-secondary border border-border rounded-xl text-white placeholder:text-muted-foreground focus:outline-none focus:border-primary/50 resize-none h-20"
+                      className="w-full px-4 py-3 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50 resize-none h-20"
                     />
                   </div>
 
@@ -679,7 +679,7 @@ export default function WithdrawalsPage() {
             className="glass rounded-2xl p-6 w-full max-w-sm"
           >
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-semibold text-white">
+              <h2 className="text-lg font-semibold text-foreground">
                 Alterar Status
               </h2>
               <button

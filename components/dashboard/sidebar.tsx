@@ -9,25 +9,28 @@ import Image from "next/image"
 // Context for sidebar state
 const SidebarContext = createContext<{ isCollapsed: boolean; setIsCollapsed: (v: boolean) => void }>({ isCollapsed: false, setIsCollapsed: () => {} })
 export const useSidebar = () => useContext(SidebarContext)
+
 import {
   LogOut,
   Menu,
   X,
-  MessageCircle,
+  Headphones,
   LayoutDashboard,
-  Wallet,
-  TrendingUp,
-  FileText,
-  User,
-  UserCircle,
-  Code,
+  ArrowLeftRight,
+  Banknote,
+  Users,
+  ReceiptText,
+  Link2,
+  FileBarChart,
+  Code2,
+  Settings,
   ShieldCheck,
-  ChevronLeft,
-  ChevronRight,
-  Activity,
+  User,
+  Eye,
+  EyeOff,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { NotificationCenter } from "./notification-center"
+import { useProfile } from "@/components/profile-provider"
 
 interface Profile {
   id: string
@@ -50,90 +53,38 @@ interface SidebarProps {
   profile: Profile | null
 }
 
-// Menu organizado em categorias com cores
-const menuCategories = [
-  {
-    title: "Visao Geral",
-    color: "primary", // Laranja
-    items: [
-      { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
-      { href: "/dashboard/wallet", icon: Wallet, label: "Carteira" },
-      { href: "/dashboard/transactions", icon: TrendingUp, label: "Transacoes" },
-      { href: "/dashboard/reports", icon: FileText, label: "Relatorios" },
-    ],
-  },
-  {
-    title: "Conta",
-    color: "emerald", // Verde
-    items: [
-      { href: "/dashboard/profile", icon: UserCircle, label: "Meu Perfil" },
-    ],
-  },
-  {
-    title: "Suporte",
-    color: "cyan", // Ciano
-    items: [
-      { href: "/dashboard/support", icon: MessageCircle, label: "Gerente" },
-      { href: "/dashboard/status", icon: Activity, label: "Status" },
-    ],
-  },
-  {
-    title: "Sistema",
-    color: "purple", // Roxo
-    items: [
-      { href: "/dashboard/integration", icon: Code, label: "Integracao" },
-    ],
-  },
-]
-
-// Funcao para obter classes de cor
-const getColorClasses = (color: string, isActive: boolean) => {
-  const colors: Record<string, { label: string; active: string; hover: string; icon: string }> = {
-    primary: {
-      label: "text-primary/70",
-      active: "bg-gradient-to-r from-primary/20 to-primary/5 text-primary border-l-2 border-primary shadow-sm shadow-primary/10",
-      hover: "hover:bg-primary/5 hover:text-primary",
-      icon: "text-primary",
-    },
-    emerald: {
-      label: "text-emerald-500/70",
-      active: "bg-gradient-to-r from-emerald-500/20 to-emerald-500/5 text-emerald-400 border-l-2 border-emerald-500 shadow-sm shadow-emerald-500/10",
-      hover: "hover:bg-emerald-500/5 hover:text-emerald-400",
-      icon: "text-emerald-400",
-    },
-    blue: {
-      label: "text-blue-500/70",
-      active: "bg-gradient-to-r from-blue-500/20 to-blue-500/5 text-blue-400 border-l-2 border-blue-500 shadow-sm shadow-blue-500/10",
-      hover: "hover:bg-blue-500/5 hover:text-blue-400",
-      icon: "text-blue-400",
-    },
-    cyan: {
-      label: "text-cyan-500/70",
-      active: "bg-gradient-to-r from-cyan-500/20 to-cyan-500/5 text-cyan-400 border-l-2 border-cyan-500 shadow-sm shadow-cyan-500/10",
-      hover: "hover:bg-cyan-500/5 hover:text-cyan-400",
-      icon: "text-cyan-400",
-    },
-    purple: {
-      label: "text-purple-500/70",
-      active: "bg-gradient-to-r from-purple-500/20 to-purple-500/5 text-purple-400 border-l-2 border-purple-500 shadow-sm shadow-purple-500/10",
-      hover: "hover:bg-purple-500/5 hover:text-purple-400",
-      icon: "text-purple-400",
-    },
-    red: {
-      label: "text-red-500/70",
-      active: "bg-gradient-to-r from-red-500/20 to-red-500/5 text-red-400 border-l-2 border-red-500 shadow-sm shadow-red-500/10",
-      hover: "hover:bg-red-500/5 hover:text-red-400",
-      icon: "text-red-400",
-    },
-  }
-  return colors[color] || colors.primary
+type MenuItem = {
+  href: string
+  icon: typeof LayoutDashboard
+  label: string
+  exact?: boolean
+  beta?: boolean
 }
 
-export function DashboardSidebar({ user, profile }: SidebarProps) {
+const menuItems: MenuItem[] = [
+  { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard", exact: true },
+  { href: "/dashboard/transactions", icon: ArrowLeftRight, label: "Transacoes" },
+  { href: "/dashboard/withdrawals", icon: Banknote, label: "Saques" },
+  { href: "/dashboard/customers", icon: Users, label: "Clientes" },
+  { href: "/dashboard/charges", icon: ReceiptText, label: "Cobrancas" },
+  { href: "/dashboard/payment-links", icon: Link2, label: "Links de Pagamento", beta: true },
+  { href: "/dashboard/reports", icon: FileBarChart, label: "Relatorios" },
+  { href: "/dashboard/integration", icon: Code2, label: "Integracoes" },
+  { href: "/dashboard/settings", icon: Settings, label: "Configuracoes" },
+]
+
+const formatCurrency = (value: number) =>
+  new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(Number(value || 0))
+
+export function DashboardSidebar({ user, profile: profileProp }: SidebarProps) {
   const [isMobileOpen, setIsMobileOpen] = useState(false)
-  const [isCollapsed, setIsCollapsed] = useState(false)
+  const [showBalance, setShowBalance] = useState(true)
   const pathname = usePathname()
   const router = useRouter()
+  const { profile: ctxProfile } = useProfile()
+
+  const profile = ctxProfile || profileProp
+  const balance = Number(profile?.balance ?? profileProp?.balance ?? 0)
 
   const handleLogout = async () => {
     await fetch("/api/auth/logout", { method: "POST" })
@@ -141,185 +92,128 @@ export function DashboardSidebar({ user, profile }: SidebarProps) {
     router.refresh()
   }
 
-  const SidebarContent = ({ collapsed = false }: { collapsed?: boolean }) => (
+  const isActive = (item: MenuItem) => (item.exact ? pathname === item.href : pathname === item.href || pathname.startsWith(item.href + "/"))
+
+  const SidebarContent = () => (
     <div className="flex flex-col h-full bg-sidebar">
       {/* Logo */}
-      <div className={`border-b border-border ${collapsed ? "p-3" : "p-5"}`}>
-        <Link href="/dashboard" className="flex items-center gap-3 group justify-center lg:justify-start">
-          <Image
-            src="/images/logo-hyperion.png"
-            alt="Hyperion Pay"
-            width={32}
-            height={32}
-          />
-          {!collapsed && (
-            <div className="flex items-baseline">
-              <span className="text-lg font-bold text-foreground">Hyperion</span>
-              <span className="text-lg font-bold text-primary">Pay</span>
-            </div>
-          )}
+      <div className="border-b border-border px-5 py-5">
+        <Link href="/dashboard" className="flex items-center gap-3">
+          <Image src="/images/logo-hyperion.png" alt="Hyperion Pay" width={36} height={36} />
+          <div className="flex flex-col leading-tight">
+            <span className="text-base font-extrabold tracking-tight">
+              <span className="text-foreground">HYPERION </span>
+              <span className="text-primary">PAY</span>
+            </span>
+            <span className="text-[11px] text-muted-foreground">Gateway de Pagamentos</span>
+          </div>
         </Link>
       </div>
 
       {/* Navigation */}
-      <nav className={`flex-1 ${collapsed ? "p-2" : "p-4"} space-y-1 overflow-y-auto scrollbar-hide`}>
-        {menuCategories.map((category, categoryIndex) => {
-          const colorClasses = getColorClasses(category.color, false)
-
+      <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto scrollbar-hide">
+        {menuItems.map((item) => {
+          const active = isActive(item)
           return (
-            <div key={category.title} className={categoryIndex > 0 ? "pt-4" : "pt-2"}>
-              {/* Category Title */}
-              {!collapsed && (
-                <div className="pb-2">
-                  <span className={`px-4 text-[10px] font-semibold uppercase tracking-widest ${colorClasses.label}`}>
-                    {category.title}
-                  </span>
-                </div>
+            <Link
+              key={item.href}
+              href={item.href}
+              onClick={() => setIsMobileOpen(false)}
+              className={`group flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 ${
+                active
+                  ? "bg-accent text-primary font-semibold"
+                  : "text-muted-foreground hover:bg-accent/60 hover:text-foreground"
+              }`}
+            >
+              <item.icon className={`w-5 h-5 flex-shrink-0 ${active ? "text-primary" : "text-muted-foreground group-hover:text-foreground"}`} />
+              <span className="font-medium text-sm">{item.label}</span>
+              {item.beta && (
+                <span className="ml-auto text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-full bg-warning-bg text-warning tracking-wide">
+                  Beta
+                </span>
               )}
-
-              {/* Menu items */}
-              {category.items.map((item) => {
-                const isActive = pathname === item.href
-                const onboardingId =
-                  item.href === "/dashboard/wallet" ? "wallet-link" :
-                  item.href === "/dashboard/integration" ? "api-link" :
-                  item.href === "/dashboard/support" ? "support-link" :
-                  undefined
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    onClick={() => setIsMobileOpen(false)}
-                    data-onboarding={onboardingId}
-                    title={collapsed ? item.label : undefined}
-                    className={`group flex items-center ${collapsed ? "justify-center p-3" : "gap-3 px-4 py-2.5"} rounded-xl transition-all duration-200 ${
-                      isActive
-                        ? colorClasses.active
-                        : `text-muted-foreground ${colorClasses.hover}`
-                    }`}
-                  >
-                    <item.icon className={`w-5 h-5 transition-transform duration-200 ${isActive ? colorClasses.icon : "group-hover:scale-110"}`} />
-                    {!collapsed && <span className="font-medium">{item.label}</span>}
-                  </Link>
-                )
-              })}
-            </div>
+            </Link>
           )
         })}
 
-        {/* KYC Link */}
-        {profile?.kyc_status !== "approved" && (
+        {/* KYC pendente */}
+        {profile?.kyc_status && profile.kyc_status !== "approved" && (
           <Link
             href="/dashboard/kyc"
             onClick={() => setIsMobileOpen(false)}
-            title={collapsed ? "Verificacao KYC" : undefined}
-            className={`group flex items-center ${collapsed ? "justify-center p-3" : "gap-3 px-4 py-2.5"} rounded-xl transition-all duration-200 mt-2 ${
+            className={`group flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 mt-1 ${
               pathname === "/dashboard/kyc"
-                ? "bg-gradient-to-r from-yellow-500/20 to-yellow-500/5 text-yellow-400 border-l-2 border-yellow-500 shadow-sm shadow-yellow-500/10"
-                : "text-yellow-500/70 hover:bg-yellow-500/5 hover:text-yellow-400"
+                ? "bg-warning-bg text-warning font-semibold"
+                : "text-warning/80 hover:bg-warning-bg"
             }`}
           >
-            <User className={`w-5 h-5 transition-transform duration-200 ${pathname === "/dashboard/kyc" ? "text-yellow-400" : "group-hover:scale-110"}`} />
-            {!collapsed && <span className="font-medium">Verificacao KYC</span>}
+            <User className="w-5 h-5 flex-shrink-0" />
+            <span className="font-medium text-sm">Verificacao KYC</span>
           </Link>
         )}
 
         {/* Admin */}
         {profile?.is_admin && (
-          <div className="pt-4">
-            {!collapsed && (
-              <div className="pb-2">
-                <span className="px-4 text-[10px] font-semibold text-red-500/70 uppercase tracking-widest">
-                  Administracao
-                </span>
-              </div>
-            )}
-            <Link
-              href="/lp-x7k9m2-internal/ceo"
-              onClick={() => setIsMobileOpen(false)}
-              title={collapsed ? "Painel CEO" : undefined}
-              className={`group flex items-center ${collapsed ? "justify-center p-3" : "gap-3 px-4 py-2.5"} rounded-xl transition-all duration-200 ${
-                pathname.startsWith("/lp-x7k9m2-internal")
-                  ? "bg-gradient-to-r from-red-500/20 to-red-500/5 text-red-400 border-l-2 border-red-500 shadow-sm shadow-red-500/10"
-                  : "text-muted-foreground hover:bg-red-500/5 hover:text-red-400"
-              }`}
-            >
-              <ShieldCheck className={`w-5 h-5 transition-transform duration-200 ${pathname.startsWith("/lp-x7k9m2-internal") ? "text-red-400" : "group-hover:scale-110"}`} />
-              {!collapsed && <span className="font-medium">Painel CEO</span>}
-            </Link>
-          </div>
+          <Link
+            href="/lp-x7k9m2-internal/ceo"
+            onClick={() => setIsMobileOpen(false)}
+            className={`group flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 mt-1 ${
+              pathname.startsWith("/lp-x7k9m2-internal")
+                ? "bg-accent text-primary font-semibold"
+                : "text-muted-foreground hover:bg-accent/60 hover:text-foreground"
+            }`}
+          >
+            <ShieldCheck className="w-5 h-5 flex-shrink-0" />
+            <span className="font-medium text-sm">Painel CEO</span>
+          </Link>
         )}
       </nav>
 
-      {/* User Section */}
-      <div className={`${collapsed ? "p-2" : "p-4"} border-t border-border/50 bg-gradient-to-t from-black/50 to-transparent`}>
-        {collapsed ? (
-          <>
-            <div className="flex flex-col items-center gap-2">
-              <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center overflow-hidden">
-                {profile?.avatar_url ? (
-                  <Image
-                    src={profile.avatar_url}
-                    alt={profile.name || "Avatar"}
-                    width={40}
-                    height={40}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <span className="text-primary font-bold">
-                    {(profile?.name || user.email)?.[0]?.toUpperCase()}
-                  </span>
-                )}
-              </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handleLogout}
-                className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                title="Sair"
-              >
-                <LogOut className="w-5 h-5" />
-              </Button>
-            </div>
-          </>
-        ) : (
-          <>
-            <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-secondary/50 mb-3">
-              <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center overflow-hidden">
-                {profile?.avatar_url ? (
-                  <Image
-                    src={profile.avatar_url}
-                    alt={profile.name || "Avatar"}
-                    width={40}
-                    height={40}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <span className="text-primary font-bold">
-                    {(profile?.name || user.email)?.[0]?.toUpperCase()}
-                  </span>
-                )}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-foreground truncate">
-                  {profile?.name || "Usuario"}
-                </p>
-                <p className="text-xs text-muted-foreground truncate">
-                  {user.email}
-                </p>
-              </div>
-              <NotificationCenter />
-            </div>
-            <Button
-              variant="ghost"
-              onClick={handleLogout}
-              className="w-full justify-start text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+      {/* Balance + actions */}
+      <div className="px-3 pb-3 space-y-3">
+        <div className="rounded-2xl border border-border bg-card p-4">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-xs text-muted-foreground">Saldo disponivel</span>
+            <button
+              onClick={() => setShowBalance((v) => !v)}
+              className="text-muted-foreground hover:text-foreground transition-colors"
+              aria-label={showBalance ? "Ocultar saldo" : "Mostrar saldo"}
             >
-              <LogOut className="w-5 h-5 mr-3" />
-              Sair
-            </Button>
-          </>
-        )}
+              {showBalance ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+            </button>
+          </div>
+          <p className="text-xl font-bold text-foreground mb-3">
+            {showBalance ? formatCurrency(balance) : "R$ ••••••"}
+          </p>
+          <Button asChild className="w-full bg-primary hover:bg-primary-dark text-primary-foreground">
+            <Link href="/dashboard/withdrawals" onClick={() => setIsMobileOpen(false)}>
+              Sacar agora
+            </Link>
+          </Button>
+        </div>
+
+        <Link
+          href="/dashboard/support"
+          onClick={() => setIsMobileOpen(false)}
+          className="flex items-center gap-3 px-2 py-2 rounded-xl hover:bg-accent/60 transition-colors"
+        >
+          <div className="w-9 h-9 rounded-full bg-accent flex items-center justify-center flex-shrink-0">
+            <Headphones className="w-4 h-4 text-primary" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-sm font-medium text-foreground">Suporte 24/7</p>
+            <p className="text-xs text-muted-foreground truncate">Fale com nosso time</p>
+          </div>
+        </Link>
+
+        <Button
+          variant="ghost"
+          onClick={handleLogout}
+          className="w-full justify-start text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+        >
+          <LogOut className="w-4 h-4 mr-3" />
+          Sair
+        </Button>
       </div>
     </div>
   )
@@ -327,44 +221,29 @@ export function DashboardSidebar({ user, profile }: SidebarProps) {
   return (
     <>
       {/* Desktop Sidebar */}
-      <aside 
+      <aside
         data-onboarding="sidebar"
-        className={`hidden lg:flex ${isCollapsed ? "w-[72px]" : "w-64"} h-screen bg-card border-r border-border flex-col fixed left-0 top-0 transition-all duration-300`}
+        className="hidden lg:flex w-64 h-screen bg-sidebar border-r border-border flex-col fixed left-0 top-0"
       >
-        <SidebarContent collapsed={isCollapsed} />
-        
-        {/* Collapse Toggle Button */}
-        <button
-          onClick={() => setIsCollapsed(!isCollapsed)}
-          className="absolute -right-3 top-20 w-6 h-6 bg-card border border-border rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors shadow-sm"
-        >
-          {isCollapsed ? (
-            <ChevronRight className="w-4 h-4" />
-          ) : (
-            <ChevronLeft className="w-4 h-4" />
-          )}
-        </button>
+        <SidebarContent />
       </aside>
 
-      {/* Mobile Header Bar - Barra fixa no topo */}
+      {/* Mobile Header Bar */}
       <div className="lg:hidden fixed top-0 left-0 right-0 h-14 bg-card border-b border-border z-40 flex items-center justify-between px-3">
         <button
           onClick={() => setIsMobileOpen(true)}
           className="p-2 bg-secondary border border-border rounded-xl text-foreground flex-shrink-0"
+          aria-label="Abrir menu"
         >
           <Menu className="w-5 h-5" />
         </button>
-        
-        {/* Saldo e Notificacoes no mobile */}
         <div className="flex items-center gap-2">
-          <div className="text-right">
-            <p className="text-[10px] text-muted-foreground">Saldo Liquido</p>
-            <p className="text-sm font-bold text-primary">
-              {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(Number(profile?.balance || 0))}
-            </p>
-          </div>
-          <NotificationCenter />
+          <span className="text-base font-extrabold tracking-tight">
+            <span className="text-foreground">HYPERION </span>
+            <span className="text-primary">PAY</span>
+          </span>
         </div>
+        <div className="w-9" />
       </div>
 
       {/* Mobile Sidebar */}
@@ -379,28 +258,29 @@ export function DashboardSidebar({ user, profile }: SidebarProps) {
               className="lg:hidden fixed inset-0 bg-overlay backdrop-blur-sm z-40"
             />
             <motion.aside
-              initial={{ x: -280 }}
+              initial={{ x: -288 }}
               animate={{ x: 0 }}
-              exit={{ x: -280 }}
-              transition={{ type: "spring", damping: 20 }}
-              className="lg:hidden fixed left-0 top-0 w-72 h-screen bg-card border-r border-border flex flex-col z-50"
+              exit={{ x: -288 }}
+              transition={{ type: "spring", damping: 22 }}
+              className="lg:hidden fixed left-0 top-0 w-72 h-screen bg-sidebar border-r border-border flex flex-col z-50"
             >
               <button
                 onClick={() => setIsMobileOpen(false)}
-                className="absolute top-4 right-4 p-2 text-muted-foreground hover:text-foreground"
+                className="absolute top-4 right-4 p-2 text-muted-foreground hover:text-foreground z-10"
+                aria-label="Fechar menu"
               >
                 <X className="w-6 h-6" />
               </button>
-              <SidebarContent collapsed={false} />
+              <SidebarContent />
             </motion.aside>
           </>
         )}
       </AnimatePresence>
-      
+
       {/* CSS Variable for content margin */}
       <style jsx global>{`
         :root {
-          --sidebar-width: ${isCollapsed ? '72px' : '256px'};
+          --sidebar-width: 256px;
         }
       `}</style>
     </>
