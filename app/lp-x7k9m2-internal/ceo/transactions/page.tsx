@@ -1,17 +1,18 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import { useRouter } from "next/navigation";
 import {
   Search,
   ArrowUpRight,
   ArrowDownRight,
-  Filter,
-  Calendar,
   DollarSign,
   CheckCircle,
   Loader2,
+  ChevronRight,
 } from "lucide-react";
+import { getStatusMeta, getMethodLabel } from "@/lib/transaction-status";
+
 interface Transaction {
   id: string;
   user_id: string;
@@ -26,9 +27,13 @@ interface Transaction {
   paid_at?: string;
   user_email?: string;
   user_name?: string;
+  acquirer?: string;
+  external_id?: string;
+  utm_source?: string;
 }
 
 export default function TransactionsPage() {
+  const router = useRouter();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [filteredTransactions, setFilteredTransactions] = useState<Transaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -45,7 +50,7 @@ export default function TransactionsPage() {
     let filtered = transactions;
 
     if (filter !== "all") {
-      filtered = filtered.filter((t) => t.status === filter);
+      filtered = filtered.filter((t) => getStatusMeta(t.status).group === filter);
     }
 
     if (typeFilter !== "all") {
@@ -252,10 +257,12 @@ export default function TransactionsPage() {
               onChange={(e) => setFilter(e.target.value)}
               className="flex-1 sm:flex-none px-3 py-2.5 bg-secondary border border-border rounded-xl text-foreground text-sm focus:outline-none focus:border-primary/50"
             >
-              <option value="all" className="bg-card">Todos</option>
-              <option value="completed" className="bg-card">Concluido</option>
+              <option value="all" className="bg-card">Todos status</option>
+              <option value="approved" className="bg-card">Aprovada</option>
               <option value="pending" className="bg-card">Pendente</option>
-              <option value="failed" className="bg-card">Falhou</option>
+              <option value="refused" className="bg-card">Recusada</option>
+              <option value="cancelled" className="bg-card">Cancelada</option>
+              <option value="refunded" className="bg-card">Estornada</option>
             </select>
           </div>
         </div>
@@ -308,14 +315,19 @@ export default function TransactionsPage() {
           </div>
         ) : (
           filteredTransactions.map((transaction) => (
-            <div key={transaction.id} className="glass rounded-xl p-4">
+            <div
+              key={transaction.id}
+              onClick={() => router.push(`/lp-x7k9m2-internal/ceo/transactions/${transaction.id}`)}
+              className="glass rounded-xl p-4 cursor-pointer active:scale-[0.99] transition-transform"
+            >
               {/* ID da transacao */}
               <div className="flex items-center justify-between mb-3 pb-2 border-b border-border">
                 <span className="text-[10px] text-muted-foreground font-mono truncate max-w-[200px]">
                   ID: {transaction.id}
                 </span>
                 <button
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.stopPropagation();
                     navigator.clipboard.writeText(transaction.id);
                   }}
                   className="p-1 hover:bg-white/10 rounded transition-colors"
@@ -341,8 +353,9 @@ export default function TransactionsPage() {
                     <p className="text-xs text-muted-foreground">{formatDate(transaction.created_at)}</p>
                   </div>
                 </div>
-                <span className={`px-2 py-1 rounded-full text-xs font-medium ${transaction.status === "completed" ? "bg-green-400/10 text-green-400" : transaction.status === "pending" ? "bg-yellow-400/10 text-yellow-400" : "bg-red-400/10 text-red-400"}`}>
-                  {transaction.status === "completed" ? "OK" : transaction.status === "pending" ? "Pend" : "Falhou"}
+                <span className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium ${getStatusMeta(transaction.status).className}`}>
+                  <span className={`h-1.5 w-1.5 rounded-full ${getStatusMeta(transaction.status).dotClassName}`} />
+                  {getStatusMeta(transaction.status).label}
                 </span>
               </div>
               <div className="flex items-center justify-between mb-3">
@@ -361,7 +374,10 @@ export default function TransactionsPage() {
                 <div className="flex gap-2 pt-3 border-t border-border">
                   {transaction.status === "pending" && (
                     <button
-                      onClick={() => confirmTransaction(transaction.id, false)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        confirmTransaction(transaction.id, false);
+                      }}
                       disabled={confirmingId === transaction.id}
                       className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-green-500/10 text-green-400 rounded-lg text-sm font-medium disabled:opacity-50"
                     >
@@ -371,7 +387,10 @@ export default function TransactionsPage() {
                   )}
                   {transaction.status === "completed" && (
                     <button
-                      onClick={() => fixBalance(transaction.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        fixBalance(transaction.id);
+                      }}
                       disabled={confirmingId === transaction.id}
                       className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-blue-500/10 text-blue-400 rounded-lg text-sm font-medium disabled:opacity-50"
                     >
@@ -392,30 +411,14 @@ export default function TransactionsPage() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-border">
-                <th className="text-left p-4 text-sm font-medium text-muted-foreground">
-                  ID
-                </th>
-                <th className="text-left p-4 text-sm font-medium text-muted-foreground">
-                  Tipo
-                </th>
-                <th className="text-left p-4 text-sm font-medium text-muted-foreground">
-                  Usuário
-                </th>
-                <th className="text-left p-4 text-sm font-medium text-muted-foreground">
-                  Valor
-                </th>
-                <th className="text-left p-4 text-sm font-medium text-muted-foreground">
-                  Taxa
-                </th>
-                <th className="text-left p-4 text-sm font-medium text-muted-foreground">
-                  Status
-                </th>
-                <th className="text-left p-4 text-sm font-medium text-muted-foreground">
-                  Data
-                </th>
-                <th className="text-left p-4 text-sm font-medium text-muted-foreground">
-                  Ações
-                </th>
+                <th className="text-left p-4 text-sm font-medium text-muted-foreground">ID</th>
+                <th className="text-left p-4 text-sm font-medium text-muted-foreground">Método</th>
+                <th className="text-left p-4 text-sm font-medium text-muted-foreground">Usuário</th>
+                <th className="text-left p-4 text-sm font-medium text-muted-foreground">Valor</th>
+                <th className="text-left p-4 text-sm font-medium text-muted-foreground">Líquido</th>
+                <th className="text-left p-4 text-sm font-medium text-muted-foreground">Status</th>
+                <th className="text-left p-4 text-sm font-medium text-muted-foreground">Data</th>
+                <th className="text-right p-4 text-sm font-medium text-muted-foreground">Ações</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
@@ -426,18 +429,25 @@ export default function TransactionsPage() {
                   </td>
                 </tr>
               ) : (
-                filteredTransactions.map((transaction) => (
+                filteredTransactions.map((transaction) => {
+                  const statusMeta = getStatusMeta(transaction.status);
+                  const net = transaction.net_amount != null
+                    ? Number(transaction.net_amount)
+                    : Number(transaction.amount) - Number(transaction.fee || 0);
+                  return (
                   <tr
                     key={transaction.id}
-                    className="hover:bg-secondary transition-colors"
+                    onClick={() => router.push(`/lp-x7k9m2-internal/ceo/transactions/${transaction.id}`)}
+                    className="hover:bg-secondary transition-colors cursor-pointer"
                   >
                     <td className="p-4">
                       <div className="flex items-center gap-2">
-                        <span className="text-xs text-muted-foreground font-mono truncate max-w-[180px]">
+                        <span className="text-xs text-muted-foreground font-mono truncate max-w-[140px]">
                           {transaction.id}
                         </span>
                         <button
-                          onClick={() => {
+                          onClick={(e) => {
+                            e.stopPropagation();
                             navigator.clipboard.writeText(transaction.id);
                           }}
                           className="p-1 hover:bg-white/10 rounded transition-colors"
@@ -452,11 +462,9 @@ export default function TransactionsPage() {
                     </td>
                     <td className="p-4">
                       <div className="flex items-center gap-3">
-<div
+                        <div
                           className={`p-2 rounded-lg ${
-                            isIncoming(transaction.type)
-                              ? "bg-green-400/10"
-                              : "bg-red-400/10"
+                            isIncoming(transaction.type) ? "bg-green-400/10" : "bg-red-400/10"
                           }`}
                         >
                           {isIncoming(transaction.type) ? (
@@ -465,13 +473,16 @@ export default function TransactionsPage() {
                             <ArrowUpRight className="w-4 h-4 text-red-400" />
                           )}
                         </div>
-                        <span className="text-foreground">
-                          {getTypeLabel(transaction.type)}
-                        </span>
+                        <div>
+                          <p className="text-foreground text-sm font-medium">{getMethodLabel(transaction.type)}</p>
+                          {transaction.acquirer && (
+                            <p className="text-xs text-muted-foreground capitalize">{transaction.acquirer}</p>
+                          )}
+                        </div>
                       </div>
                     </td>
                     <td className="p-4">
-                      <p className="text-foreground">
+                      <p className="text-foreground text-sm">
                         {transaction.user_name || "Sem nome"}
                       </p>
                       <p className="text-xs text-muted-foreground">
@@ -479,45 +490,35 @@ export default function TransactionsPage() {
                       </p>
                     </td>
                     <td className="p-4">
-<p
+                      <p
                         className={`font-semibold ${
-                          isIncoming(transaction.type)
-                            ? "text-green-400"
-                            : "text-red-400"
+                          isIncoming(transaction.type) ? "text-green-400" : "text-red-400"
                         }`}
                       >
                         {isIncoming(transaction.type) ? "+" : "-"}
                         {formatCurrency(Number(transaction.amount))}
                       </p>
                     </td>
-                    <td className="p-4 text-muted-foreground">
-                      {formatCurrency(Number(transaction.fee || 0))}
+                    <td className="p-4 text-muted-foreground text-sm">
+                      {formatCurrency(net)}
                     </td>
                     <td className="p-4">
-                      <span
-                        className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          transaction.status === "completed"
-                            ? "bg-green-400/10 text-green-400"
-                            : transaction.status === "pending"
-                            ? "bg-yellow-400/10 text-yellow-400"
-                            : "bg-red-400/10 text-red-400"
-                        }`}
-                      >
-                        {transaction.status === "completed"
-                          ? "Concluído"
-                          : transaction.status === "pending"
-                          ? "Pendente"
-                          : "Falhou"}
+                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${statusMeta.className}`}>
+                        <span className={`h-1.5 w-1.5 rounded-full ${statusMeta.dotClassName}`} />
+                        {statusMeta.label}
                       </span>
                     </td>
                     <td className="p-4 text-muted-foreground text-sm">
                       {formatDate(transaction.created_at)}
                     </td>
                     <td className="p-4">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center justify-end gap-2">
                         {transaction.status === "pending" && (
                           <button
-                            onClick={() => confirmTransaction(transaction.id, false)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              confirmTransaction(transaction.id, false);
+                            }}
                             disabled={confirmingId === transaction.id}
                             className="flex items-center gap-1.5 px-3 py-1.5 bg-green-500/10 text-green-400 rounded-lg hover:bg-green-500/20 transition-colors text-sm disabled:opacity-50"
                           >
@@ -530,26 +531,29 @@ export default function TransactionsPage() {
                           </button>
                         )}
                         {transaction.status === "completed" && (
-                          <>
-                            <button
-                              onClick={() => fixBalance(transaction.id)}
-                              disabled={confirmingId === transaction.id}
-                              className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-500/10 text-blue-400 rounded-lg hover:bg-blue-500/20 transition-colors text-sm disabled:opacity-50"
-                              title="Corrigir Saldo: credita o valor líquido no saldo do usuário"
-                            >
-                              {confirmingId === transaction.id ? (
-                                <Loader2 className="w-4 h-4 animate-spin" />
-                              ) : (
-                                <DollarSign className="w-4 h-4" />
-                              )}
-                              Corrigir Saldo
-                            </button>
-                          </>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              fixBalance(transaction.id);
+                            }}
+                            disabled={confirmingId === transaction.id}
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-500/10 text-blue-400 rounded-lg hover:bg-blue-500/20 transition-colors text-sm disabled:opacity-50"
+                            title="Corrigir Saldo: credita o valor líquido no saldo do usuário"
+                          >
+                            {confirmingId === transaction.id ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <DollarSign className="w-4 h-4" />
+                            )}
+                            Corrigir
+                          </button>
                         )}
+                        <ChevronRight className="w-4 h-4 text-muted-foreground/50" />
                       </div>
                     </td>
                   </tr>
-                ))
+                  );
+                })
               )}
             </tbody>
           </table>

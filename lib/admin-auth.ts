@@ -3,10 +3,9 @@ import { getSession } from "@/lib/auth";
 import { sql } from "@/lib/db";
 import { cookies } from "next/headers";
 import { jwtVerify } from "jose";
+import { getJwtSecret } from "./jwt-secret";
 
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || 'fallback-secret-change-in-production'
-);
+const JWT_SECRET = getJwtSecret();
 
 const TEAM_COOKIE_NAME = 'team_session';
 

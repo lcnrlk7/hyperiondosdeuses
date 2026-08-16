@@ -11,7 +11,7 @@ export default async function ChargesPage() {
 
   const rows = await sql`
     SELECT id, external_id, amount, net_amount, fee, status,
-           payer_name, description, created_at, metadata
+           payer_name, description, created_at, paid_at, metadata
     FROM transactions
     WHERE user_id = ${user.id} AND type = 'pix_in'
     ORDER BY created_at DESC
@@ -20,12 +20,13 @@ export default async function ChargesPage() {
 
   const charges = rows.map((r) => ({
     id: String(r.id),
-    externalId: r.external_id ? String(r.external_id) : null,
     amount: Number(r.amount) || 0,
     status: String(r.status || "pending"),
-    payerName: r.payer_name ? String(r.payer_name) : null,
+    payer_name: r.payer_name ? String(r.payer_name) : null,
     description: r.description ? String(r.description) : null,
-    createdAt: r.created_at ? new Date(r.created_at).toISOString() : null,
+    copy_paste: r.metadata?.copy_paste ? String(r.metadata.copy_paste) : null,
+    created_at: r.created_at ? new Date(r.created_at).toISOString() : new Date().toISOString(),
+    paid_at: r.paid_at ? new Date(r.paid_at).toISOString() : null,
   }));
 
   return <ChargesContent charges={charges} />;

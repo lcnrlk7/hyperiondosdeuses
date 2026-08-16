@@ -2,10 +2,9 @@ import { handleAuth } from '@/lib/middleware-auth'
 import { type NextRequest, NextResponse } from 'next/server'
 import { neon } from '@neondatabase/serverless'
 import { jwtVerify } from 'jose'
+import { getJwtSecret } from '@/lib/jwt-secret'
 
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || 'fallback-secret-change-in-production'
-)
+const JWT_SECRET = getJwtSecret()
 
 // Cache de White Label tenants
 interface WhiteLabelCache {
@@ -172,6 +171,27 @@ function getClientIp(request: NextRequest): string {
          'unknown'
 }
 
+// SEGURANCA: unico email autorizado a acessar rotas administrativas.
+// Deve ser identico a ADMIN_EMAIL em lib/admin-auth.ts (nao importamos de la
+// para evitar puxar next/headers para o bundle do middleware/edge).
+const ADMIN_API_EMAIL = 'elicecontadodiscord@gmail.com'
+
+// Extrai o email do token da sessao (equipe ou usuario), validando a assinatura.
+async function getTokenEmail(request: NextRequest): Promise<string | null> {
+  const teamToken = request.cookies.get('team_session')?.value
+  const authToken = request.cookies.get('auth-token')?.value
+  for (const token of [teamToken, authToken]) {
+    if (!token) continue
+    try {
+      const { payload } = await jwtVerify(token, JWT_SECRET)
+      if (payload?.email) return (payload.email as string).toLowerCase()
+    } catch {
+      // token invalido, tenta o proximo
+    }
+  }
+  return null
+}
+
 // Lista de dominios principais do sistema (nao sao checkouts)
 const MAIN_DOMAINS = [
   'localhost',
@@ -250,6 +270,22 @@ export async function middleware(request: NextRequest) {
     const url = request.nextUrl.clone()
     url.pathname = '/blocked'
     return NextResponse.rewrite(url)
+  }
+
+  // DEFESA EM PROFUNDIDADE: todas as rotas /api/admin/* exigem o admin autorizado.
+  // Mesmo que uma rota individual esqueca o guarda verifyAdmin, o middleware bloqueia.
+  // check-role se auto-reporta com seguranca (retorna {isAdmin:false}), entao fica isento.
+  if (
+    pathname.startsWith('/api/admin') &&
+    pathname !== '/api/admin/check-role'
+  ) {
+    const email = await getTokenEmail(request)
+    if (email !== ADMIN_API_EMAIL) {
+      return NextResponse.json(
+        { error: 'Acesso negado. Requer permissao de administrador.' },
+        { status: 403 }
+      )
+    }
   }
   
   // Dominio principal - serve TUDO no mesmo dominio (landing, auth, dashboard, admin).

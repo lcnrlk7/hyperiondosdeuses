@@ -27,12 +27,11 @@ export async function POST(request: NextRequest) {
 
     // Criar response e definir cookie (HTTPOnly em producao)
     const response = NextResponse.json({ success: true });
-    const isProduction = process.env.NODE_ENV === "production" && !process.env.VERCEL_URL?.includes('v0.dev');
-    
+
     response.cookies.set(COOKIE_NAME, token, {
-      httpOnly: isProduction,
-      secure: isProduction,
-      sameSite: "strict",
+      httpOnly: true,
+      secure: true,
+      sameSite: "none",
       maxAge: COOKIE_MAX_AGE,
       path: "/",
     });

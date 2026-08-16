@@ -3,8 +3,29 @@ import { sql } from "@/lib/db";
 import { notifyPixPaid } from "@/lib/notifications";
 import { notifyDeposit, notifyWithdrawal, notifyUserTransaction } from "@/lib/telegram/notify";
 
+// Comparacao de strings em tempo constante para evitar timing attacks.
+function safeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let out = 0;
+  for (let i = 0; i < a.length; i++) out |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return out === 0;
+}
+
 export async function POST(request: NextRequest) {
   try {
+    // SEGURANCA: este endpoint NAO e a URL registrada no adquirente (essa e
+    // /api/webhooks/medusa). Antes creditava saldo sem NENHUMA autenticacao, o
+    // que permitia forjar "charge.paid" e adicionar saldo. Agora exige um
+    // segredo compartilhado e falha fechado se ele nao estiver configurado.
+    const secret = process.env.PAYMENT_WEBHOOK_SECRET;
+    const provided =
+      request.headers.get("x-webhook-secret") ||
+      request.headers.get("authorization")?.replace(/^Bearer\s+/i, "") ||
+      "";
+    if (!secret || !provided || !safeEqual(provided, secret)) {
+      return NextResponse.json({ error: "Nao autorizado" }, { status: 401 });
+    }
+
     const body = await request.text();
     const payload = JSON.parse(body);
     const event = payload.event || payload.type;

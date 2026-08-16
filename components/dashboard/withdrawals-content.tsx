@@ -116,7 +116,7 @@ export function WithdrawalsContent({ withdrawals: initial }: { withdrawals: With
     }
   }
 
-  const handleWithdraw = async (amount: number, pixKey: string, pixKeyType: string, faceChallengeId?: string) => {
+  const handleWithdraw = async (amount: number, pixKey: string, pixKeyType: string) => {
     if (!amount || amount <= 0 || !pixKey) {
       setError("Preencha todos os campos");
       return;
@@ -138,34 +138,9 @@ export function WithdrawalsContent({ withdrawals: initial }: { withdrawals: With
       const res = await fetch("/api/withdrawals/create", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ amount, pixKey, pixKeyType, faceChallengeId }),
+        body: JSON.stringify({ amount, pixKey, pixKeyType }),
       });
       const data = await res.json();
-
-      // Saque exige verificacao facial (Didit)
-      if (res.status === 403 && data.requiresFaceAuth) {
-        try {
-          const chRes = await fetch("/api/verify/face-challenge", {
-            method: "POST",
-            headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-            body: JSON.stringify({ purpose: "withdrawal" }),
-          });
-          const chData = await chRes.json();
-          if (chRes.ok && chData.url) {
-            sessionStorage.setItem(
-              "face_withdraw",
-              JSON.stringify({ amount, pixKey, pixKeyType, returnTo: window.location.pathname })
-            );
-            window.location.href = chData.url;
-            return;
-          }
-          setError("Nao foi possivel iniciar a verificacao facial.");
-        } catch {
-          setError("Nao foi possivel iniciar a verificacao facial.");
-        }
-        setLoading(false);
-        return;
-      }
 
       if (!res.ok) {
         setError(data.error || "Erro ao processar saque");
@@ -191,27 +166,6 @@ export function WithdrawalsContent({ withdrawals: initial }: { withdrawals: With
       setLoading(false);
     }
   };
-
-  // Retoma o saque apos verificacao facial aprovada
-  useEffect(() => {
-    const url = new URL(window.location.href);
-    const faceChallenge = url.searchParams.get("faceChallenge");
-    if (!faceChallenge) return;
-    const raw = sessionStorage.getItem("face_withdraw");
-    url.searchParams.delete("faceChallenge");
-    window.history.replaceState({}, "", url.toString());
-    if (raw) {
-      try {
-        const pending = JSON.parse(raw);
-        sessionStorage.removeItem("face_withdraw");
-        setModalOpen(true);
-        handleWithdraw(pending.amount, pending.pixKey, pending.pixKeyType, faceChallenge);
-      } catch {
-        // ignora
-      }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   const summary = [
     { label: "Saldo disponivel", value: formatCurrency(balance), icon: Banknote, cls: "text-primary" },

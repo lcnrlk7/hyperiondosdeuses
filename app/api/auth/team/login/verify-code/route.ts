@@ -5,10 +5,9 @@ import { SignJWT } from 'jose'
 import { isAllowedAdmin } from '@/lib/admin-auth'
 import { verifyLoginCode, createLoginCode } from '@/lib/login-code'
 import { sendLoginCodeEmail } from '@/lib/email'
+import { getJwtSecret } from '@/lib/jwt-secret'
 
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || 'fallback-secret-change-in-production'
-)
+const JWT_SECRET = getJwtSecret()
 
 const TEAM_COOKIE_NAME = 'team_session'
 
@@ -150,8 +149,8 @@ export async function POST(request: NextRequest) {
 
     response.cookies.set(TEAM_COOKIE_NAME, token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      secure: true,
+      sameSite: 'none',
       maxAge: 60 * 60 * 24,
       path: '/',
     })

@@ -2,10 +2,9 @@ import { SignJWT, jwtVerify } from 'jose'
 import { cookies } from 'next/headers'
 import { sql } from './db'
 import bcrypt from 'bcryptjs'
+import { getJwtSecret } from './jwt-secret'
 
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || 'fallback-secret-change-in-production'
-)
+const JWT_SECRET = getJwtSecret()
 
 const COOKIE_NAME = 'auth-token'
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 7 // 7 days

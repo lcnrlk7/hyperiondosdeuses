@@ -151,12 +151,10 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    const isProduction =
-      process.env.NODE_ENV === "production" && !process.env.VERCEL_URL?.includes("v0.dev");
     response.cookies.set(COOKIE_NAME, token, {
-      httpOnly: isProduction,
-      secure: isProduction,
-      sameSite: "strict",
+      httpOnly: true,
+      secure: true,
+      sameSite: "none",
       maxAge: COOKIE_MAX_AGE,
       path: "/",
     });

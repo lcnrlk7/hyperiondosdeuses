@@ -26,6 +26,15 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // SEGURANCA: conta precisa estar ativa e nao bloqueada. A verificacao de
+    // identidade (Didit) e feita na liberacao da conta, NAO a cada saque.
+    if (profile.is_blocked) {
+      return NextResponse.json(
+        { error: "Conta bloqueada. Entre em contato com o suporte." },
+        { status: 403 }
+      )
+    }
+
     const body = await request.json()
     const { amount, pix_key, pix_key_type, description } = body
 

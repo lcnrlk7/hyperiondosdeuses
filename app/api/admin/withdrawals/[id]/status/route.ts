@@ -1,22 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sql } from "@/lib/db";
+import { verifyAdmin, accessDeniedResponse } from "@/lib/admin-auth";
 
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    // Verificar se veio do painel CEO (tem o header X-Admin-Token)
-    const adminToken = request.headers.get("X-Admin-Token");
-    
-    // Se o token admin existe e nao esta vazio, permite acesso
-    // O usuario ja passou pela autenticacao do painel CEO para chegar aqui
-    if (!adminToken || adminToken.trim() === "") {
-      return NextResponse.json(
-        { error: "Acesso restrito ao painel administrativo" },
-        { status: 401 }
-      );
-    }
+    // SEGURANCA: exige o admin autorizado (antes aceitava qualquer header nao-vazio).
+    const admin = await verifyAdmin();
+    if (!admin) return accessDeniedResponse();
 
     const { id } = await params;
     const body = await request.json();

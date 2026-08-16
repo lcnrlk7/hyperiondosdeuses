@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server"
 import { sql } from "@/lib/db"
 import { generateVerificationCode, sendVerificationEmail } from "@/lib/email"
+import { isValidEmailStrict } from "@/lib/sanitize"
+import { rateLimit, getClientIP, logSuspiciousActivity } from "@/lib/security"
 
 export async function POST(request: Request) {
   try {
@@ -13,11 +15,30 @@ export async function POST(request: Request) {
       )
     }
 
-    // Validar formato do email
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRegex.test(email)) {
+    // SEGURANCA: rate limiting para impedir flood de emails / enumeracao.
+    const ip = await getClientIP()
+    const ipLimit = rateLimit(`sendcode_ip_${ip}`, 8, 3600000) // 8 por hora por IP
+    if (!ipLimit.allowed) {
+      await logSuspiciousActivity(null, "SENDCODE_RATE_LIMITED", `IP: ${ip}`, ip)
       return NextResponse.json(
-        { error: "Email inválido" },
+        { error: "Muitas solicitações. Aguarde alguns minutos e tente novamente." },
+        { status: 429 }
+      )
+    }
+    const emailLimit = rateLimit(`sendcode_email_${email.toLowerCase()}`, 5, 3600000) // 5 por hora por email
+    if (!emailLimit.allowed) {
+      return NextResponse.json(
+        { error: "Muitos códigos enviados para este email. Aguarde antes de tentar novamente." },
+        { status: 429 }
+      )
+    }
+
+    // SEGURANCA: valida o email E bloqueia dominios temporarios/descartaveis.
+    // Mesma regra usada no /register, garantindo que apenas emails reais entrem.
+    const emailValidation = isValidEmailStrict(email)
+    if (!emailValidation.valid) {
+      return NextResponse.json(
+        { error: emailValidation.error || "Email inválido" },
         { status: 400 }
       )
     }

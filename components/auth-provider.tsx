@@ -62,8 +62,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setToken(storedToken);
         setUser(parsedUser);
         
-        // Também setar cookie para o servidor
-        document.cookie = `auth-token=${storedToken}; path=/; max-age=${60 * 60 * 24 * 7}; samesite=lax`;
+        // Também setar cookie para o servidor (SameSite=None; Secure para funcionar no iframe do preview e cross-site)
+        document.cookie = `auth-token=${storedToken}; path=/; max-age=${60 * 60 * 24 * 7}; samesite=none; secure`;
       } catch {
         // Token inválido, limpar
         localStorage.removeItem("auth-token");
@@ -86,7 +86,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = (newToken: string, newUser: User) => {
     localStorage.setItem("auth-token", newToken);
     localStorage.setItem("auth-user", JSON.stringify(newUser));
-    document.cookie = `auth-token=${newToken}; path=/; max-age=${60 * 60 * 24 * 7}; samesite=lax`;
+    document.cookie = `auth-token=${newToken}; path=/; max-age=${60 * 60 * 24 * 7}; samesite=none; secure`;
     setToken(newToken);
     setUser(newUser);
   };

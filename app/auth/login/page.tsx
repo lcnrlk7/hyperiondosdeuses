@@ -82,7 +82,7 @@ export default function LoginPage() {
       const response = await fetch("/api/auth/login/verify-code", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, code: emailCode }),
+        body: JSON.stringify({ email, password, code: emailCode }),
       });
 
       const data = await response.json();
@@ -96,6 +96,9 @@ export default function LoginPage() {
       if (data.token && data.user) {
         localStorage.setItem("auth-token", data.token);
         localStorage.setItem("auth-user", JSON.stringify(data.user));
+        // Garante o cookie de sessao para o middleware ja na primeira navegacao
+        // (SameSite=None; Secure para funcionar no iframe do preview e cross-site)
+        document.cookie = `auth-token=${data.token}; path=/; max-age=${60 * 60 * 24 * 7}; samesite=none; secure`;
         window.location.href = "/dashboard";
       } else {
         setError("Resposta invalida do servidor");
