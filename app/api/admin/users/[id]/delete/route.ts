@@ -1,24 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sql } from "@/lib/db";
-import { verifyToken } from "@/lib/auth";
-import { cookies } from "next/headers";
-
-async function getSession() {
-  const cookieStore = await cookies();
-  const token = cookieStore.get("auth_token")?.value;
-  if (!token) return null;
-  return await verifyToken(token);
-}
+import { verifyAdmin, accessDeniedResponse } from "@/lib/admin-auth";
 
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getSession();
-    if (!session || (session.role !== "admin" && session.role !== "ceo")) {
-      return NextResponse.json({ error: "Nao autorizado" }, { status: 401 });
-    }
+    // SEGURANCA: exige o admin autorizado (antes lia o cookie errado "auth_token"
+    // e confiava na claim role, que era forjavel).
+    const session = await verifyAdmin();
+    if (!session) return accessDeniedResponse();
 
     const { id: userId } = await params;
 

@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sql } from "@/lib/db";
+import { verifyAdmin, accessDeniedResponse } from "@/lib/admin-auth";
 
-// GET para bloquear via URL simples (emergencia)
+// GET para bloquear via URL simples (emergencia) - AGORA EXIGE ADMIN
 export async function GET(request: NextRequest) {
+  const admin = await verifyAdmin();
+  if (!admin) return accessDeniedResponse();
+
   const userId = request.nextUrl.searchParams.get("userId");
   
   if (!userId) {
@@ -46,6 +50,9 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: Request) {
   try {
+    const admin = await verifyAdmin();
+    if (!admin) return accessDeniedResponse();
+
     const { userId, reason, cancelPendingWithdrawals } = await request.json();
 
     if (!userId) {

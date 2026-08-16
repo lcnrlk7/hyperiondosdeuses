@@ -1,6 +1,5 @@
 import { verifyAdmin, accessDeniedResponse } from "@/lib/admin-auth";
 import { NextRequest, NextResponse } from "next/server";
-import { getCurrentUser } from "@/lib/auth";
 import { sql } from "@/lib/db";
 
 export async function GET(request: NextRequest) {
@@ -67,20 +66,8 @@ export async function GET(request: NextRequest) {
 // Marcar erro como resolvido
 export async function PATCH(request: NextRequest) {
   try {
-    const user = await getCurrentUser();
-    
-    if (!user) {
-      return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
-    }
-
-    // Verificar se é admin
-    const profileResult = await sql`
-      SELECT is_admin FROM profiles WHERE id = ${user.id}
-    `;
-    
-    if (!profileResult[0]?.is_admin) {
-      return NextResponse.json({ error: "Acesso negado" }, { status: 403 });
-    }
+    const admin = await verifyAdmin();
+    if (!admin) return accessDeniedResponse();
 
     const body = await request.json();
     const { errorId, resolved } = body;
@@ -91,7 +78,7 @@ export async function PATCH(request: NextRequest) {
 
     await sql`
       UPDATE integration_errors
-      SET resolved = ${resolved !== false}, resolved_at = NOW(), resolved_by = ${user.id}
+      SET resolved = ${resolved !== false}, resolved_at = NOW(), resolved_by = ${admin.id}
       WHERE id = ${errorId}
     `;
 
