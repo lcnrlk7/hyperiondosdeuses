@@ -78,7 +78,7 @@ export async function PATCH(request: NextRequest) {
 
     await sql`
       UPDATE integration_errors
-      SET resolved = ${resolved !== false}, resolved_at = NOW(), resolved_by = ${admin.id}
+      SET resolved = ${resolved !== false}, resolved_at = NOW(), resolved_by = ${admin.userId}
       WHERE id = ${errorId}
     `;
 

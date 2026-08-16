@@ -43,7 +43,7 @@ export function DashboardHeader({ user, profile: profileProp }: HeaderProps) {
         <div className="w-10 h-10 rounded-full bg-accent flex items-center justify-center overflow-hidden border border-border">
           {profile?.avatar_url ? (
             <Image
-              src={profile.avatar_url || "/placeholder.svg"}
+              src={typeof profile.avatar_url === "string" ? profile.avatar_url : "/placeholder.svg"}
               alt={displayName}
               width={40}
               height={40}
