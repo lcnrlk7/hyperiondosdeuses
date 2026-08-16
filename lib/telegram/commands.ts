@@ -40,9 +40,14 @@ async function checkRequiredChannels(userId: number): Promise<{ isOk: boolean; m
   const missing: typeof REQUIRED_CHANNELS = [];
   
   for (const channel of REQUIRED_CHANNELS) {
-    const isMember = await checkChannelMembership(channel.id, userId);
-    if (!isMember) {
-      missing.push(channel);
+    try {
+      const isMember = await checkChannelMembership(channel.id, userId);
+      if (!isMember) {
+        missing.push(channel);
+      }
+    } catch (error) {
+      // Se der erro na verificacao (bot nao e admin), assumir que usuario e membro
+      console.log(`[Bot] Erro ao verificar canal ${channel.id}:`, error);
     }
   }
   

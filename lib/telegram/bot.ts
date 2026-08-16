@@ -146,13 +146,21 @@ export async function checkChannelMembership(
     });
     const data = await response.json();
     
-    if (!data.ok) return false;
+    // Se o bot nao e admin do canal, retornar true (permitir acesso)
+    if (!data.ok) {
+      if (data.description?.includes("inaccessible") || data.description?.includes("not found")) {
+        console.log(`[Bot] Canal ${chatId} inacessivel, permitindo acesso`);
+        return true;
+      }
+      return false;
+    }
     
     // Verificar status: member, administrator, creator sao validos
     const validStatuses = ["member", "administrator", "creator"];
     return validStatuses.includes(data.result?.status);
   } catch {
-    return false;
+    // Em caso de erro, permitir acesso
+    return true;
   }
 }
 
