@@ -112,7 +112,7 @@ export function FeesContent() {
             <div className="p-1.5 sm:p-2 rounded-lg sm:rounded-xl bg-blue-500/20">
               <ShieldCheck className="w-4 h-4 sm:w-5 sm:h-5 text-blue-400" />
             </div>
-            <span className="text-sm font-semibold text-white">100% sem MED</span>
+            <span className="text-sm font-semibold text-foreground">100% sem MED</span>
           </div>
           <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
             Rota totalmente sem MED. Deixa que a gente cuida disso por você.
@@ -129,7 +129,7 @@ export function FeesContent() {
             <div className="p-1.5 sm:p-2 rounded-lg sm:rounded-xl bg-green-500/20">
               <Lock className="w-4 h-4 sm:w-5 sm:h-5 text-green-400" />
             </div>
-            <span className="text-sm font-semibold text-white">Saldo nunca bloqueado</span>
+            <span className="text-sm font-semibold text-foreground">Saldo nunca bloqueado</span>
           </div>
           <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
             Seu saldo nunca é bloqueado. Você opera com total tranquilidade.
@@ -146,7 +146,7 @@ export function FeesContent() {
             <div className="p-1.5 sm:p-2 rounded-lg sm:rounded-xl bg-cyan-500/20">
               <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-cyan-400" />
             </div>
-            <span className="text-sm font-semibold text-white">Multiaquirência</span>
+            <span className="text-sm font-semibold text-foreground">Multiaquirência</span>
           </div>
           <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
             Mais estabilidade nas suas transações e benefícios exclusivos.
@@ -167,7 +167,7 @@ export function FeesContent() {
             </div>
             <span className="text-xs sm:text-sm text-red-400">Total em Taxas</span>
           </div>
-          <p className="text-xl sm:text-2xl font-bold text-white">
+          <p className="text-xl sm:text-2xl font-bold text-foreground">
             {formatCurrency(fees?.total_fees_paid || 0)}
           </p>
         </motion.div>
@@ -184,7 +184,7 @@ export function FeesContent() {
             </div>
             <span className="text-xs sm:text-sm text-blue-400">Volume Total</span>
           </div>
-          <p className="text-xl sm:text-2xl font-bold text-white">
+          <p className="text-xl sm:text-2xl font-bold text-foreground">
             {formatCurrency(fees?.total_volume || 0)}
           </p>
         </motion.div>
@@ -201,7 +201,7 @@ export function FeesContent() {
             </div>
             <span className="text-xs sm:text-sm text-purple-400">Transacoes</span>
           </div>
-          <p className="text-xl sm:text-2xl font-bold text-white">
+          <p className="text-xl sm:text-2xl font-bold text-foreground">
             {fees?.total_transactions || 0}
           </p>
         </motion.div>

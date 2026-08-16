@@ -188,6 +188,39 @@ export async function sendVerificationEmail(
 }
 
 // ============================================================
+// 1b. Email de codigo de acesso (login em 2 etapas)
+// ============================================================
+export async function sendLoginCodeEmail(
+  to: string,
+  code: string,
+  name?: string
+): Promise<boolean> {
+  const greeting = name ? `Ola <strong style="color:${C.text};">${name}</strong>, use` : "Use";
+  const content = `
+    ${titleSection("&#128273;", "Codigo de Acesso", `${greeting} o codigo abaixo para concluir seu login na Hyperion Pay.`)}
+    ${codeBlock("Seu codigo de acesso", code)}
+    <tr><td bgcolor="${C.cardBg}" style="background-color:${C.cardBg};padding:4px 36px 32px;text-align:center;">
+      <p style="margin:0 0 6px;color:${C.textSoft};font-size:13px;">Este codigo expira em <strong style="color:${C.accent};">10 minutos</strong></p>
+      <p style="margin:0;color:${C.textDim};font-size:11px;">Se voce nao tentou entrar na sua conta, altere sua senha imediatamente.</p>
+    </td></tr>
+  `;
+
+  try {
+    const { error } = await getResend().emails.send({
+      from: FROM_EMAIL, to,
+      subject: `${code} - Codigo de Acesso | Hyperion Pay`,
+      html: emailWrapper(content),
+    });
+    if (error) { console.error("[Email] Erro ao enviar codigo de acesso:", error); return false; }
+    console.log("[Email] Codigo de acesso enviado com sucesso para:", to);
+    return true;
+  } catch (error) {
+    console.error("[Email] Erro ao enviar codigo de acesso:", error);
+    return false;
+  }
+}
+
+// ============================================================
 // 2. Email de boas-vindas
 // ============================================================
 export async function sendWelcomeEmail(

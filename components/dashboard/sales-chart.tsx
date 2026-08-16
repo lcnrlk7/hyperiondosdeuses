@@ -177,38 +177,40 @@ export function SalesChart({ transactions }: SalesChartProps) {
           >
             <defs>
               <linearGradient id="colorVendas" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#6366f1" stopOpacity={0.4} />
-                <stop offset="95%" stopColor="#6366f1" stopOpacity={0.05} />
+                <stop offset="5%" stopColor="#2563eb" stopOpacity={0.35} />
+                <stop offset="95%" stopColor="#2563eb" stopOpacity={0.05} />
               </linearGradient>
             </defs>
             <CartesianGrid 
               strokeDasharray="3 3" 
-              stroke="rgba(255,255,255,0.05)" 
+              stroke="rgba(15,23,42,0.06)" 
               vertical={false}
             />
             <XAxis 
               dataKey="name" 
               axisLine={false}
               tickLine={false}
-              tick={{ fill: '#888', fontSize: 12 }}
+              tick={{ fill: '#64748b', fontSize: 12 }}
               dy={10}
             />
             <YAxis 
               axisLine={false}
               tickLine={false}
-              tick={{ fill: '#888', fontSize: 10 }}
+              tick={{ fill: '#64748b', fontSize: 10 }}
               tickFormatter={(value) => formatCurrency(value)}
               width={50}
               domain={[0, maxValue * 1.1]}
             />
             <Tooltip
               contentStyle={{
-                backgroundColor: '#111111',
-                border: '1px solid #1f1f1f',
-                borderRadius: '6px',
+                backgroundColor: '#ffffff',
+                border: '1px solid #e2e8f0',
+                borderRadius: '8px',
                 padding: '10px 12px',
+                boxShadow: '0 4px 12px rgba(15,23,42,0.08)',
               }}
-              labelStyle={{ color: '#fafafa', fontWeight: '600', marginBottom: '4px' }}
+              labelStyle={{ color: '#0f172a', fontWeight: '600', marginBottom: '4px' }}
+              itemStyle={{ color: '#0f172a' }}
               formatter={(value: number) => [
                 new Intl.NumberFormat("pt-BR", {
                   style: "currency",
@@ -220,7 +222,7 @@ export function SalesChart({ transactions }: SalesChartProps) {
             <Area
               type="monotone"
               dataKey="vendas"
-              stroke="#6366f1"
+              stroke="#2563eb"
               strokeWidth={2}
               fill="url(#colorVendas)"
               animationDuration={1500}

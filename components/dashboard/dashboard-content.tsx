@@ -518,30 +518,32 @@ export function DashboardContent({
                       <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(15,23,42,0.06)" vertical={false} />
                   <XAxis 
                     dataKey="name" 
                     axisLine={false} 
                     tickLine={false} 
-                    tick={{ fill: '#6b7280', fontSize: 11 }}
+                    tick={{ fill: '#64748b', fontSize: 11 }}
                     dy={10}
                   />
                   <YAxis 
                     axisLine={false} 
                     tickLine={false} 
-                    tick={{ fill: '#6b7280', fontSize: 11 }}
+                    tick={{ fill: '#64748b', fontSize: 11 }}
                     tickFormatter={(v) => v.toFixed(0)}
                     width={30}
                   />
                   <Tooltip
                     contentStyle={{
-                      backgroundColor: '#111827',
-                      border: '1px solid #1f2937',
+                      backgroundColor: '#ffffff',
+                      border: '1px solid #e2e8f0',
                       borderRadius: '8px',
                       padding: '8px 12px',
+                      boxShadow: '0 4px 12px rgba(15,23,42,0.08)',
                     }}
                     formatter={(value: number) => [formatCurrency(value), "Receita"]}
-                    labelStyle={{ color: '#f9fafb', fontWeight: 600 }}
+                    labelStyle={{ color: '#0f172a', fontWeight: 600 }}
+                    itemStyle={{ color: '#0f172a' }}
                   />
                   <Area
                     type="monotone"

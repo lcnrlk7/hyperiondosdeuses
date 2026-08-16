@@ -37,6 +37,18 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-success-bg: var(--success-bg);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-warning-bg: var(--warning-bg);
+  --color-danger: var(--danger);
+  --color-danger-foreground: var(--danger-foreground);
+  --color-danger-bg: var(--danger-bg);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+  --color-info-bg: var(--info-bg);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -87,6 +99,20 @@
   --chart-4: #10b981;
   --chart-5: #3b82f6;
   
+  /* Status colors */
+  --success: #22c55e;
+  --success-foreground: #22c55e;
+  --success-bg: rgba(34, 197, 94, 0.12);
+  --warning: #eab308;
+  --warning-foreground: #eab308;
+  --warning-bg: rgba(234, 179, 8, 0.12);
+  --danger: #ef4444;
+  --danger-foreground: #ef4444;
+  --danger-bg: rgba(239, 68, 68, 0.12);
+  --info: #3b82f6;
+  --info-foreground: #3b82f6;
+  --info-bg: rgba(59, 130, 246, 0.12);
+  
   /* Radius */
   --radius: 0.5rem;
   
@@ -101,59 +127,73 @@
   --sidebar-ring: #4f46e5;
 }
 
-/* TEMA CLARO */
+/* TEMA CLARO - Fintech azul (Hyperion Pay Dashboard) */
 .light {
-  /* Core palette - Clean white with indigo */
-  --background: #fafbff;
-  --foreground: #050614;
+  /* Core palette - Branco/gelo com azul */
+  --background: #f8fafc;
+  --foreground: #0f172a;
   --card: #ffffff;
-  --card-foreground: #050614;
+  --card-foreground: #0f172a;
   --popover: #ffffff;
-  --popover-foreground: #050614;
+  --popover-foreground: #0f172a;
   
-  /* Primary - Indigo */
-  --primary: #4f46e5;
-  --primary-light: #6366f1;
-  --primary-dark: #3730a3;
+  /* Primary - Azul principal */
+  --primary: #2563eb;
+  --primary-light: #3b82f6;
+  --primary-dark: #1d4ed8;
   --primary-foreground: #ffffff;
   
-  /* Secondary - Light grays */
+  /* Secondary - Superficies neutras */
   --secondary: #f1f5f9;
-  --secondary-foreground: #050614;
+  --secondary-foreground: #0f172a;
   
-  /* Muted - For less prominent elements */
+  /* Muted - Textos secundarios / fundos suaves */
   --muted: #f1f5f9;
   --muted-foreground: #64748b;
   
-  /* Accent - Matches primary */
-  --accent: #eef2ff;
-  --accent-foreground: #4f46e5;
+  /* Accent - Azul claro de destaque */
+  --accent: #eff6ff;
+  --accent-foreground: #2563eb;
   
   /* Destructive */
-  --destructive: #ef4444;
+  --destructive: #dc2626;
   --destructive-foreground: #ffffff;
   
   /* Borders and inputs */
   --border: #e2e8f0;
-  --input: #f1f5f9;
-  --ring: #4f46e5;
+  --input: #e2e8f0;
+  --ring: #2563eb;
   
   /* Charts */
-  --chart-1: #4f46e5;
-  --chart-2: #6366f1;
-  --chart-3: #818cf8;
-  --chart-4: #22c55e;
-  --chart-5: #3b82f6;
+  --chart-1: #2563eb;
+  --chart-2: #0ea5e9;
+  --chart-3: #60a5fa;
+  --chart-4: #16a34a;
+  --chart-5: #64748b;
+  
+  /* Status colors */
+  --success: #16a34a;
+  --success-foreground: #16a34a;
+  --success-bg: #dcfce7;
+  --warning: #eab308;
+  --warning-foreground: #a16207;
+  --warning-bg: #fef9c3;
+  --danger: #dc2626;
+  --danger-foreground: #dc2626;
+  --danger-bg: #fee2e2;
+  --info: #2563eb;
+  --info-foreground: #2563eb;
+  --info-bg: #dbeafe;
   
   /* Sidebar */
   --sidebar: #ffffff;
-  --sidebar-foreground: #050614;
-  --sidebar-primary: #4f46e5;
+  --sidebar-foreground: #0f172a;
+  --sidebar-primary: #2563eb;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #eef2ff;
-  --sidebar-accent-foreground: #4f46e5;
+  --sidebar-accent: #eff6ff;
+  --sidebar-accent-foreground: #2563eb;
   --sidebar-border: #e2e8f0;
-  --sidebar-ring: #4f46e5;
+  --sidebar-ring: #2563eb;
 }
 
 @layer base {

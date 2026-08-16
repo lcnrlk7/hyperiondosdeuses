@@ -12,14 +12,16 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   return (
-    <AuthProvider>
-      <OnboardingProvider>
-        <ServiceWorkerRegister />
-        <DashboardLayoutWrapper>{children}</DashboardLayoutWrapper>
-        <OnboardingOverlay />
-        <KeyboardShortcuts />
-        <PWAInstallPrompt />
-      </OnboardingProvider>
-    </AuthProvider>
+    <div className="light bg-background text-foreground min-h-screen">
+      <AuthProvider>
+        <OnboardingProvider>
+          <ServiceWorkerRegister />
+          <DashboardLayoutWrapper>{children}</DashboardLayoutWrapper>
+          <OnboardingOverlay />
+          <KeyboardShortcuts />
+          <PWAInstallPrompt />
+        </OnboardingProvider>
+      </AuthProvider>
+    </div>
   );
 }

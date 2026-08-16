@@ -424,7 +424,7 @@ export function WalletContent() {
                 Depositar
               </Button>
             </DialogTrigger>
-            <DialogContent className="!bg-[#1a1a1a] border-border max-w-md sm:max-w-lg overflow-hidden">
+            <DialogContent className="!bg-card border-border max-w-md sm:max-w-lg overflow-hidden">
               <DialogHeader>
                 <DialogTitle className="text-foreground">Depositar via PIX</DialogTitle>
               </DialogHeader>
@@ -447,7 +447,7 @@ export function WalletContent() {
                         placeholder="0,00"
                         value={depositAmount}
                         onChange={(e) => setDepositAmount(e.target.value)}
-                        className="bg-[#252525] border-border"
+                        className="bg-secondary border-border"
                         min={systemSettings.minDeposit}
                         max={1000}
                       />
@@ -524,7 +524,7 @@ export function WalletContent() {
                     </div>
 
                     <div className="space-y-2">
-                      <div className="flex items-center gap-2 bg-[#252525] rounded-lg p-3 max-w-full overflow-hidden">
+                      <div className="flex items-center gap-2 bg-secondary rounded-lg p-3 max-w-full overflow-hidden">
                         <code className="flex-1 text-xs text-muted-foreground break-all line-clamp-2 text-left">
                           {pixTransaction.copyPaste}
                         </code>
@@ -578,7 +578,7 @@ export function WalletContent() {
                 Sacar
               </Button>
             </DialogTrigger>
-            <DialogContent className="!bg-[#1a1a1a] border-border max-w-md sm:max-w-lg">
+            <DialogContent className="!bg-card border-border max-w-md sm:max-w-lg">
               <DialogHeader>
                 <DialogTitle className="text-foreground">Sacar via PIX</DialogTitle>
               </DialogHeader>
