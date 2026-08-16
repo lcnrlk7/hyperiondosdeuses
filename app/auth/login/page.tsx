@@ -82,7 +82,7 @@ export default function LoginPage() {
       const response = await fetch("/api/auth/login/verify-code", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, code: emailCode }),
+        body: JSON.stringify({ email, password, code: emailCode }),
       });
 
       const data = await response.json();
