@@ -282,7 +282,9 @@ export default function CEOLayout({ children }: { children: React.ReactNode }) {
       {/* Mobile Header */}
       <header className="lg:hidden glass sticky top-0 z-50 px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Image src="/images/logo-hyperion.png" alt="Hyperion Pay" width={32} height={32} />
+          <div className="w-8 h-8 rounded-xl bg-slate-950 flex items-center justify-center overflow-hidden ring-1 ring-primary/30">
+            <Image src="/images/logo-hyperion.png" alt="Hyperion Pay" width={32} height={32} className="scale-125" />
+          </div>
           <span className="font-semibold text-foreground">Admin CEO</span>
         </div>
         <div className="flex items-center gap-2">
@@ -306,17 +308,16 @@ export default function CEOLayout({ children }: { children: React.ReactNode }) {
 
       <div className="flex">
         {/* Sidebar Desktop */}
-        <aside className="hidden lg:flex lg:flex-col lg:w-64 lg:min-h-screen bg-gradient-to-b from-card to-black/95 border-r border-border/50 sticky top-0">
-          <div className="p-6 border-b border-border/50">
+        <aside className="hidden lg:flex lg:flex-col lg:w-64 lg:min-h-screen bg-card border-r border-border sticky top-0">
+          <div className="p-6 border-b border-border">
             <div className="flex items-center gap-3">
-              <div className="relative">
-                <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full" />
+              <div className="relative w-11 h-11 rounded-2xl bg-slate-950 flex items-center justify-center overflow-hidden ring-1 ring-primary/30 shadow-lg shadow-primary/20">
                 <Image
                   src="/images/logo-hyperion.png"
                   alt="Hyperion Pay"
-                  width={40}
-                  height={40}
-                  className="relative drop-shadow-lg"
+                  width={44}
+                  height={44}
+                  className="relative scale-125"
                 />
               </div>
               <div>
@@ -324,7 +325,7 @@ export default function CEOLayout({ children }: { children: React.ReactNode }) {
                   <span className="font-bold text-foreground">Hyperion</span>
                   <span className="font-bold text-primary">Pay</span>
                 </div>
-                <span className="text-xs text-red-400 font-medium">Painel CEO</span>
+                <span className="text-xs text-muted-foreground font-medium">Painel CEO</span>
               </div>
             </div>
             
@@ -414,12 +415,15 @@ export default function CEOLayout({ children }: { children: React.ReactNode }) {
               >
                 <div className="p-6 border-b border-border">
                   <div className="flex items-center gap-3">
-                    <Image
-                      src="/images/logo-hyperion.png"
-                      alt="Hyperion Pay"
-                      width={36}
-                      height={36}
-                    />
+                    <div className="w-10 h-10 rounded-2xl bg-slate-950 flex items-center justify-center overflow-hidden ring-1 ring-primary/30">
+                      <Image
+                        src="/images/logo-hyperion.png"
+                        alt="Hyperion Pay"
+                        width={40}
+                        height={40}
+                        className="scale-125"
+                      />
+                    </div>
                     <div>
                       <div className="flex items-baseline">
                         <span className="font-bold text-foreground">Hyperion</span>
