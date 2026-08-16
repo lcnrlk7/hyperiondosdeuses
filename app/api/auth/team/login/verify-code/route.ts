@@ -5,10 +5,9 @@ import { SignJWT } from 'jose'
 import { isAllowedAdmin } from '@/lib/admin-auth'
 import { verifyLoginCode, createLoginCode } from '@/lib/login-code'
 import { sendLoginCodeEmail } from '@/lib/email'
+import { getJwtSecret } from '@/lib/jwt-secret'
 
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || 'fallback-secret-change-in-production'
-)
+const JWT_SECRET = getJwtSecret()
 
 const TEAM_COOKIE_NAME = 'team_session'
 

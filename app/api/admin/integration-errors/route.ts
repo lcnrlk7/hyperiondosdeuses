@@ -5,20 +5,8 @@ import { sql } from "@/lib/db";
 
 export async function GET(request: NextRequest) {
   try {
-    const user = await getCurrentUser();
-    
-    if (!user) {
-      return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
-    }
-
-    // Verificar se é admin
-    const profileResult = await sql`
-      SELECT is_admin FROM profiles WHERE id = ${user.id}
-    `;
-    
-    if (!profileResult[0]?.is_admin) {
-      return NextResponse.json({ error: "Acesso negado" }, { status: 403 });
-    }
+    const admin = await verifyAdmin();
+    if (!admin) return accessDeniedResponse();
 
     const { searchParams } = new URL(request.url);
     const resolved = searchParams.get("resolved");

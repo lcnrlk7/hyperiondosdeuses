@@ -4,12 +4,11 @@ import crypto from "node:crypto";
 import { SignJWT, jwtVerify } from "jose";
 import { sql } from "./db";
 import { createDiditSession, getAppBaseUrl } from "./didit";
+import { getJwtSecret } from "./jwt-secret";
 
 const DEVICE_COOKIE = "hp_device_id";
 const DEVICE_COOKIE_MAX_AGE = 60 * 60 * 24 * 365 * 2; // 2 anos
-const SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || "fallback-secret-change-in-production",
-);
+const SECRET = getJwtSecret();
 
 export type FacePurpose = "login" | "withdrawal";
 

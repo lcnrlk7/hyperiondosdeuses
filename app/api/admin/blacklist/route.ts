@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { neon } from "@neondatabase/serverless"
-import { cookies } from "next/headers"
-import { jwtVerify } from "jose"
+import { verifyAdmin } from "@/lib/admin-auth"
 
 function getDb() {
   if (!process.env.DATABASE_URL) {
@@ -9,10 +8,6 @@ function getDb() {
   }
   return neon(process.env.DATABASE_URL)
 }
-
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || "fallback-secret-change-in-production"
-)
 
 // Flag para evitar criar tabelas multiplas vezes
 let tablesCreated = false
@@ -82,17 +77,10 @@ async function ensureTablesExist() {
 
 // Verifica se e admin/CEO
 async function verifyAdminAuth(): Promise<boolean> {
-  const cookieStore = await cookies()
-  const token = cookieStore.get("team_session")?.value
-
-  if (!token) return false
-
-  try {
-    const { payload } = await jwtVerify(token, JWT_SECRET)
-    return payload.role === "ceo" || payload.role === "admin" || payload.role === "manager"
-  } catch {
-    return false
-  }
+  // SEGURANCA: verificacao central (exige o email admin autorizado).
+  // Antes confiava apenas na claim "role" do JWT, que era forjavel.
+  const admin = await verifyAdmin()
+  return !!admin
 }
 
 // GET - Lista todos os bloqueios
