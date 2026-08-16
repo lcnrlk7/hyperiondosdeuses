@@ -1,6 +1,7 @@
 import { sql } from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
 import { getSystemFeesForUser, createWithdrawal } from "@/lib/acquirers";
+import { assertUserVerified } from "@/lib/kyc-guard";
 import crypto from "crypto";
 
 // Funcao para extrair credenciais do request
@@ -124,13 +125,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verificar KYC
-    if (profile.kyc_status !== "approved") {
-      return NextResponse.json(
-        { success: false, error: "KYC pendente ou nao aprovado", code: "KYC_REQUIRED" },
-        { status: 403 }
-      );
-    }
+    // SEGURANCA: exige KYC + prova de vida (Didit) antes de sacar.
+    const verified = await assertUserVerified(profile.id);
+    if (!verified.ok) return verified.response;
 
     const body = await request.json();
     const { amount, pix_key, pix_key_type, external_id, description } = body;
