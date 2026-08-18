@@ -75,11 +75,19 @@ export default function DocsPage() {
   );
 
   const highlightCode = (code: string) => {
-    return code
+    // Escapa HTML primeiro para nao quebrar a marcacao / renderizar tags do proprio codigo
+    const escaped = code
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
+
+    return escaped
       .replace(/(["'])(.*?)\1/g, '<span class="text-green-400">$&</span>')
       .replace(/\b(const|let|var|function|return|import|from|export|async|await|if|else)\b/g, '<span class="text-purple-400">$&</span>')
       .replace(/\b(true|false|null|undefined)\b/g, '<span class="text-indigo-400">$&</span>')
-      .replace(/(\d+\.?\d*)/g, '<span class="text-indigo-400">$&</span>')
+      // So realça números "de verdade": ignora dígitos colados a letras/hifens
+      // (ex.: os "400"/"500" dos nomes de classe como text-green-400 injetados acima)
+      .replace(/(?<![\w-])(\d+\.?\d*)(?![\w-])/g, '<span class="text-indigo-400">$&</span>')
       .replace(/(\/\/.*$)/gm, '<span class="text-muted-foreground">$&</span>');
   };
 
