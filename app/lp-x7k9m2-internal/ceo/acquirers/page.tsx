@@ -19,6 +19,7 @@ import {
   XCircle,
   RefreshCw,
   ArrowUpDown,
+  Wallet,
 } from "lucide-react";
 
 interface Acquirer {
@@ -81,10 +82,35 @@ export default function AcquirersPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [testing, setTesting] = useState<string | null>(null);
   const [testResults, setTestResults] = useState<Record<string, { ok: boolean; msg: string }>>({});
+  const [balances, setBalances] = useState<
+    Record<string, { ok: boolean; available?: number; blocked?: number; error?: string }>
+  >({});
+  const [loadingBalances, setLoadingBalances] = useState(false);
 
   useEffect(() => {
     loadAcquirers();
+    loadBalances();
   }, []);
+
+  async function loadBalances() {
+    setLoadingBalances(true);
+    try {
+      const response = await fetch("/api/admin/acquirers/balance");
+      const data = await response.json();
+      if (data.success && Array.isArray(data.balances)) {
+        const map: Record<string, { ok: boolean; available?: number; blocked?: number; error?: string }> = {};
+        for (const b of data.balances) {
+          if (!b.supported) continue;
+          map[b.id] = { ok: b.ok, available: b.available, blocked: b.blocked, error: b.error };
+        }
+        setBalances(map);
+      }
+    } catch (error) {
+      console.error("Error loading balances:", error);
+    } finally {
+      setLoadingBalances(false);
+    }
+  }
 
   async function loadAcquirers() {
     try {
@@ -347,6 +373,14 @@ export default function AcquirersPage() {
         </div>
         <div className="flex items-center gap-3">
           <button
+            onClick={loadBalances}
+            disabled={loadingBalances}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-secondary text-foreground hover:bg-secondary/80 transition-colors disabled:opacity-50"
+          >
+            <RefreshCw className={`w-5 h-5 ${loadingBalances ? "animate-spin" : ""}`} />
+            Atualizar saldos
+          </button>
+          <button
             onClick={openAddModal}
             className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
           >
@@ -373,6 +407,23 @@ export default function AcquirersPage() {
             {acquirers.filter((a) => !a.is_active).length}
           </p>
           <p className="text-sm text-muted-foreground">Inativos</p>
+        </div>
+        <div className="glass rounded-xl p-4">
+          <p className="text-2xl font-bold text-primary flex items-center gap-2">
+            <Wallet className="w-5 h-5" />
+            {loadingBalances && Object.keys(balances).length === 0 ? (
+              <Loader2 className="w-5 h-5 animate-spin" />
+            ) : (
+              <>
+                R${" "}
+                {Object.values(balances)
+                  .filter((b) => b.ok)
+                  .reduce((sum, b) => sum + Number(b.available || 0), 0)
+                  .toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </>
+            )}
+          </p>
+          <p className="text-sm text-muted-foreground">Saldo total disponível</p>
         </div>
       </div>
 
@@ -548,6 +599,32 @@ export default function AcquirersPage() {
                   <span className={`px-2 py-0.5 rounded text-xs font-medium ${acquirer.is_selectable ? "bg-green-400/10 text-green-400" : "bg-muted text-muted-foreground"}`}>
                     {acquirer.is_selectable ? "Selecionável pelo usuário" : "Oculta do usuário"}
                   </span>
+
+                  {/* Saldo da adquirente */}
+                  <span className="flex items-center gap-1.5 text-muted-foreground">
+                    <Wallet className="w-4 h-4 text-primary" />
+                    Saldo disponível:{" "}
+                    {loadingBalances && !balances[acquirer.id] ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : balances[acquirer.id]?.ok ? (
+                      <span className="text-green-400 font-semibold">
+                        R$ {Number(balances[acquirer.id].available || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </span>
+                    ) : balances[acquirer.id] ? (
+                      <span className="text-red-400" title={balances[acquirer.id].error}>indisponível</span>
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
+                  </span>
+                  {balances[acquirer.id]?.ok && Number(balances[acquirer.id].blocked || 0) > 0 && (
+                    <span className="text-muted-foreground">
+                      Bloqueado:{" "}
+                      <span className="text-yellow-400 font-medium">
+                        R$ {Number(balances[acquirer.id].blocked || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </span>
+                    </span>
+                  )}
+
                   {testResults[acquirer.id] && (
                     <span className={`flex items-center gap-1.5 ${testResults[acquirer.id].ok ? "text-green-400" : "text-red-400"}`}>
                       {testResults[acquirer.id].ok ? <CheckCircle className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
