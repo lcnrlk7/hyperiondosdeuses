@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
+import { AcquirerAnalytics } from "@/components/admin/acquirer-analytics";
 import {
   Server,
   Plus,
@@ -20,6 +21,9 @@ import {
   RefreshCw,
   ArrowUpDown,
   Wallet,
+  Webhook,
+  Copy,
+  Check,
 } from "lucide-react";
 
 interface Acquirer {
@@ -86,11 +90,65 @@ export default function AcquirersPage() {
     Record<string, { ok: boolean; available?: number; blocked?: number; error?: string }>
   >({});
   const [loadingBalances, setLoadingBalances] = useState(false);
+  const [webhookInfo, setWebhookInfo] = useState<{
+    webhookUrl: string;
+    acquirers: Array<{ id: string; name: string; registered: boolean; registeredAt: string | null }>;
+  } | null>(null);
+  const [copiedWebhook, setCopiedWebhook] = useState(false);
+  const [registeringWebhook, setRegisteringWebhook] = useState(false);
 
   useEffect(() => {
     loadAcquirers();
     loadBalances();
+    loadWebhook();
   }, []);
+
+  async function loadWebhook() {
+    try {
+      const response = await fetch("/api/admin/acquirers/webhook");
+      const data = await response.json();
+      if (data.success) {
+        setWebhookInfo({ webhookUrl: data.webhookUrl, acquirers: data.acquirers || [] });
+      }
+    } catch (error) {
+      console.error("Error loading webhook info:", error);
+    }
+  }
+
+  async function copyWebhook() {
+    if (!webhookInfo?.webhookUrl) return;
+    try {
+      await navigator.clipboard.writeText(webhookInfo.webhookUrl);
+      setCopiedWebhook(true);
+      setTimeout(() => setCopiedWebhook(false), 2000);
+    } catch {}
+  }
+
+  async function registerWebhook() {
+    setRegisteringWebhook(true);
+    try {
+      const response = await fetch("/api/admin/acquirers/webhook", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+      const data = await response.json();
+      if (data.success) {
+        alert("Webhook registrado com sucesso em todas as adquirentes Medusa Online.");
+      } else {
+        const fails = (data.results || [])
+          .filter((r: any) => !r.ok)
+          .map((r: any) => `${r.name}: ${r.error}`)
+          .join("\n");
+        alert("Alguns registros falharam:\n" + (fails || "erro desconhecido"));
+      }
+      loadWebhook();
+    } catch {
+      alert("Erro ao registrar webhook.");
+    } finally {
+      setRegisteringWebhook(false);
+    }
+  }
 
   async function loadBalances() {
     setLoadingBalances(true);
@@ -426,6 +484,63 @@ export default function AcquirersPage() {
           <p className="text-sm text-muted-foreground">Saldo total disponível</p>
         </div>
       </div>
+
+      {/* Webhook Medusa Online */}
+      {webhookInfo && (
+        <div className="glass rounded-2xl p-6">
+          <div className="flex items-start gap-4">
+            <div className="p-3 rounded-xl bg-primary/10">
+              <Webhook className="w-6 h-6 text-primary" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <h3 className="text-lg font-semibold text-foreground mb-1">Webhook Medusa Online</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                URL onde a Medusa envia os status de pagamento e saque em tempo real. Configure esta URL
+                em Configurações → API e Integrações → Webhook no painel da Medusa, ou clique em
+                &quot;Registrar automaticamente&quot;.
+              </p>
+
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 mb-4">
+                <code className="flex-1 px-4 py-2.5 bg-secondary rounded-xl text-sm text-foreground font-mono break-all">
+                  {webhookInfo.webhookUrl}
+                </code>
+                <button
+                  onClick={copyWebhook}
+                  className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-secondary hover:bg-secondary/80 text-foreground transition-colors"
+                >
+                  {copiedWebhook ? <Check className="w-4 h-4 text-green-400" /> : <Copy className="w-4 h-4" />}
+                  {copiedWebhook ? "Copiado" : "Copiar"}
+                </button>
+                <button
+                  onClick={registerWebhook}
+                  disabled={registeringWebhook}
+                  className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
+                >
+                  {registeringWebhook ? <Loader2 className="w-4 h-4 animate-spin" /> : <Webhook className="w-4 h-4" />}
+                  Registrar automaticamente
+                </button>
+              </div>
+
+              <div className="flex flex-wrap gap-3">
+                {webhookInfo.acquirers.map((a) => (
+                  <span
+                    key={a.id}
+                    className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium ${
+                      a.registered ? "bg-green-400/10 text-green-400" : "bg-muted text-muted-foreground"
+                    }`}
+                  >
+                    {a.registered ? <CheckCircle className="w-3.5 h-3.5" /> : <XCircle className="w-3.5 h-3.5" />}
+                    {a.name}: {a.registered ? "registrado" : "não registrado"}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Analytics / Gráficos */}
+      <AcquirerAnalytics />
 
       {/* Acquirers List */}
       <div className="space-y-4">

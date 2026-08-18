@@ -14,8 +14,9 @@ export async function GET() {
       return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
     }
 
-    const profileRows = await sql`SELECT acquirer_id FROM profiles WHERE id = ${user.id}`;
+    const profileRows = await sql`SELECT acquirer_id, auto_retry_acquirer FROM profiles WHERE id = ${user.id}`;
     const selectedId = profileRows[0]?.acquirer_id || null;
+    const autoRetry = Boolean(profileRows[0]?.auto_retry_acquirer);
 
     const acquirers = await sql`
       SELECT id, name, badge, max_ticket, priority
@@ -25,7 +26,7 @@ export async function GET() {
     `;
 
     if (acquirers.length === 0) {
-      return NextResponse.json({ acquirers: [], selectedId });
+      return NextResponse.json({ acquirers: [], selectedId, autoRetry });
     }
 
     const ids = acquirers.map((a) => a.id as string);
@@ -88,7 +89,7 @@ export async function GET() {
       isBestConversion: a.id === bestConvId,
     }));
 
-    return NextResponse.json({ acquirers: result, selectedId });
+    return NextResponse.json({ acquirers: result, selectedId, autoRetry });
   } catch (error) {
     console.error("[user/acquirers] GET error:", error);
     return NextResponse.json({ error: "Erro interno" }, { status: 500 });
@@ -124,6 +125,28 @@ export async function PUT(request: Request) {
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("[user/acquirers] PUT error:", error);
+    return NextResponse.json({ error: "Erro interno" }, { status: 500 });
+  }
+}
+
+/**
+ * POST - Liga/desliga a retentativa automática (fallback de adquirente).
+ * Quando ligada, se a adquirente selecionada falhar ao gerar o PIX, o sistema
+ * tenta automaticamente as demais adquirentes ativas — mesmo as não selecionáveis.
+ */
+export async function POST(request: Request) {
+  try {
+    const user = await getCurrentUser();
+    if (!user) {
+      return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+    }
+
+    const { autoRetry } = await request.json();
+    await sql`UPDATE profiles SET auto_retry_acquirer = ${Boolean(autoRetry)} WHERE id = ${user.id}`;
+
+    return NextResponse.json({ success: true, autoRetry: Boolean(autoRetry) });
+  } catch (error) {
+    console.error("[user/acquirers] POST error:", error);
     return NextResponse.json({ error: "Erro interno" }, { status: 500 });
   }
 }

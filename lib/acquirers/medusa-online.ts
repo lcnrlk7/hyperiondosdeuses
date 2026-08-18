@@ -217,6 +217,33 @@ export class MedusaOnline {
   }
 
   /**
+   * Registra/atualiza a URL de webhook via POST /webhook
+   */
+  async registerWebhook(url: string, secret: string): Promise<{ success: boolean; error?: string }> {
+    try {
+      await this.request("/webhook", {
+        method: "POST",
+        body: JSON.stringify({ url, secret }),
+      });
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: error instanceof Error ? error.message : "Erro ao registrar webhook" };
+    }
+  }
+
+  /**
+   * Consulta a configuração de webhook via GET /webhook
+   */
+  async getWebhook(): Promise<{ success: boolean; url?: string; active?: boolean; error?: string }> {
+    try {
+      const { data } = await this.request<Record<string, any>>("/webhook", { method: "GET" });
+      return { success: true, url: data.url, active: data.active ?? data.ativo };
+    } catch (error) {
+      return { success: false, error: error instanceof Error ? error.message : "Erro ao consultar webhook" };
+    }
+  }
+
+  /**
    * Faz um teste leve de conectividade/credenciais consultando o saldo.
    */
   async ping(): Promise<{ ok: boolean; latencyMs: number; error?: string }> {

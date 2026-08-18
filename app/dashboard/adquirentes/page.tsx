@@ -13,6 +13,8 @@ import {
   CheckCircle2,
   XCircle,
   ShieldCheck,
+  RefreshCw,
+  Loader2 as Spinner,
 } from "lucide-react"
 
 interface AcquirerItem {
@@ -34,15 +36,35 @@ const formatCurrency = (v: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(Number(v || 0))
 
 export default function AdquirentesPage() {
-  const { data, isLoading, mutate } = useSWR<{ acquirers: AcquirerItem[]; selectedId: string | null }>(
-    "/api/user/acquirers",
-    fetcher,
-  )
+  const { data, isLoading, mutate } = useSWR<{
+    acquirers: AcquirerItem[]
+    selectedId: string | null
+    autoRetry: boolean
+  }>("/api/user/acquirers", fetcher)
   const [selecting, setSelecting] = useState<string | null>(null)
   const [testing, setTesting] = useState<string | null>(null)
   const [testResult, setTestResult] = useState<Record<string, { ok: boolean; msg: string }>>({})
+  const [savingRetry, setSavingRetry] = useState(false)
 
   const acquirers = data?.acquirers ?? []
+  const autoRetry = data?.autoRetry ?? false
+
+  async function toggleAutoRetry() {
+    const next = !autoRetry
+    setSavingRetry(true)
+    // Atualização otimista
+    mutate({ ...(data as any), autoRetry: next }, false)
+    try {
+      await fetch("/api/user/acquirers", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ autoRetry: next }),
+      })
+      await mutate()
+    } finally {
+      setSavingRetry(false)
+    }
+  }
 
   async function selectAcquirer(id: string) {
     setSelecting(id)
@@ -96,6 +118,45 @@ export default function AdquirentesPage() {
             Escolha por qual adquirente seus depósitos PIX serão processados. Compare o desempenho em tempo real
             e teste a disponibilidade antes de usar.
           </p>
+        </div>
+      </div>
+
+      {/* Retentativa automática (fallback de adquirente) */}
+      <div className="rounded-2xl border border-border bg-card p-5">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <div className="p-2.5 rounded-xl bg-primary/10">
+              <RefreshCw className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <h3 className="text-base font-semibold text-foreground mb-1">Retentativa automática</h3>
+              <p className="text-sm text-muted-foreground text-pretty max-w-2xl">
+                Se a adquirente escolhida falhar ao gerar o PIX, o sistema tenta automaticamente outra
+                adquirente disponível — mesmo que não esteja selecionada — para não perder o depósito.
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={autoRetry}
+            onClick={toggleAutoRetry}
+            disabled={savingRetry}
+            className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors disabled:opacity-60 ${
+              autoRetry ? "bg-primary" : "bg-secondary"
+            }`}
+          >
+            <span className="sr-only">Ativar retentativa automática</span>
+            {savingRetry ? (
+              <Spinner className="w-4 h-4 animate-spin text-primary-foreground mx-auto" />
+            ) : (
+              <span
+                className={`inline-block h-5 w-5 transform rounded-full bg-background shadow transition-transform ${
+                  autoRetry ? "translate-x-6" : "translate-x-1"
+                }`}
+              />
+            )}
+          </button>
         </div>
       </div>
 
