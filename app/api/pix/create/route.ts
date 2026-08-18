@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { sql } from "@/lib/db";
 import { MedusaPayments } from "@/lib/acquirers/medusa";
+import { MedusaOnline, isMedusaOnline } from "@/lib/acquirers/medusa-online";
 import { getSystemFeesForUser } from "@/lib/acquirers";
 import { logNewTransaction } from "@/lib/discord-webhook";
 import { detectAttack } from "@/lib/sanitize";
@@ -177,8 +178,55 @@ export async function POST(request: NextRequest) {
     
     let pixResult: { success: boolean; data?: { qrCode?: string; qrCodeBase64?: string; copyPaste?: string; transactionId?: string; fee?: number }; error?: string };
 
+    // Liquidante Medusa Online (api.medusapayments.online) - Bearer / valores em reais
+    if (isMedusaOnline(acquirer)) {
+      // Respeita o ticket maximo da nominal
+      const maxTicket = Number(acquirer.max_ticket) || 0;
+      if (maxTicket > 0 && amount > maxTicket) {
+        return errorResponse("PIX-003", 400, `amount=${amount} > max_ticket=${maxTicket}`);
+      }
+
+      try {
+        const client = new MedusaOnline({ apiKey: acquirer.api_key, baseUrl: acquirer.api_url });
+        const cpf = (profile.cpf_cnpj || "").replace(/\D/g, "") || "36009722004";
+        const result = await client.createPix({
+          valor: amount,
+          clienteNome: profile.name || payerName || "Cliente Hyperion Pay",
+          clienteEmail: profile.email || payerEmail || "cliente@hyperionpay.com.br",
+          clienteCpf: payerDocument ? payerDocument.replace(/\D/g, "") : cpf,
+          clienteTelefone: (profile.phone || payerPhone || "").replace(/\D/g, "") || undefined,
+          produto: description || "Depósito via PIX - Hyperion Pay",
+          idempotencyKey: transactionId,
+        });
+
+        if (!result.success) {
+          try {
+            await sql`
+              INSERT INTO integration_errors (integration_name, error_code, error_message, request_data, user_id, created_at)
+              VALUES ('medusa_online', 'CREATE_FAILED', ${result.error || 'Erro'}, ${JSON.stringify({ amount, transactionId, acquirer: acquirer.code })}, ${profile.id}, NOW())
+            `;
+          } catch {}
+          pixResult = { success: false, error: result.error };
+        } else {
+          pixResult = {
+            success: true,
+            data: {
+              qrCode: result.qrCode,
+              qrCodeBase64: result.qrCodeBase64,
+              copyPaste: result.qrCode,
+              transactionId: result.transactionId,
+            },
+          };
+        }
+      } catch (error) {
+        pixResult = {
+          success: false,
+          error: error instanceof Error ? error.message : "Erro ao criar cobrança PIX",
+        };
+      }
+    }
     // Usar cliente correto baseado no adquirente selecionado
-    if (acquirer.code === 'medusa' || acquirer.code === 'medusa_white') {
+    else if (acquirer.code === 'medusa' || acquirer.code === 'medusa_white') {
       try {
         const medusa = new MedusaPayments({
           secretKey: acquirer.api_key,
