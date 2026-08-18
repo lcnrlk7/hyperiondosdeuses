@@ -47,6 +47,10 @@ interface Acquirer {
   last_health_check?: string;
   avg_response_time?: number;
   failure_count_today?: number;
+  company_id?: string;
+  max_ticket?: number;
+  badge?: string;
+  is_selectable?: boolean;
 }
 
 export default function AcquirersPage() {
@@ -69,8 +73,14 @@ export default function AcquirersPage() {
     max_withdrawal: 10000,
     daily_limit: 10000,
     route_type: "white" as "white" | "black",
+    company_id: "",
+    max_ticket: 0,
+    badge: "",
+    is_selectable: false,
   });
   const [isSaving, setIsSaving] = useState(false);
+  const [testing, setTesting] = useState<string | null>(null);
+  const [testResults, setTestResults] = useState<Record<string, { ok: boolean; msg: string }>>({});
 
   useEffect(() => {
     loadAcquirers();
@@ -157,6 +167,10 @@ export default function AcquirersPage() {
               min_deposit: form.min_deposit,
               min_withdrawal: form.min_withdrawal,
               route_type: form.route_type,
+              company_id: form.company_id,
+              max_ticket: form.max_ticket,
+              badge: form.badge,
+              is_selectable: form.is_selectable,
             },
           }),
         });
@@ -205,6 +219,35 @@ export default function AcquirersPage() {
     }
   }
 
+  async function runTest(acquirer: Acquirer) {
+    setTesting(acquirer.id);
+    setTestResults((prev) => ({ ...prev, [acquirer.id]: { ok: false, msg: "Testando..." } }));
+    try {
+      const res = await fetch("/api/admin/acquirers/test", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ acquirerId: acquirer.id }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setTestResults((prev) => ({
+          ...prev,
+          [acquirer.id]: {
+            ok: true,
+            msg: `Funcional - ${data.latencyMs}ms${data.hasQrCode ? " - QR gerado" : ""}${data.simulated ? " (modo teste)" : ""}`,
+          },
+        }));
+      } else {
+        setTestResults((prev) => ({ ...prev, [acquirer.id]: { ok: false, msg: data.error || "Falhou" } }));
+      }
+      loadAcquirers();
+    } catch {
+      setTestResults((prev) => ({ ...prev, [acquirer.id]: { ok: false, msg: "Erro de conexão" } }));
+    } finally {
+      setTesting(null);
+    }
+  }
+
   function openAddModal() {
     setEditingAcquirer(null);
     setForm({
@@ -221,6 +264,10 @@ export default function AcquirersPage() {
       max_withdrawal: 10000,
       daily_limit: 10000,
       route_type: "white",
+      company_id: "",
+      max_ticket: 0,
+      badge: "",
+      is_selectable: false,
     });
     setShowModal(true);
   }
@@ -241,6 +288,10 @@ export default function AcquirersPage() {
       max_withdrawal: (acquirer as any).max_withdrawal || 10000,
       daily_limit: (acquirer as any).daily_limit || 10000,
       route_type: acquirer.route_type || "white",
+      company_id: acquirer.company_id || "",
+      max_ticket: Number(acquirer.max_ticket) || 0,
+      badge: acquirer.badge || "",
+      is_selectable: acquirer.is_selectable ?? false,
     });
     setShowModal(true);
   }
@@ -262,6 +313,10 @@ export default function AcquirersPage() {
       max_withdrawal: 10000,
       daily_limit: 10000,
       route_type: "white",
+      company_id: "",
+      max_ticket: 0,
+      badge: "",
+      is_selectable: false,
     });
   }
 
@@ -414,6 +469,21 @@ export default function AcquirersPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
+                  {acquirer.api_url?.includes("medusapayments.online") && (
+                    <button
+                      onClick={() => runTest(acquirer)}
+                      disabled={testing === acquirer.id}
+                      className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary/10 hover:bg-primary/20 transition-colors text-primary text-sm font-medium disabled:opacity-50"
+                      title="Testar em tempo real (gera PIX de teste)"
+                    >
+                      {testing === acquirer.id ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Activity className="w-4 h-4" />
+                      )}
+                      Testar
+                    </button>
+                  )}
                   <button
                     onClick={() => checkHealth(acquirer.id)}
                     disabled={checkingHealth === acquirer.id}
@@ -457,6 +527,35 @@ export default function AcquirersPage() {
                   </button>
                 </div>
               </div>
+
+              {/* Info da liquidante Medusa Online */}
+              {acquirer.api_url?.includes("medusapayments.online") && (
+                <div className="mt-4 pt-4 border-t border-border flex flex-wrap items-center gap-4 text-sm">
+                  <span className="text-muted-foreground">
+                    Nominal exibida: <span className="text-foreground font-medium">{acquirer.name}</span>
+                  </span>
+                  {acquirer.badge && (
+                    <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
+                      {acquirer.badge}
+                    </span>
+                  )}
+                  <span className="text-muted-foreground">
+                    Ticket máx.: <span className="text-yellow-400 font-medium">R$ {Number(acquirer.max_ticket || 0).toLocaleString("pt-BR")}</span>
+                  </span>
+                  <span className="text-muted-foreground">
+                    Company ID: <span className="text-foreground font-mono text-xs">{acquirer.company_id || "-"}</span>
+                  </span>
+                  <span className={`px-2 py-0.5 rounded text-xs font-medium ${acquirer.is_selectable ? "bg-green-400/10 text-green-400" : "bg-muted text-muted-foreground"}`}>
+                    {acquirer.is_selectable ? "Selecionável pelo usuário" : "Oculta do usuário"}
+                  </span>
+                  {testResults[acquirer.id] && (
+                    <span className={`flex items-center gap-1.5 ${testResults[acquirer.id].ok ? "text-green-400" : "text-red-400"}`}>
+                      {testResults[acquirer.id].ok ? <CheckCircle className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
+                      {testResults[acquirer.id].msg}
+                    </span>
+                  )}
+                </div>
+              )}
             </motion.div>
           ))
         )}
@@ -509,6 +608,60 @@ export default function AcquirersPage() {
                 <p className="text-xs text-muted-foreground mt-1">
                   Usado para identificar a adquirente no código. Apenas letras minúsculas, números e underscore.
                 </p>
+              </div>
+
+              {/* Configuração da liquidante Medusa Online */}
+              <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 space-y-4">
+                <p className="text-sm font-semibold text-primary">Liquidante Medusa Online</p>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground mb-2 block">
+                    Company ID (id da empresa)
+                  </label>
+                  <input
+                    type="text"
+                    value={form.company_id}
+                    onChange={(e) => setForm({ ...form, company_id: e.target.value })}
+                    placeholder="Ex: 03582a2b-ecc3-4283-..."
+                    className="w-full px-4 py-2.5 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50 font-mono text-sm"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground mb-2 block">
+                      Ticket máximo (R$)
+                    </label>
+                    <input
+                      type="number"
+                      value={form.max_ticket}
+                      onChange={(e) => setForm({ ...form, max_ticket: Number(e.target.value) })}
+                      placeholder="1000"
+                      min="0"
+                      step="50"
+                      className="w-full px-4 py-2.5 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground mb-2 block">
+                      Selo (Nova / Exclusiva)
+                    </label>
+                    <input
+                      type="text"
+                      value={form.badge}
+                      onChange={(e) => setForm({ ...form, badge: e.target.value })}
+                      placeholder="Nova"
+                      className="w-full px-4 py-2.5 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
+                    />
+                  </div>
+                </div>
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={form.is_selectable}
+                    onChange={(e) => setForm({ ...form, is_selectable: e.target.checked })}
+                    className="w-4 h-4 rounded border-border accent-primary"
+                  />
+                  <span className="text-sm text-foreground">Disponível para o usuário selecionar</span>
+                </label>
               </div>
               <div>
                 <label className="text-sm font-medium text-muted-foreground mb-2 block">
