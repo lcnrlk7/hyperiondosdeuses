@@ -51,6 +51,10 @@ export async function PUT(request: Request) {
             max_withdrawal = COALESCE(${data.max_withdrawal}, max_withdrawal),
             daily_limit = COALESCE(${data.daily_limit}, daily_limit),
             route_type = COALESCE(${data.route_type}, route_type),
+            company_id = COALESCE(${data.company_id ?? null}, company_id),
+            max_ticket = COALESCE(${data.max_ticket ?? null}, max_ticket),
+            badge = COALESCE(${data.badge ?? null}, badge),
+            is_selectable = COALESCE(${data.is_selectable ?? null}, is_selectable),
             updated_at = NOW()
         WHERE id = ${id}
       `;

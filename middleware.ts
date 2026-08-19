@@ -4,8 +4,6 @@ import { neon } from '@neondatabase/serverless'
 import { jwtVerify } from 'jose'
 import { getJwtSecret } from '@/lib/jwt-secret'
 
-const JWT_SECRET = getJwtSecret()
-
 // Cache de White Label tenants
 interface WhiteLabelCache {
   domain: string
@@ -138,7 +136,7 @@ async function isBlocked(request: NextRequest): Promise<{ blocked: boolean; reas
   const authToken = request.cookies.get('auth-token')?.value
   if (authToken) {
     try {
-      const { payload } = await jwtVerify(authToken, JWT_SECRET)
+      const { payload } = await jwtVerify(authToken, getJwtSecret())
       
       // Verifica user_id
       if (payload.id && blockedCache.userIds.has(payload.id as string)) {
@@ -183,7 +181,7 @@ async function getTokenEmail(request: NextRequest): Promise<string | null> {
   for (const token of [teamToken, authToken]) {
     if (!token) continue
     try {
-      const { payload } = await jwtVerify(token, JWT_SECRET)
+      const { payload } = await jwtVerify(token, getJwtSecret())
       if (payload?.email) return (payload.email as string).toLowerCase()
     } catch {
       // token invalido, tenta o proximo

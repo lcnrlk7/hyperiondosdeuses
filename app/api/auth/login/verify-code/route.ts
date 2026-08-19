@@ -6,6 +6,7 @@ import { logLogin } from "@/lib/discord-webhook";
 import { trackLogin, checkNewDevice } from "@/lib/login-tracker";
 import { verifyLoginCode, createLoginCode } from "@/lib/login-code";
 import { sendLoginCodeEmail } from "@/lib/email";
+import { lookupGeoLocation } from "@/lib/geo-ip";
 
 const COOKIE_NAME = "auth-token";
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 7; // 7 days
@@ -112,11 +113,14 @@ export async function POST(request: NextRequest) {
     // Codigo valido: emite o token de sessao
     const token = await createToken(user);
 
+    // Geolocalizacao do IP (nao bloqueia o login se falhar)
+    const geo = await lookupGeoLocation(ip);
+
     // Registrar login bem-sucedido (sem bloquear)
     try {
       await sql`
-        INSERT INTO audit_logs (user_id, action, entity_type, new_value, created_at)
-        VALUES (${user.id}, 'LOGIN', 'auth', ${JSON.stringify({ email: user.email })}, NOW())
+        INSERT INTO audit_logs (user_id, action, entity_type, ip_address, new_value, created_at)
+        VALUES (${user.id}, 'LOGIN', 'auth', ${ip}, ${JSON.stringify({ email: user.email, ip, location: geo.label })}, NOW())
       `;
       trackLogin({ userId: user.id, success: true });
       const isNewDevice = await checkNewDevice(user.id);
@@ -125,6 +129,8 @@ export async function POST(request: NextRequest) {
         userName: user.name,
         userEmail: user.email,
         ip,
+        location: geo.label,
+        locationFlag: geo.flag,
         userAgent: request.headers.get("user-agent") || undefined,
         isAdmin: user.role === "admin" || user.role === "ceo",
         isNewDevice,

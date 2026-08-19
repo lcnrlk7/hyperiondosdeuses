@@ -20,6 +20,7 @@ import {
 import Link from "next/link";
 import { useProfile } from "@/components/profile-provider";
 import { SupportAnnouncement } from "./support-announcement";
+import { IpBadge } from "./ip-badge";
 
 interface Transaction {
   id: string;
@@ -182,7 +183,12 @@ export function MobileDashboard({ profile: serverProfile, transactions }: Mobile
     <div className="lg:hidden space-y-4 pb-24">
       {/* Aviso de Suporte */}
       <SupportAnnouncement />
-      
+
+      {/* Endereco IP do usuario (borrado por padrao) */}
+      <div className="flex justify-end">
+        <IpBadge />
+      </div>
+
       {/* Header com saudacao e periodo */}
       <div className="flex items-start justify-between">
         <div>

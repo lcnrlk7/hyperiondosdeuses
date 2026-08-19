@@ -1,4 +1,5 @@
 import { neon, NeonQueryFunction } from "@neondatabase/serverless";
+import { logSecurityEvent } from "@/lib/discord-webhook";
 
 let _sql: NeonQueryFunction<false, false> | null = null;
 
@@ -69,9 +70,29 @@ export async function logAttack(data: AttackLogData): Promise<void> {
         ${blocked}
       )
     `;
-    
+
   } catch (error) {
     console.error("[Attack Logger] Erro ao registrar ataque:", error);
+  }
+
+  // Aviso de VULNERABILIDADE no Discord (canal de seguranca) — marca cargos em high/critical
+  try {
+    logSecurityEvent({
+      title: `Tentativa de ataque detectada: ${data.attackType}`,
+      action: String(data.attackType),
+      severity: (severityValue as "low" | "medium" | "high" | "critical") || "high",
+      description: blocked ? "Requisicao bloqueada pelo sistema de defesa." : "Requisicao suspeita detectada.",
+      userId: data.userId || null,
+      userEmail: data.userEmail || null,
+      ip: data.ipAddress,
+      fields: [
+        ...(data.endpoint ? [{ name: "Endpoint", value: `\`${data.endpoint}\``, inline: true }] : []),
+        ...(data.payload ? [{ name: "Payload", value: `\`\`\`${data.payload.substring(0, 300)}\`\`\``, inline: false }] : []),
+        { name: "Bloqueado", value: blocked ? "Sim" : "Nao", inline: true },
+      ],
+    });
+  } catch (error) {
+    console.error("[Attack Logger] Erro ao enviar alerta Discord:", error);
   }
 }
 

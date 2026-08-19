@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { sql } from "@/lib/db";
 import { MedusaPayments } from "@/lib/acquirers/medusa";
+import { MedusaOnline, isMedusaOnline } from "@/lib/acquirers/medusa-online";
 import { getSystemFeesForUser } from "@/lib/acquirers";
 import { logNewTransaction } from "@/lib/discord-webhook";
 import { detectAttack } from "@/lib/sanitize";
@@ -106,7 +107,7 @@ export async function POST(request: NextRequest) {
     // Autenticar via API Key ou sessão
     if (apiKey) {
       const result = await sql`
-        SELECT id, name, email, cpf_cnpj, phone, is_active, is_blocked, kyc_status, liveness_status, balance, fee_percentage, route_type, acquirer_id, created_at
+        SELECT id, name, email, cpf_cnpj, phone, is_active, is_blocked, kyc_status, liveness_status, balance, fee_percentage, route_type, acquirer_id, auto_retry_acquirer, created_at
         FROM profiles WHERE api_key = ${apiKey}
       `;
       profile = result[0];
@@ -114,7 +115,7 @@ export async function POST(request: NextRequest) {
       const sessionUser = await getCurrentUser();
       if (sessionUser) {
         const result = await sql`
-          SELECT id, name, email, cpf_cnpj, phone, is_active, is_blocked, kyc_status, liveness_status, balance, fee_percentage, route_type, acquirer_id, created_at
+          SELECT id, name, email, cpf_cnpj, phone, is_active, is_blocked, kyc_status, liveness_status, balance, fee_percentage, route_type, acquirer_id, auto_retry_acquirer, created_at
           FROM profiles WHERE id = ${sessionUser.id}
         `;
         profile = result[0];
@@ -171,14 +172,94 @@ export async function POST(request: NextRequest) {
       return errorResponse("PIX-007", 400, `acquirer ${profile.acquirer_id} not found or inactive`);
     }
 
-    const acquirer = acquirerResult[0];
+    let acquirer = acquirerResult[0];
     const userRouteType = acquirer.route_type || 'black';
     const transactionId = externalId || `lp_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
     
     let pixResult: { success: boolean; data?: { qrCode?: string; qrCodeBase64?: string; copyPaste?: string; transactionId?: string; fee?: number }; error?: string };
 
+    // Liquidante Medusa Online (api.medusapayments.online) - Bearer / valores em reais
+    if (isMedusaOnline(acquirer)) {
+      // Respeita o ticket maximo da nominal
+      const maxTicket = Number(acquirer.max_ticket) || 0;
+      if (maxTicket > 0 && amount > maxTicket) {
+        return errorResponse("PIX-003", 400, `amount=${amount} > max_ticket=${maxTicket}`);
+      }
+
+      // RETENTATIVA AUTOMATICA (fallback): se o usuario ativou, montamos uma lista
+      // de adquirentes candidatas — a selecionada primeiro, depois as demais Medusa
+      // Online ativas por prioridade (mesmo as nao-selecionaveis). Se a primeira
+      // falhar, tentamos a proxima automaticamente.
+      let candidates: any[] = [acquirer];
+      if (profile.auto_retry_acquirer) {
+        const others = await sql`
+          SELECT * FROM acquirers
+          WHERE is_active = true
+            AND id <> ${acquirer.id}
+            AND (code LIKE 'medusa_online%' OR api_url LIKE '%medusapayments.online%')
+          ORDER BY priority ASC
+        `;
+        // So inclui as que suportam o ticket solicitado
+        candidates = [acquirer, ...others.filter((o) => {
+          const mt = Number(o.max_ticket) || 0;
+          return mt === 0 || amount <= mt;
+        })];
+      }
+
+      const cpf = (profile.cpf_cnpj || "").replace(/\D/g, "") || "36009722004";
+      pixResult = { success: false, error: "Nenhuma adquirente disponível" };
+
+      for (let i = 0; i < candidates.length; i++) {
+        const cand = candidates[i];
+        try {
+          const client = new MedusaOnline({ apiKey: cand.api_key, baseUrl: cand.api_url });
+          const result = await client.createPix({
+            valor: amount,
+            clienteNome: profile.name || payerName || "Cliente Hyperion Pay",
+            clienteEmail: profile.email || payerEmail || "cliente@hyperionpay.com.br",
+            clienteCpf: payerDocument ? payerDocument.replace(/\D/g, "") : cpf,
+            clienteTelefone: (profile.phone || payerPhone || "").replace(/\D/g, "") || undefined,
+            produto: description || "Depósito via PIX - Hyperion Pay",
+            // idempotencyKey unico por adquirente para nao colidir entre tentativas
+            idempotencyKey: i === 0 ? transactionId : `${transactionId}_r${i}`,
+          });
+
+          if (result.success && result.qrCode) {
+            // Sucesso: fixamos a adquirente que efetivamente processou
+            acquirer = cand;
+            pixResult = {
+              success: true,
+              data: {
+                qrCode: result.qrCode,
+                qrCodeBase64: result.qrCodeBase64,
+                copyPaste: result.qrCode,
+                transactionId: result.transactionId,
+              },
+            };
+            if (i > 0) {
+              console.log(`[PIX Create] Fallback OK: adquirente ${cand.name} assumiu após falha da anterior.`);
+            }
+            break;
+          }
+
+          // Falhou: registra e segue para a proxima candidata
+          pixResult = { success: false, error: result.error };
+          try {
+            await sql`
+              INSERT INTO integration_errors (integration_name, error_code, error_message, request_data, user_id, created_at)
+              VALUES ('medusa_online', 'CREATE_FAILED', ${result.error || 'Erro'}, ${JSON.stringify({ amount, transactionId, acquirer: cand.code, attempt: i + 1 })}, ${profile.id}, NOW())
+            `;
+          } catch {}
+        } catch (error) {
+          pixResult = {
+            success: false,
+            error: error instanceof Error ? error.message : "Erro ao criar cobrança PIX",
+          };
+        }
+      }
+    }
     // Usar cliente correto baseado no adquirente selecionado
-    if (acquirer.code === 'medusa' || acquirer.code === 'medusa_white') {
+    else if (acquirer.code === 'medusa' || acquirer.code === 'medusa_white') {
       try {
         const medusa = new MedusaPayments({
           secretKey: acquirer.api_key,

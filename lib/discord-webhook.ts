@@ -11,14 +11,26 @@ try {
   // @vercel/functions nao disponivel (ambiente local)
 }
 
+// Webhook UNICO: todos os avisos (sistema, transacoes, saques, cadastros,
+// suporte, geral e seguranca) vao para este mesmo canal do Discord.
+// Pode ser sobrescrito via env (DISCORD_SECURITY_WEBHOOK_URL).
+const DISCORD_WEBHOOK_URL =
+  process.env.DISCORD_SECURITY_WEBHOOK_URL ||
+  "https://discord.com/api/webhooks/1539423168802980010/NNOKSBJh_-elX-y8AEt_E8kDFvtWV0lvknQRLIYcZGn-0OJn5-ndIO7ZwgNaoPelGIsY";
+
 const DISCORD_WEBHOOKS = {
-  sistema: "https://discord.com/api/webhooks/1499837126609731725/rd7ex3iTcCjGnunDuap0KL-NfnEKhX8FIvywgHwbBa8mR_oXAQZSwad26S-CusN1t16q",
-  transacoes: "https://discord.com/api/webhooks/1499837272516722770/NapVqX-BUAD0nhELgeowLVwbN_01r-7iE720EjFQJrk8q6CasynT1TEGPfI_m2Aqphf6",
-  saques: "https://discord.com/api/webhooks/1499837361440161886/qD-d03QN8WqTglC0SmUFB0BAJCakSoaQGDVyvydLnYl9Vp9yAAjwrCjkLWPtCX3Kd-ZI",
-  geral: "https://discord.com/api/webhooks/1499837482303492320/llq0EYn-DH_qI8QaXiKSyvvrPNqiZX3z9oB2SqoYjAQMgDhMd2Rvw1Wrz7r7zyLUXhK_",
-  cadastros: "https://discord.com/api/webhooks/1499837621147406498/NEwuwrhItxr6qRU-fB1speAwDbm2IYosFGhqevTrDbzv-8h74zssSdrMngX94KucoDkk",
-  suporte: "https://discord.com/api/webhooks/1501311387664912596/rnzOo0UspOYuwOAwhEh0HJsBtZneYwYQGsidN8kUxD-a1-KjyLLiRslB_4C2YAOoPq1t",
+  sistema: DISCORD_WEBHOOK_URL,
+  transacoes: DISCORD_WEBHOOK_URL,
+  saques: DISCORD_WEBHOOK_URL,
+  geral: DISCORD_WEBHOOK_URL,
+  cadastros: DISCORD_WEBHOOK_URL,
+  suporte: DISCORD_WEBHOOK_URL,
+  seguranca: DISCORD_WEBHOOK_URL,
 };
+
+// Cargos marcados nos avisos de seguranca (Discord role IDs)
+const SECURITY_ROLE_IDS = ["1508189791340986370", "1508189792670585004"];
+const SECURITY_ROLE_MENTIONS = SECURITY_ROLE_IDS.map((id) => `<@&${id}>`).join(" ");
 
 // Cores para os embeds
 const COLORS = {
@@ -59,6 +71,34 @@ interface DiscordWebhookPayload {
   avatar_url?: string;
   content?: string;
   embeds?: DiscordEmbed[];
+  allowed_mentions?: {
+    parse?: Array<"roles" | "users" | "everyone">;
+    roles?: string[];
+    users?: string[];
+  };
+}
+
+// Deduplicacao: como todos os canais agora apontam para o MESMO webhook,
+// funcoes que antes enviavam para 2 canais (ex.: cadastros + geral) gerariam
+// mensagens repetidas. Ignoramos envios identicos (mesma URL + payload) dentro
+// de uma janela curta.
+const _recentSends = new Map<string, number>();
+const DEDUPE_WINDOW_MS = 5000;
+
+function isDuplicateSend(webhookUrl: string, payload: DiscordWebhookPayload): boolean {
+  try {
+    const key = webhookUrl + "|" + JSON.stringify(payload);
+    const now = Date.now();
+    // Limpa entradas antigas
+    for (const [k, t] of _recentSends) {
+      if (now - t > DEDUPE_WINDOW_MS) _recentSends.delete(k);
+    }
+    if (_recentSends.has(key)) return true;
+    _recentSends.set(key, now);
+    return false;
+  } catch {
+    return false;
+  }
 }
 
 // Funcao base para enviar webhook (usa waitUntil para garantir execucao em serverless)
@@ -66,6 +106,9 @@ function sendDiscordWebhook(
   webhookUrl: string,
   payload: DiscordWebhookPayload
 ): void {
+  // Evita mensagens duplicadas quando varios canais apontam para o mesmo webhook
+  if (isDuplicateSend(webhookUrl, payload)) return;
+
   const sendRequest = async () => {
     try {
       const response = await fetch(webhookUrl, {
@@ -166,9 +209,8 @@ export function logNewTransaction(data: {
     embed.fields?.push({ name: "Descricao", value: data.description, inline: false });
   }
 
-  // Enviar para webhook de transacoes e geral (fire-and-forget com waitUntil)
-  sendDiscordWebhook(DISCORD_WEBHOOKS.transacoes, { embeds: [embed] });
-  sendDiscordWebhook(DISCORD_WEBHOOKS.geral, { embeds: [embed] });
+  // Webhook unico (fire-and-forget com waitUntil)
+  sendDiscordWebhook(DISCORD_WEBHOOK_URL, { embeds: [embed] });
 }
 
 export function logTransactionStatusUpdate(data: {
@@ -200,8 +242,7 @@ export function logTransactionStatusUpdate(data: {
     author: { name: "Atualizacao de Transacao", icon_url: "https://cdn-icons-png.flaticon.com/512/1827/1827933.png" },
   };
 
-  sendDiscordWebhook(DISCORD_WEBHOOKS.transacoes, { embeds: [embed] });
-  sendDiscordWebhook(DISCORD_WEBHOOKS.geral, { embeds: [embed] });
+  sendDiscordWebhook(DISCORD_WEBHOOK_URL, { embeds: [embed] });
 }
 
 // ==================== LOGS DE SAQUES ====================
@@ -238,8 +279,7 @@ export function logWithdrawalRequest(data: {
     author: { name: "Sistema de Saques", icon_url: "https://cdn-icons-png.flaticon.com/512/2489/2489756.png" },
   };
 
-  sendDiscordWebhook(DISCORD_WEBHOOKS.saques, { embeds: [embed] });
-  sendDiscordWebhook(DISCORD_WEBHOOKS.geral, { embeds: [embed] });
+  sendDiscordWebhook(DISCORD_WEBHOOK_URL, { embeds: [embed] });
 }
 
 export function logWithdrawalStatusUpdate(data: {
@@ -277,8 +317,7 @@ export function logWithdrawalStatusUpdate(data: {
     embed.fields?.push({ name: "Aprovado por", value: data.adminName, inline: true });
   }
 
-  sendDiscordWebhook(DISCORD_WEBHOOKS.saques, { embeds: [embed] });
-  sendDiscordWebhook(DISCORD_WEBHOOKS.geral, { embeds: [embed] });
+  sendDiscordWebhook(DISCORD_WEBHOOK_URL, { embeds: [embed] });
 }
 
 // ==================== LOGS DE CADASTROS E KYC ====================
@@ -456,6 +495,8 @@ export function logLogin(data: {
   userName: string;
   userEmail: string;
   ip?: string;
+  location?: string;
+  locationFlag?: string;
   userAgent?: string;
   isAdmin?: boolean;
   isNewDevice?: boolean;
@@ -467,19 +508,87 @@ export function logLogin(data: {
       { name: "ID", value: `\`${data.userId}\``, inline: false },
       { name: "Nome", value: data.userName || "N/A", inline: true },
       { name: "Email", value: maskEmail(data.userEmail), inline: true },
-      { name: "IP", value: data.ip || "N/A", inline: true },
+      { name: "IP", value: `\`${data.ip || "N/A"}\``, inline: true },
     ],
     footer: { text: `Hyperion Pay • ${formatDateTime()}` },
     timestamp: new Date().toISOString(),
     author: { name: "Sistema de Login", icon_url: "https://cdn-icons-png.flaticon.com/512/2889/2889676.png" },
   };
 
+  if (data.location) {
+    const flag = data.locationFlag ? `${data.locationFlag} ` : "";
+    embed.fields?.push({ name: "Localizacao", value: `${flag}${data.location}`, inline: true });
+  }
+
+  if (data.isNewDevice) {
+    embed.fields?.push({ name: "Alerta", value: "🆕 Novo dispositivo/local", inline: true });
+  }
+
   if (data.userAgent) {
     const ua = data.userAgent.length > 50 ? data.userAgent.slice(0, 50) + "..." : data.userAgent;
     embed.fields?.push({ name: "Dispositivo", value: ua, inline: false });
   }
 
-  sendDiscordWebhook(DISCORD_WEBHOOKS.sistema, { embeds: [embed] });
+  sendDiscordWebhook(DISCORD_WEBHOOK_URL, { embeds: [embed] });
+}
+
+// ==================== LOGS DE SEGURANCA ====================
+
+/**
+ * Aviso de SEGURANCA / VULNERABILIDADE.
+ * Envia um embed destacado ao canal de seguranca e MARCA os cargos
+ * responsaveis. Use para: tentativas de saque sem permissao, bloqueios
+ * anti-fraude, race conditions, ataques (SQLi/XSS), rate limit estourado,
+ * login bloqueado, etc.
+ */
+export function logSecurityEvent(data: {
+  title: string;
+  action: string;
+  severity: "low" | "medium" | "high" | "critical";
+  description?: string;
+  userId?: string | null;
+  userEmail?: string | null;
+  ip?: string;
+  fields?: Array<{ name: string; value: string; inline?: boolean }>;
+}): void {
+  const severityConfig = {
+    low: { color: COLORS.info, emoji: "🟢", label: "BAIXA" },
+    medium: { color: COLORS.warning, emoji: "🟡", label: "MEDIA" },
+    high: { color: 0xf97316, emoji: "🟠", label: "ALTA" },
+    critical: { color: COLORS.error, emoji: "🔴", label: "CRITICA" },
+  } as const;
+  const cfg = severityConfig[data.severity] || severityConfig.medium;
+
+  const fields: DiscordEmbed["fields"] = [
+    { name: "Evento", value: `\`${data.action}\``, inline: true },
+    { name: "Severidade", value: `${cfg.emoji} **${cfg.label}**`, inline: true },
+  ];
+  if (data.ip) fields.push({ name: "IP", value: `\`${data.ip}\``, inline: true });
+  if (data.userEmail) fields.push({ name: "Usuario", value: maskEmail(data.userEmail), inline: true });
+  if (data.userId) fields.push({ name: "ID", value: `\`${data.userId}\``, inline: true });
+  if (data.fields) fields.push(...data.fields);
+
+  const embed: DiscordEmbed = {
+    title: `🛡️ ${data.title}`,
+    description: data.description,
+    color: cfg.color,
+    fields,
+    footer: { text: `Hyperion Pay • Seguranca • ${formatDateTime()}` },
+    timestamp: new Date().toISOString(),
+    author: {
+      name: "Alerta de Seguranca",
+      icon_url: "https://cdn-icons-png.flaticon.com/512/2716/2716652.png",
+    },
+  };
+
+  // Alertas HIGH/CRITICAL marcam os cargos responsaveis
+  const mentionRoles = data.severity === "high" || data.severity === "critical";
+
+  sendDiscordWebhook(DISCORD_WEBHOOKS.seguranca, {
+    content: mentionRoles ? SECURITY_ROLE_MENTIONS : undefined,
+    embeds: [embed],
+    allowed_mentions: mentionRoles ? { roles: SECURITY_ROLE_IDS } : { parse: [] },
+  });
 }
 
 export function logAPIUsage(data: {
