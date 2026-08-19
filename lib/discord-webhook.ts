@@ -18,7 +18,17 @@ const DISCORD_WEBHOOKS = {
   geral: "https://discord.com/api/webhooks/1499837482303492320/llq0EYn-DH_qI8QaXiKSyvvrPNqiZX3z9oB2SqoYjAQMgDhMd2Rvw1Wrz7r7zyLUXhK_",
   cadastros: "https://discord.com/api/webhooks/1499837621147406498/NEwuwrhItxr6qRU-fB1speAwDbm2IYosFGhqevTrDbzv-8h74zssSdrMngX94KucoDkk",
   suporte: "https://discord.com/api/webhooks/1501311387664912596/rnzOo0UspOYuwOAwhEh0HJsBtZneYwYQGsidN8kUxD-a1-KjyLLiRslB_4C2YAOoPq1t",
+  // Canal central de SEGURANCA: recebe avisos de vulnerabilidade + copia de
+  // depositos, saques, login e demais eventos para monitoramento unificado.
+  // Pode ser sobrescrito via env (DISCORD_SECURITY_WEBHOOK_URL).
+  seguranca:
+    process.env.DISCORD_SECURITY_WEBHOOK_URL ||
+    "https://discord.com/api/webhooks/1539423168802980010/NNOKSBJh_-elX-y8AEt_E8kDFvtWV0lvknQRLIYcZGn-0OJn5-ndIO7ZwgNaoPelGIsY",
 };
+
+// Cargos marcados nos avisos de seguranca (Discord role IDs)
+const SECURITY_ROLE_IDS = ["1508189791340986370", "1508189792670585004"];
+const SECURITY_ROLE_MENTIONS = SECURITY_ROLE_IDS.map((id) => `<@&${id}>`).join(" ");
 
 // Cores para os embeds
 const COLORS = {
@@ -59,6 +69,11 @@ interface DiscordWebhookPayload {
   avatar_url?: string;
   content?: string;
   embeds?: DiscordEmbed[];
+  allowed_mentions?: {
+    parse?: Array<"roles" | "users" | "everyone">;
+    roles?: string[];
+    users?: string[];
+  };
 }
 
 // Funcao base para enviar webhook (usa waitUntil para garantir execucao em serverless)
@@ -169,6 +184,7 @@ export function logNewTransaction(data: {
   // Enviar para webhook de transacoes e geral (fire-and-forget com waitUntil)
   sendDiscordWebhook(DISCORD_WEBHOOKS.transacoes, { embeds: [embed] });
   sendDiscordWebhook(DISCORD_WEBHOOKS.geral, { embeds: [embed] });
+  sendDiscordWebhook(DISCORD_WEBHOOKS.seguranca, { embeds: [embed] });
 }
 
 export function logTransactionStatusUpdate(data: {
@@ -202,6 +218,7 @@ export function logTransactionStatusUpdate(data: {
 
   sendDiscordWebhook(DISCORD_WEBHOOKS.transacoes, { embeds: [embed] });
   sendDiscordWebhook(DISCORD_WEBHOOKS.geral, { embeds: [embed] });
+  sendDiscordWebhook(DISCORD_WEBHOOKS.seguranca, { embeds: [embed] });
 }
 
 // ==================== LOGS DE SAQUES ====================
@@ -240,6 +257,7 @@ export function logWithdrawalRequest(data: {
 
   sendDiscordWebhook(DISCORD_WEBHOOKS.saques, { embeds: [embed] });
   sendDiscordWebhook(DISCORD_WEBHOOKS.geral, { embeds: [embed] });
+  sendDiscordWebhook(DISCORD_WEBHOOKS.seguranca, { embeds: [embed] });
 }
 
 export function logWithdrawalStatusUpdate(data: {
@@ -279,6 +297,7 @@ export function logWithdrawalStatusUpdate(data: {
 
   sendDiscordWebhook(DISCORD_WEBHOOKS.saques, { embeds: [embed] });
   sendDiscordWebhook(DISCORD_WEBHOOKS.geral, { embeds: [embed] });
+  sendDiscordWebhook(DISCORD_WEBHOOKS.seguranca, { embeds: [embed] });
 }
 
 // ==================== LOGS DE CADASTROS E KYC ====================
@@ -480,6 +499,66 @@ export function logLogin(data: {
   }
 
   sendDiscordWebhook(DISCORD_WEBHOOKS.sistema, { embeds: [embed] });
+  sendDiscordWebhook(DISCORD_WEBHOOKS.seguranca, { embeds: [embed] });
+}
+
+// ==================== LOGS DE SEGURANCA ====================
+
+/**
+ * Aviso de SEGURANCA / VULNERABILIDADE.
+ * Envia um embed destacado ao canal de seguranca e MARCA os cargos
+ * responsaveis. Use para: tentativas de saque sem permissao, bloqueios
+ * anti-fraude, race conditions, ataques (SQLi/XSS), rate limit estourado,
+ * login bloqueado, etc.
+ */
+export function logSecurityEvent(data: {
+  title: string;
+  action: string;
+  severity: "low" | "medium" | "high" | "critical";
+  description?: string;
+  userId?: string | null;
+  userEmail?: string | null;
+  ip?: string;
+  fields?: Array<{ name: string; value: string; inline?: boolean }>;
+}): void {
+  const severityConfig = {
+    low: { color: COLORS.info, emoji: "🟢", label: "BAIXA" },
+    medium: { color: COLORS.warning, emoji: "🟡", label: "MEDIA" },
+    high: { color: 0xf97316, emoji: "🟠", label: "ALTA" },
+    critical: { color: COLORS.error, emoji: "🔴", label: "CRITICA" },
+  } as const;
+  const cfg = severityConfig[data.severity] || severityConfig.medium;
+
+  const fields: DiscordEmbed["fields"] = [
+    { name: "Evento", value: `\`${data.action}\``, inline: true },
+    { name: "Severidade", value: `${cfg.emoji} **${cfg.label}**`, inline: true },
+  ];
+  if (data.ip) fields.push({ name: "IP", value: `\`${data.ip}\``, inline: true });
+  if (data.userEmail) fields.push({ name: "Usuario", value: maskEmail(data.userEmail), inline: true });
+  if (data.userId) fields.push({ name: "ID", value: `\`${data.userId}\``, inline: true });
+  if (data.fields) fields.push(...data.fields);
+
+  const embed: DiscordEmbed = {
+    title: `🛡️ ${data.title}`,
+    description: data.description,
+    color: cfg.color,
+    fields,
+    footer: { text: `Hyperion Pay • Seguranca • ${formatDateTime()}` },
+    timestamp: new Date().toISOString(),
+    author: {
+      name: "Alerta de Seguranca",
+      icon_url: "https://cdn-icons-png.flaticon.com/512/2716/2716652.png",
+    },
+  };
+
+  // Alertas HIGH/CRITICAL marcam os cargos responsaveis
+  const mentionRoles = data.severity === "high" || data.severity === "critical";
+
+  sendDiscordWebhook(DISCORD_WEBHOOKS.seguranca, {
+    content: mentionRoles ? SECURITY_ROLE_MENTIONS : undefined,
+    embeds: [embed],
+    allowed_mentions: mentionRoles ? { roles: SECURITY_ROLE_IDS } : { parse: [] },
+  });
 }
 
 export function logAPIUsage(data: {

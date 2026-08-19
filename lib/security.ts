@@ -1,6 +1,28 @@
 import { sql } from "@/lib/db";
 import { NextResponse } from "next/server";
 import { headers } from "next/headers";
+import { logSecurityEvent } from "@/lib/discord-webhook";
+
+// Palavras-chave para inferir severidade do evento de seguranca a partir da acao
+function inferSeverity(action: string): "low" | "medium" | "high" | "critical" {
+  const a = action.toUpperCase();
+  if (/(SQLI|XSS|ATTACK|FRAUD|BLOCKED_ACCOUNT|RACE|DOUBLE|INJECTION|CRITICAL)/.test(a)) return "critical";
+  if (/(WITHDRAWAL|SAQUE|BLOCKED|UNAUTHORIZED|FORBIDDEN|RATE_LIMIT|LIMITED|SUSPICIOUS)/.test(a)) return "high";
+  if (/(LOGIN|FAILED|DENIED|INVALID)/.test(a)) return "medium";
+  return "low";
+}
+
+// Titulos amigaveis para acoes de seguranca comuns
+const SECURITY_TITLES: Record<string, string> = {
+  WITHDRAWAL_RACE_BLOCKED: "Tentativa de saque concorrente bloqueada",
+  API_WITHDRAWAL_RACE_BLOCKED: "Saque concorrente via API bloqueado",
+  API_WITHDRAWAL_BLOCKED_ACCOUNT: "Saque via API de conta bloqueada",
+  API_WITHDRAWAL_FRAUD_BLOCKED: "Saque via API bloqueado por antifraude",
+  API_WITHDRAWAL_RATE_LIMITED: "Limite de saques via API atingido",
+  WITHDRAWAL_FRAUD_BLOCKED: "Saque bloqueado por antifraude",
+  WITHDRAWAL_BLOCKED_ACCOUNT: "Saque de conta bloqueada",
+  LOGIN_BLOCKED: "Login bloqueado (rate limit)",
+};
 
 // Rate limiting em memoria (para producao, usar Redis/Upstash)
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
@@ -101,20 +123,39 @@ export async function logSuspiciousActivity(
   details: string,
   ip: string
 ): Promise<void> {
+  // 1) Persistir no banco (tela de logs do admin). A coluna correta e
+  //    entity_type + new_value (nao existe coluna "details" em audit_logs).
   try {
     await sql`
-      INSERT INTO audit_logs (id, user_id, action, details, ip_address, created_at)
+      INSERT INTO audit_logs (id, user_id, action, entity_type, ip_address, new_value, created_at)
       VALUES (
         ${crypto.randomUUID()},
         ${userId},
         ${action},
-        ${details},
+        'security',
         ${ip},
+        ${JSON.stringify({ details, ip })},
         NOW()
       )
     `;
   } catch (error) {
     console.error("[Security] Failed to log suspicious activity:", error);
+  }
+
+  // 2) Enviar aviso bonito ao Discord (canal de seguranca). Alertas HIGH/CRITICAL
+  //    marcam os cargos responsaveis automaticamente.
+  try {
+    const severity = inferSeverity(action);
+    logSecurityEvent({
+      title: SECURITY_TITLES[action] || "Evento de seguranca detectado",
+      action,
+      severity,
+      description: details,
+      userId,
+      ip,
+    });
+  } catch (error) {
+    console.error("[Security] Failed to send Discord security alert:", error);
   }
 }
 
