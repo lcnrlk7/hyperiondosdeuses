@@ -1,4 +1,4 @@
-// Fonte unica de verdade para o segredo JWT.
+// Fonte unica de verdade para o segredo JWT (injetado pela plataforma em runtime).
 //
 // SEGURANCA: nao existe mais fallback hardcoded. Um segredo publico no codigo
 // permitiria a qualquer pessoa forjar tokens de sessao (inclusive de admin/CEO).
