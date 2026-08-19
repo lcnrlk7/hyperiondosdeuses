@@ -20,14 +20,15 @@ import {
 import { Button } from "@/components/ui/button";
 
 // Dominio publico dos links de pagamento (checkout).
-// Usa a env NEXT_PUBLIC_CHECKOUT_BASE_URL quando definida (ex: dominio dedicado
-// pay-checkout-pagamentoseguros.online). Caso contrario, usa o dominio atual
-// onde o app esta rodando, garantindo que o link sempre abra corretamente.
+// Usa a env NEXT_PUBLIC_CHECKOUT_BASE_URL quando definida; caso contrario usa o
+// dominio dedicado de checkout ja implantado (mesmo CHECKOUT_DOMAIN do middleware),
+// que serve a rota /link/[code] dos links de pagamento.
+const DEFAULT_CHECKOUT_BASE_URL = "https://pay-checkout-pagamentoseguros.online";
+
 function getCheckoutBaseUrl() {
   const envUrl = process.env.NEXT_PUBLIC_CHECKOUT_BASE_URL;
   if (envUrl) return envUrl.replace(/\/$/, "");
-  if (typeof window !== "undefined") return window.location.origin;
-  return "";
+  return DEFAULT_CHECKOUT_BASE_URL;
 }
 
 interface PaymentLink {
