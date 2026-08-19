@@ -327,50 +327,33 @@ export default function Home() {
 
       {/* Por que escolher */}
       <section id="sobre" className="relative px-4 md:px-6 py-8 md:py-16">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid lg:grid-cols-[1fr_1.1fr] gap-10 lg:gap-16 items-center">
-            <div className="relative">
-              <div className="overflow-hidden rounded-3xl border border-slate-200 shadow-2xl shadow-slate-900/10">
-                <Image
-                  src="/images/banner-dashboard.png"
-                  alt="Painel HyperionPay"
-                  width={900}
-                  height={620}
-                  className="w-full h-auto"
-                  style={{ height: "auto" }}
-                />
-              </div>
-            </div>
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center max-w-2xl mx-auto mb-10 md:mb-14">
+            <p className="text-sm font-semibold text-pink-600 mb-2">Por que a HyperionPay</p>
+            <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-slate-900 mb-4 text-balance">
+              Feita para escalar junto com você.
+            </h2>
+            <p className="text-base md:text-lg text-slate-600 text-pretty leading-relaxed">
+              Da primeira venda ao milhão em volume, a nossa infraestrutura acompanha o
+              ritmo do seu negócio — com estabilidade, transparência e taxas justas.
+            </p>
+          </div>
 
-            <div>
-              <p className="text-sm font-semibold text-pink-600 mb-2">Por que a HyperionPay</p>
-              <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-slate-900 mb-4 text-balance">
-                Feita para escalar junto com você.
-              </h2>
-              <p className="text-base md:text-lg text-slate-600 mb-8 text-pretty leading-relaxed">
-                Da primeira venda ao milhão em volume, a nossa infraestrutura acompanha o
-                ritmo do seu negócio — com estabilidade, transparência e taxas justas.
-              </p>
-
-              <div className="grid sm:grid-cols-2 gap-5">
-                {[
-                  { icon: Zap, t: "Alta performance", d: "Confirmação de PIX em menos de 2 segundos." },
-                  { icon: ShieldCheck, t: "Segurança bancária", d: "Criptografia de ponta e monitoramento contínuo." },
-                  { icon: CircleDollarSign, t: "Taxas transparentes", d: "Sem letras miúdas, sem surpresas na fatura." },
-                  { icon: Server, t: "99,9% de uptime", d: "Infraestrutura redundante e sempre disponível." },
-                ].map((f) => (
-                  <div key={f.t} className="flex gap-3">
-                    <span className="mt-0.5 flex h-10 w-10 flex-none items-center justify-center rounded-xl bg-pink-600/10">
-                      <f.icon className="h-5 w-5 text-pink-600" />
-                    </span>
-                    <div>
-                      <p className="font-semibold text-slate-900">{f.t}</p>
-                      <p className="text-sm text-slate-500">{f.d}</p>
-                    </div>
-                  </div>
-                ))}
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            {[
+              { icon: Zap, t: "Alta performance", d: "Confirmação de PIX em menos de 2 segundos." },
+              { icon: ShieldCheck, t: "Segurança bancária", d: "Criptografia de ponta e monitoramento contínuo." },
+              { icon: CircleDollarSign, t: "Taxas transparentes", d: "Sem letras miúdas, sem surpresas na fatura." },
+              { icon: Server, t: "99,9% de uptime", d: "Infraestrutura redundante e sempre disponível." },
+            ].map((f) => (
+              <div key={f.t} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                <span className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-pink-600/10">
+                  <f.icon className="h-5 w-5 text-pink-600" />
+                </span>
+                <p className="font-semibold text-slate-900">{f.t}</p>
+                <p className="text-sm text-slate-500 mt-1">{f.d}</p>
               </div>
-            </div>
+            ))}
           </div>
         </div>
       </section>
