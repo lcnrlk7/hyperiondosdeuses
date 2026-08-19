@@ -40,16 +40,30 @@ interface AuditLog {
 }
 
 // Categorias de ações
-type Category = "all" | "auth" | "transactions" | "users" | "errors" | "system";
+type Category = "all" | "security" | "auth" | "transactions" | "users" | "errors" | "system";
 
 const categoryConfig: Record<Category, { label: string; icon: typeof Activity; color: string; bgColor: string }> = {
   all: { label: "Todos", icon: Activity, color: "text-foreground", bgColor: "bg-white/10" },
+  security: { label: "Segurança", icon: Shield, color: "text-red-400", bgColor: "bg-red-500/10" },
   auth: { label: "Autenticação", icon: Key, color: "text-blue-400", bgColor: "bg-blue-500/10" },
   transactions: { label: "Transações", icon: DollarSign, color: "text-green-400", bgColor: "bg-green-500/10" },
   users: { label: "Usuários", icon: Users, color: "text-purple-400", bgColor: "bg-purple-500/10" },
   errors: { label: "Erros", icon: AlertTriangle, color: "text-red-400", bgColor: "bg-red-500/10" },
   system: { label: "Sistema", icon: Shield, color: "text-orange-400", bgColor: "bg-orange-500/10" },
 };
+
+// Determina a categoria de um log: eventos de seguranca tem prioridade
+// (entity_type 'security' ou nomes de acao tipicos de bloqueio/ataque).
+function resolveCategory(log: { action: string; entity_type: string | null }): Category {
+  const a = (log.action || "").toUpperCase();
+  if (
+    log.entity_type === "security" ||
+    /(BLOCKED|FRAUD|RACE|ATTACK|INJECTION|XSS|UNAUTHORIZED|RATE_LIMIT|LIMITED|SUSPICIOUS|DOUBLE)/.test(a)
+  ) {
+    return "security";
+  }
+  return actionToCategory[log.action] || "system";
+}
 
 // Mapeamento de ações para categorias
 const actionToCategory: Record<string, Category> = {
@@ -110,6 +124,16 @@ const actionIcons: Record<string, { icon: typeof Activity; color: string }> = {
   REWARD_CREDITED: { icon: Gift, color: "text-green-400" },
   CREATE_ACQUIRER: { icon: Shield, color: "text-purple-400" },
   DELETE_ACQUIRER: { icon: Shield, color: "text-red-400" },
+  PAYMENT_CONFIRMED: { icon: DollarSign, color: "text-green-400" },
+  // Seguranca
+  LOGIN_BLOCKED: { icon: Shield, color: "text-red-400" },
+  WITHDRAWAL_RACE_BLOCKED: { icon: Shield, color: "text-red-400" },
+  API_WITHDRAWAL_RACE_BLOCKED: { icon: Shield, color: "text-red-400" },
+  API_WITHDRAWAL_BLOCKED_ACCOUNT: { icon: Shield, color: "text-red-400" },
+  API_WITHDRAWAL_FRAUD_BLOCKED: { icon: AlertTriangle, color: "text-red-400" },
+  API_WITHDRAWAL_RATE_LIMITED: { icon: AlertTriangle, color: "text-orange-400" },
+  WITHDRAWAL_FRAUD_BLOCKED: { icon: AlertTriangle, color: "text-red-400" },
+  WITHDRAWAL_BLOCKED_ACCOUNT: { icon: Shield, color: "text-red-400" },
   other: { icon: Activity, color: "text-muted-foreground" },
 };
 
@@ -139,6 +163,16 @@ const actionLabels: Record<string, string> = {
   REWARD_CREDITED: "Premiação Creditada",
   CREATE_ACQUIRER: "Adquirente Criada",
   DELETE_ACQUIRER: "Adquirente Removida",
+  PAYMENT_CONFIRMED: "Pagamento Confirmado",
+  // Seguranca
+  LOGIN_BLOCKED: "Login Bloqueado",
+  WITHDRAWAL_RACE_BLOCKED: "Saque Concorrente Bloqueado",
+  API_WITHDRAWAL_RACE_BLOCKED: "Saque API Concorrente Bloqueado",
+  API_WITHDRAWAL_BLOCKED_ACCOUNT: "Saque API - Conta Bloqueada",
+  API_WITHDRAWAL_FRAUD_BLOCKED: "Saque API - Antifraude",
+  API_WITHDRAWAL_RATE_LIMITED: "Saque API - Limite Atingido",
+  WITHDRAWAL_FRAUD_BLOCKED: "Saque - Antifraude",
+  WITHDRAWAL_BLOCKED_ACCOUNT: "Saque - Conta Bloqueada",
 };
 
 export default function LogsPage() {
@@ -187,6 +221,7 @@ export default function LogsPage() {
   const categoryCounts = useMemo(() => {
     const counts: Record<Category, number> = {
       all: logs.length,
+      security: 0,
       auth: 0,
       transactions: 0,
       users: 0,
@@ -195,7 +230,7 @@ export default function LogsPage() {
     };
 
     logs.forEach((log) => {
-      const category = actionToCategory[log.action] || "system";
+      const category = resolveCategory(log);
       counts[category]++;
     });
 
@@ -207,7 +242,7 @@ export default function LogsPage() {
     return logs.filter((log) => {
       // Filtro de categoria
       if (activeCategory !== "all") {
-        const logCategory = actionToCategory[log.action] || "system";
+        const logCategory = resolveCategory(log);
         if (logCategory !== activeCategory) return false;
       }
 
@@ -366,7 +401,7 @@ export default function LogsPage() {
         ) : (
           <div className="divide-y divide-white/5 max-h-[600px] overflow-y-auto">
             {filteredLogs.map((log, index) => {
-              const logCategory = actionToCategory[log.action] || "system";
+              const logCategory = resolveCategory(log);
               const catConfig = categoryConfig[logCategory];
               
               return (

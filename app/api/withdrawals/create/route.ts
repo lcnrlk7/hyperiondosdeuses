@@ -282,12 +282,29 @@ export async function POST(request: NextRequest) {
     let acquirerWithdrawalId = null;
     let withdrawalStatus = requiresApproval ? "pending" : "processing";
 
-    // Descontar saldo do usuário ANTES de processar (valor + taxa)
-    await sql`
+    // SEGURANCA: Débito ATÔMICO com trava de saldo. O UPDATE só desconta se o
+    // saldo ainda cobrir o valor no momento da escrita. Isso impede double-spend
+    // por requisições concorrentes (varios saques disparados ao mesmo tempo para
+    // sacar mais do que o saldo real). Se nenhuma linha for afetada, rejeita.
+    const debitResult = await sql`
       UPDATE profiles 
       SET balance = balance - ${totalDebit}
-      WHERE id = ${sessionUser.id}
+      WHERE id = ${sessionUser.id} AND balance >= ${totalDebit}
+      RETURNING id
     `;
+
+    if (debitResult.length === 0) {
+      await logSuspiciousActivity(
+        sessionUser.id,
+        "WITHDRAWAL_RACE_BLOCKED",
+        `Débito concorrente/saldo insuficiente. Amount: ${amount}, TotalDebit: ${totalDebit}`,
+        ip,
+      );
+      return NextResponse.json(
+        { error: "Saldo insuficiente ou operação concorrente detectada. Tente novamente." },
+        { status: 400 },
+      );
+    }
 
     // Se não requer aprovação, processar automaticamente
     if (!requiresApproval && acquirer) {

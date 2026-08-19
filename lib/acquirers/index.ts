@@ -1,5 +1,6 @@
 import { sql } from "@/lib/db";
 import { MedusaPayments, MEDUSA_STATUS_MAP } from "./medusa";
+import { MedusaOnline, isMedusaOnline, toMedusaOnlinePixKeyType } from "./medusa-online";
 
 export interface AcquirerConfig {
   id: string;
@@ -14,6 +15,10 @@ export interface AcquirerConfig {
   fixed_fee?: number;
   withdrawal_fee?: number;
   route_type: 'white' | 'black';
+  company_id?: string;
+  max_ticket?: number;
+  badge?: string;
+  is_selectable?: boolean;
 }
 
 // Nomes amigáveis para mostrar no painel do usuário (não mostrar nomes reais das adquirentes)
@@ -250,6 +255,62 @@ export async function createPixPayment(
     return { success: false, error: "Credenciais da adquirente não configuradas" };
   }
 
+  // Liquidante Medusa Online (api.medusapayments.online) - Bearer / valores em reais
+  if (isMedusaOnline(config)) {
+    try {
+      // Respeita o ticket máximo da nominal selecionada
+      const maxTicket = Number(config.max_ticket) || 0;
+      if (maxTicket > 0 && amount > maxTicket) {
+        return {
+          success: false,
+          error: `O valor máximo permitido para esta adquirente é R$ ${maxTicket.toFixed(2)}`,
+        };
+      }
+
+      const client = new MedusaOnline({ apiKey: config.api_key, baseUrl: config.api_url });
+
+      // Busca dados do pagador quando houver usuário
+      let clienteNome = (payerName && payerName.trim()) || "Cliente Hyperion Pay";
+      let clienteCpf = "36009722004";
+      let clienteEmail = "cliente@hyperionpay.com.br";
+      if (userId) {
+        const u = await sql`SELECT name, email, cpf_cnpj FROM profiles WHERE id = ${userId}`;
+        if (u.length > 0) {
+          clienteNome = (u[0].name || clienteNome).trim();
+          clienteEmail = (u[0].email || clienteEmail).trim();
+          clienteCpf = (u[0].cpf_cnpj || clienteCpf).replace(/\D/g, "") || clienteCpf;
+        }
+      }
+
+      const result = await client.createPix({
+        valor: amount,
+        clienteNome,
+        clienteEmail,
+        clienteCpf,
+        produto: (description && description.trim()) || "Depósito via PIX - Hyperion Pay",
+        idempotencyKey: externalId,
+      });
+
+      if (!result.success) {
+        return { success: false, error: result.error };
+      }
+
+      return {
+        success: true,
+        transactionId: result.transactionId,
+        qrCode: result.qrCode,
+        qrCodeBase64: result.qrCodeBase64,
+        copyPaste: result.qrCode,
+        expiresAt: result.expiresAt,
+        amount: result.amount ?? amount,
+      };
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : "Erro ao processar pagamento";
+      console.error("[createPixPayment/medusa_online] Erro:", msg);
+      return { success: false, error: msg };
+    }
+  }
+
   try {
     switch (config.code) {
       case "medusa": {
@@ -351,6 +412,31 @@ export async function createWithdrawal(
 
   if (!config) {
     return { success: false, error: "Nenhuma adquirente ativa configurada" };
+  }
+
+  // Liquidante Medusa Online (api.medusapayments.online)
+  if (isMedusaOnline(config)) {
+    try {
+      const client = new MedusaOnline({ apiKey: config.api_key, baseUrl: config.api_url });
+      const keyType = toMedusaOnlinePixKeyType(pixKeyType || detectPixKeyType(pixKey));
+      const idempotencyKey = `wd-${userId || "anon"}-${Date.now()}`;
+
+      const result = await client.requestWithdrawal({
+        valor: amount,
+        chavePix: pixKey,
+        chavePixTipo: keyType,
+        idempotencyKey,
+      });
+
+      if (!result.success) {
+        return { success: false, error: result.error };
+      }
+      return { success: true, withdrawalId: result.withdrawalId, status: result.status };
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : "Erro ao processar saque";
+      console.error("[createWithdrawal/medusa_online] Erro:", msg);
+      return { success: false, error: msg };
+    }
   }
 
   try {
@@ -504,6 +590,16 @@ export async function getTransactionStatus(
     return { success: false, error: "Adquirente não encontrada" };
   }
 
+  // Liquidante Medusa Online
+  if (isMedusaOnline(config)) {
+    const client = new MedusaOnline({ apiKey: config.api_key, baseUrl: config.api_url });
+    const result = await client.getPix(transactionId);
+    if (!result.success) {
+      return { success: false, error: result.error };
+    }
+    return { success: true, status: result.status };
+  }
+
   try {
     switch (config.code) {
       case "medusa": {
@@ -556,6 +652,16 @@ export async function checkAcquirerBalance(acquirerCode?: string): Promise<Balan
 
   if (!config) {
     return { success: false, error: "Adquirente não encontrada" };
+  }
+
+  // Liquidante Medusa Online
+  if (isMedusaOnline(config)) {
+    const client = new MedusaOnline({ apiKey: config.api_key, baseUrl: config.api_url });
+    const result = await client.getBalance();
+    if (!result.success) {
+      return { success: false, error: result.error };
+    }
+    return { success: true, balance: result.available, available: result.available };
   }
 
   try {

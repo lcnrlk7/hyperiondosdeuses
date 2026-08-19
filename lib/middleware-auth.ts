@@ -2,8 +2,6 @@ import { jwtVerify } from 'jose'
 import { NextResponse, type NextRequest } from 'next/server'
 import { getJwtSecret } from '@/lib/jwt-secret'
 
-const JWT_SECRET = getJwtSecret()
-
 const AUTH_COOKIE_NAME = 'auth-token'
 const TEAM_COOKIE_NAME = 'team_session'
 
@@ -22,7 +20,7 @@ async function verifyUserToken(request: NextRequest): Promise<SessionUser | null
   if (!token) return null
 
   try {
-    const { payload } = await jwtVerify(token, JWT_SECRET)
+    const { payload } = await jwtVerify(token, getJwtSecret())
     return {
       id: payload.id as string,
       email: payload.email as string,
@@ -42,7 +40,7 @@ async function verifyTeamToken(request: NextRequest): Promise<SessionUser | null
   if (!token) return null
 
   try {
-    const { payload } = await jwtVerify(token, JWT_SECRET)
+    const { payload } = await jwtVerify(token, getJwtSecret())
     return {
       id: payload.id as string,
       email: payload.email as string,

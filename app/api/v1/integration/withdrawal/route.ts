@@ -1,6 +1,7 @@
 import { sql } from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
 import { getSystemFeesForUser, createWithdrawal } from "@/lib/acquirers";
+import { validateWithdrawal, getClientIP, logSuspiciousActivity, rateLimit, isValidPixKey } from "@/lib/security";
 import crypto from "crypto";
 
 // Funcao para extrair credenciais do request
@@ -160,6 +161,73 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // SEGURANCA: valida o formato da chave PIX (mesma regra da rota do painel)
+    if (!isValidPixKey(pix_key)) {
+      return NextResponse.json(
+        { success: false, error: "Chave PIX invalida", code: "INVALID_PIX_KEY" },
+        { status: 400 }
+      );
+    }
+
+    // SEGURANCA: busca dados autoritativos e ATUAIS do perfil (o objeto vindo da
+    // autenticacao pode estar defasado). Aqui checamos bloqueio, KYC e prova de vida.
+    const ip = await getClientIP();
+    const secRows = await sql`
+      SELECT balance, is_blocked, is_active, kyc_status, liveness_status, created_at
+      FROM profiles WHERE id = ${profile.id}
+    `;
+    const sec = secRows[0];
+
+    if (!sec || sec.is_active === false) {
+      return NextResponse.json(
+        { success: false, error: "Conta desativada", code: "ACCOUNT_DISABLED" },
+        { status: 403 }
+      );
+    }
+
+    // SEGURANCA: conta bloqueada nao movimenta dinheiro (faltava nesta rota de API)
+    if (sec.is_blocked) {
+      await logSuspiciousActivity(profile.id, "API_WITHDRAWAL_BLOCKED_ACCOUNT", `IP: ${ip}, Amount: ${amount}`, ip);
+      return NextResponse.json(
+        { success: false, error: "Conta bloqueada. Entre em contato com o suporte.", code: "ACCOUNT_BLOCKED" },
+        { status: 403 }
+      );
+    }
+
+    // SEGURANCA: KYC e prova de vida obrigatorios para sacar (faltava nesta rota)
+    if (sec.kyc_status !== "approved") {
+      return NextResponse.json(
+        { success: false, error: "KYC nao aprovado. Complete a verificacao para sacar.", code: "KYC_REQUIRED" },
+        { status: 403 }
+      );
+    }
+    if (sec.liveness_status !== "approved") {
+      return NextResponse.json(
+        { success: false, error: "Verificacao de identidade obrigatoria para sacar.", code: "LIVENESS_REQUIRED" },
+        { status: 403 }
+      );
+    }
+
+    // SEGURANCA: rate limit por usuario (5 saques/hora via API)
+    const apiWithdrawalRateLimit = rateLimit(`api_withdrawal_${profile.id}`, 5, 3600000);
+    if (!apiWithdrawalRateLimit.allowed) {
+      await logSuspiciousActivity(profile.id, "API_WITHDRAWAL_RATE_LIMITED", `IP: ${ip}`, ip);
+      return NextResponse.json(
+        { success: false, error: "Limite de solicitacoes de saque atingido. Aguarde 1 hora.", code: "RATE_LIMITED" },
+        { status: 429 }
+      );
+    }
+
+    // SEGURANCA: validacao anti-fraude (velocidade, chave PIX suspeita, etc.)
+    const fraudCheck = await validateWithdrawal(profile.id, amount, pix_key);
+    if (!fraudCheck.valid) {
+      await logSuspiciousActivity(profile.id, "API_WITHDRAWAL_FRAUD_BLOCKED", `Reason: ${fraudCheck.reason}, Amount: ${amount}`, ip);
+      return NextResponse.json(
+        { success: false, error: fraudCheck.reason || "Saque nao autorizado", code: "FRAUD_BLOCKED" },
+        { status: 403 }
+      );
+    }
+
     // Buscar taxas do usuario
     const userFees = await getSystemFeesForUser(profile.id);
     
@@ -172,11 +240,12 @@ export async function POST(request: NextRequest) {
     }
 
     const totalDebit = amount + withdrawalFee;
+    const currentBalance = Number(sec.balance) || 0;
 
-    // Verificar saldo
-    if (profile.balance < totalDebit) {
+    // Verificacao previa (mensagem amigavel)
+    if (currentBalance < totalDebit) {
       return NextResponse.json(
-        { success: false, error: `Saldo insuficiente. Necessario: R$ ${totalDebit.toFixed(2)}, Disponivel: R$ ${profile.balance.toFixed(2)}`, code: "INSUFFICIENT_BALANCE" },
+        { success: false, error: `Saldo insuficiente. Necessario: R$ ${totalDebit.toFixed(2)}, Disponivel: R$ ${currentBalance.toFixed(2)}`, code: "INSUFFICIENT_BALANCE" },
         { status: 400 }
       );
     }
@@ -184,15 +253,29 @@ export async function POST(request: NextRequest) {
     // Criar ID do saque
     const withdrawalId = `wd_${crypto.randomUUID()}`;
 
-    // Inserir saque no banco
+    // SEGURANCA: débito ATÔMICO com trava de saldo ANTES de registrar o saque.
+    // Impede double-spend por requisições concorrentes na API. Se o saldo já
+    // não cobrir (outra requisição debitou antes), nenhuma linha é afetada e
+    // rejeitamos sem inserir o saque.
+    const debitResult = await sql`
+      UPDATE profiles
+      SET balance = balance - ${totalDebit}, updated_at = NOW()
+      WHERE id = ${profile.id} AND balance >= ${totalDebit}
+      RETURNING id
+    `;
+
+    if (debitResult.length === 0) {
+      await logSuspiciousActivity(profile.id, "API_WITHDRAWAL_RACE_BLOCKED", `Débito concorrente/saldo insuficiente. TotalDebit: ${totalDebit}`, ip);
+      return NextResponse.json(
+        { success: false, error: "Saldo insuficiente ou operacao concorrente detectada.", code: "INSUFFICIENT_BALANCE" },
+        { status: 400 }
+      );
+    }
+
+    // Inserir saque no banco (saldo ja debitado com trava)
     await sql`
       INSERT INTO withdrawals (id, user_id, amount, fee, pix_key, pix_key_type, external_id, description, status, created_at)
       VALUES (${withdrawalId}, ${profile.id}, ${amount}, ${withdrawalFee}, ${pix_key}, ${pix_key_type.toLowerCase()}, ${external_id || null}, ${description || null}, 'pending', NOW())
-    `;
-
-    // Debitar saldo do usuario
-    await sql`
-      UPDATE profiles SET balance = balance - ${totalDebit}, updated_at = NOW() WHERE id = ${profile.id}
     `;
 
     // Processar saque automaticamente se valor <= R$ 500

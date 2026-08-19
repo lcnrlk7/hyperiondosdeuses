@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { sql } from "@/lib/db";
 import { MedusaPayments, MEDUSA_STATUS_MAP } from "@/lib/acquirers/medusa";
+import { MedusaOnline } from "@/lib/acquirers/medusa-online";
 import { notifyPixPaid } from "@/lib/notifications";
 
 export async function GET(request: NextRequest) {
@@ -121,8 +122,30 @@ export async function GET(request: NextRequest) {
         let newStatus = transaction.status;
         let paidAt: string | null = null;
 
-        // Verificar com Medusa
-        if (acquirerCode === 'medusa' || acquirerCode === 'medusa_white') {
+        // Verificar com Medusa Online (adquirentes medusa_online_*)
+        if (acquirerCode && acquirerCode.startsWith('medusa_online')) {
+          const onlineAcq = await sql`
+            SELECT api_key, api_url FROM acquirers WHERE code = ${acquirerCode} LIMIT 1
+          `;
+          if (onlineAcq.length > 0) {
+            const client = new MedusaOnline({
+              apiKey: onlineAcq[0].api_key,
+              baseUrl: onlineAcq[0].api_url,
+            });
+            const checkResult = await client.getPix(
+              transaction.acquirer_transaction_id || transaction.external_id
+            );
+            // getPix ja devolve status interno (pending/completed/failed/refunded)
+            if (checkResult.success && checkResult.status) {
+              newStatus = checkResult.status;
+              if (newStatus === "completed") {
+                paidAt = new Date().toISOString();
+              }
+            }
+          }
+        }
+        // Verificar com Medusa (legado)
+        else if (acquirerCode === 'medusa' || acquirerCode === 'medusa_white') {
           const acquirerResult = await sql`
             SELECT api_key, api_secret FROM acquirers WHERE code = 'medusa' AND is_active = true LIMIT 1
           `;

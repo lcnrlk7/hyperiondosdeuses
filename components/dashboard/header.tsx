@@ -3,6 +3,7 @@
 import Image from "next/image"
 import { useProfile } from "@/components/profile-provider"
 import { NotificationCenter } from "./notification-center"
+import { IpBadge } from "./ip-badge"
 
 interface Profile {
   id: string
@@ -33,6 +34,7 @@ export function DashboardHeader({ user, profile: profileProp }: HeaderProps) {
 
   return (
     <header className="hidden lg:flex h-16 bg-card border-b border-border items-center justify-end gap-4 px-8">
+      <IpBadge />
       <NotificationCenter />
 
       <div className="flex items-center gap-3">
