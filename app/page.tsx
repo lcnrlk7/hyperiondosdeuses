@@ -15,9 +15,16 @@ import {
   Lock,
   CircleDollarSign,
   RefreshCw,
+  MessageCircle,
 } from "lucide-react";
 import { DocsShowcase } from "@/components/landing/docs-showcase";
 import { NominalSelector } from "@/components/landing/nominal-selector";
+import { MetricsBento } from "@/components/landing/metrics-bento";
+import { AccountManager } from "@/components/landing/account-manager";
+
+const WHATSAPP_URL =
+  "https://wa.me/5598981502071?text=" +
+  encodeURIComponent("Olá! Vim pela HyperionPay e gostaria de falar com meu gerente de contas.");
 
 const REGISTER_URL = "/auth/register";
 const LOGIN_URL = "/auth/login";
@@ -56,8 +63,9 @@ export default function Home() {
             <Link href="#solucoes" className="text-sm text-slate-500 hover:text-slate-900 transition-colors">Soluções</Link>
             <Link href="#sem-med" className="text-sm text-slate-500 hover:text-slate-900 transition-colors">Sem MED</Link>
             <Link href="#nominal" className="text-sm text-slate-500 hover:text-slate-900 transition-colors">Nominal</Link>
+            <Link href="#numeros" className="text-sm text-slate-500 hover:text-slate-900 transition-colors">Infraestrutura</Link>
+            <Link href="#gerente" className="text-sm text-slate-500 hover:text-slate-900 transition-colors">Gerente</Link>
             <Link href="#docs" className="text-sm text-slate-500 hover:text-slate-900 transition-colors">Documentação</Link>
-            <Link href="#sobre" className="text-sm text-slate-500 hover:text-slate-900 transition-colors">Sobre nós</Link>
           </nav>
 
           <div className="flex items-center gap-2 md:gap-3">
@@ -253,6 +261,9 @@ export default function Home() {
       {/* Nominal personalizada */}
       <NominalSelector />
 
+      {/* Métricas / Infraestrutura */}
+      <MetricsBento />
+
       {/* Soluções */}
       <section id="solucoes" className="relative px-4 md:px-6 py-8 md:py-12">
         <div className="max-w-7xl mx-auto">
@@ -364,6 +375,9 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Gerente de contas exclusivo */}
+      <AccountManager />
+
       {/* CTA */}
       <section className="relative px-4 md:px-6 py-16 md:py-24">
         <div className="max-w-6xl mx-auto">
@@ -418,6 +432,21 @@ export default function Home() {
           </div>
         </div>
       </footer>
+
+      {/* Botão flutuante — Fale com seu gerente */}
+      <a
+        href={WHATSAPP_URL}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="Falar com seu gerente no WhatsApp"
+        className="group fixed bottom-5 right-5 z-50 flex items-center gap-2.5 rounded-full bg-gradient-to-r from-emerald-500 to-green-500 pl-4 pr-5 py-3 text-sm font-semibold text-white shadow-xl shadow-emerald-500/30 hover:shadow-2xl hover:shadow-emerald-500/40 transition-all"
+      >
+        <span className="relative flex h-6 w-6 items-center justify-center">
+          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white/40" />
+          <MessageCircle className="relative h-5 w-5" />
+        </span>
+        <span className="hidden sm:inline">Fale com seu gerente</span>
+      </a>
     </main>
   );
 }
