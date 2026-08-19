@@ -35,12 +35,12 @@ export default function Home() {
     <main className="relative min-h-screen bg-white text-slate-900 overflow-x-hidden font-sans">
       {/* Background Effects */}
       <div className="fixed inset-0 pointer-events-none">
-        <div className="absolute -top-40 left-1/4 w-[620px] h-[620px] bg-blue-400/20 rounded-full blur-[160px]" />
-        <div className="absolute top-1/3 right-1/5 w-[520px] h-[520px] bg-sky-300/20 rounded-full blur-[160px]" />
+        <div className="absolute -top-40 left-1/4 w-[620px] h-[620px] bg-pink-400/20 rounded-full blur-[160px]" />
+        <div className="absolute top-1/3 right-1/5 w-[520px] h-[520px] bg-pink-300/20 rounded-full blur-[160px]" />
         <div
           className="absolute inset-0 opacity-[0.5]"
           style={{
-            backgroundImage: `linear-gradient(rgba(37,99,235,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(37,99,235,0.06) 1px, transparent 1px)`,
+            backgroundImage: `linear-gradient(rgba(230,0,126,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(230,0,126,0.06) 1px, transparent 1px)`,
             backgroundSize: "64px 64px",
             maskImage: "radial-gradient(ellipse 80% 55% at 50% 0%, black, transparent 75%)",
             WebkitMaskImage: "radial-gradient(ellipse 80% 55% at 50% 0%, black, transparent 75%)",
@@ -54,7 +54,7 @@ export default function Home() {
           <Link href="/" className="flex items-center gap-2">
             <Image src="/images/hp-logo.png" alt="Hyperion Pay" width={36} height={36} className="h-7 w-7 md:h-8 md:w-8 object-contain" />
             <span className="text-base md:text-lg font-semibold tracking-tight text-slate-900">
-              Hyperion<span className="text-blue-600">Pay</span>
+              Hyperion<span className="text-pink-600">Pay</span>
             </span>
           </Link>
 
@@ -72,7 +72,7 @@ export default function Home() {
             <a href={LOGIN_URL} className="px-3 md:px-4 py-1.5 md:py-2 text-xs md:text-sm text-slate-600 hover:text-slate-900 transition-colors">
               Entrar
             </a>
-            <a href={REGISTER_URL} className="px-3 md:px-5 py-1.5 md:py-2 bg-gradient-to-r from-blue-600 to-sky-500 rounded-full text-xs md:text-sm font-medium text-white hover:shadow-lg hover:shadow-blue-500/25 transition-all">
+            <a href={REGISTER_URL} className="px-3 md:px-5 py-1.5 md:py-2 bg-gradient-to-r from-pink-600 to-pink-400 rounded-full text-xs md:text-sm font-medium text-white hover:shadow-lg hover:shadow-pink-500/25 transition-all">
               Criar conta
             </a>
           </div>
@@ -85,17 +85,17 @@ export default function Home() {
           <div className="grid lg:grid-cols-2 gap-10 lg:gap-12 items-center">
             {/* Left */}
             <div className="relative z-10">
-              <div className="inline-flex items-center gap-2 px-3 py-1 mb-5 bg-blue-50 border border-blue-100 rounded-full">
+              <div className="inline-flex items-center gap-2 px-3 py-1 mb-5 bg-pink-50 border border-pink-100 rounded-full">
                 <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" />
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-600" />
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-pink-400 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-pink-600" />
                 </span>
-                <span className="text-xs font-medium text-blue-700">Gateway PIX · Rota 100% livre de MED</span>
+                <span className="text-xs font-medium text-pink-700">Gateway PIX · Rota 100% livre de MED</span>
               </div>
 
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-[1.05] tracking-tight mb-5 text-balance text-slate-900">
                 Pagamentos PIX{" "}
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-blue-500 to-sky-400">
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-pink-600 via-pink-500 to-pink-300">
                   sem risco
                 </span>{" "}
                 de bloqueio.
@@ -108,7 +108,7 @@ export default function Home() {
               </p>
 
               <div className="flex flex-col sm:flex-row gap-3 mb-9">
-                <a href={REGISTER_URL} className="group inline-flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-sky-500 rounded-full text-sm md:text-base font-medium text-white hover:shadow-xl hover:shadow-blue-500/25 transition-all">
+                <a href={REGISTER_URL} className="group inline-flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-pink-600 to-pink-400 rounded-full text-sm md:text-base font-medium text-white hover:shadow-xl hover:shadow-pink-500/25 transition-all">
                   Criar conta grátis
                   <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </a>
@@ -119,15 +119,15 @@ export default function Home() {
 
               <div className="flex flex-wrap items-center gap-x-6 gap-y-3 text-xs md:text-sm text-slate-500">
                 <div className="flex items-center gap-2">
-                  <Zap className="w-4 h-4 text-blue-600" />
+                  <Zap className="w-4 h-4 text-pink-600" />
                   <span>Ativação em até 5 min</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <ShieldCheck className="w-4 h-4 text-blue-600" />
+                  <ShieldCheck className="w-4 h-4 text-pink-600" />
                   <span>Sem mensalidades</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-blue-600" />
+                  <Clock className="w-4 h-4 text-pink-600" />
                   <span>Suporte 24/7</span>
                 </div>
               </div>
@@ -136,7 +136,7 @@ export default function Home() {
             {/* Right — mascot + floating cards */}
             <div className="relative flex items-center justify-center lg:justify-end">
               <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-[340px] h-[340px] md:w-[440px] md:h-[440px] bg-gradient-to-br from-blue-400/25 to-sky-300/20 rounded-full blur-3xl" />
+                <div className="w-[340px] h-[340px] md:w-[440px] md:h-[440px] bg-gradient-to-br from-pink-400/25 to-pink-300/20 rounded-full blur-3xl" />
               </div>
 
               <Image
@@ -171,7 +171,7 @@ export default function Home() {
 
               {/* API badge */}
               <div className="absolute z-20 top-1/2 -left-3 md:-left-6 hidden sm:flex items-center gap-2 rounded-full border border-slate-200 bg-white/90 backdrop-blur px-3 py-2 shadow-lg animate-float-delay-1">
-                <Code2 className="h-4 w-4 text-blue-600" />
+                <Code2 className="h-4 w-4 text-pink-600" />
                 <span className="text-xs font-medium text-slate-700">API &lt; 2s</span>
               </div>
             </div>
@@ -216,13 +216,13 @@ export default function Home() {
       {/* Sem MED — signature section */}
       <section id="sem-med" className="relative px-4 md:px-6 py-16 md:py-24">
         <div className="max-w-6xl mx-auto">
-          <div className="relative overflow-hidden rounded-3xl p-[1.5px] bg-gradient-to-br from-blue-500 via-sky-400 to-blue-500">
+          <div className="relative overflow-hidden rounded-3xl p-[1.5px] bg-gradient-to-br from-pink-500 via-pink-300 to-pink-500">
             <div className="relative rounded-3xl bg-white px-6 md:px-12 py-12 md:py-16">
               <div className="grid lg:grid-cols-2 gap-10 items-center">
                 <div>
-                  <div className="inline-flex items-center gap-2 px-3 py-1 mb-5 bg-blue-50 border border-blue-100 rounded-full">
-                    <ShieldCheck className="h-3.5 w-3.5 text-blue-700" />
-                    <span className="text-xs font-medium text-blue-700">Nosso diferencial</span>
+                  <div className="inline-flex items-center gap-2 px-3 py-1 mb-5 bg-pink-50 border border-pink-100 rounded-full">
+                    <ShieldCheck className="h-3.5 w-3.5 text-pink-700" />
+                    <span className="text-xs font-medium text-pink-700">Nosso diferencial</span>
                   </div>
                   <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-slate-900 mb-4 text-balance">
                     Seu dinheiro nunca fica preso.
@@ -242,8 +242,8 @@ export default function Home() {
                     { icon: RefreshCw, t: "Liquidação transparente", d: "Acompanhe cada centavo em tempo real no extrato." },
                   ].map((f) => (
                     <div key={f.t} className="flex gap-4 rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
-                      <span className="flex h-11 w-11 flex-none items-center justify-center rounded-xl bg-blue-600/10">
-                        <f.icon className="h-5 w-5 text-blue-600" />
+                      <span className="flex h-11 w-11 flex-none items-center justify-center rounded-xl bg-pink-600/10">
+                        <f.icon className="h-5 w-5 text-pink-600" />
                       </span>
                       <div>
                         <p className="font-semibold text-slate-900">{f.t}</p>
@@ -268,7 +268,7 @@ export default function Home() {
       <section id="solucoes" className="relative px-4 md:px-6 py-8 md:py-12">
         <div className="max-w-7xl mx-auto">
           <div className="max-w-2xl mb-10 md:mb-14">
-            <p className="text-sm font-semibold text-blue-600 mb-2">Soluções</p>
+            <p className="text-sm font-semibold text-pink-600 mb-2">Soluções</p>
             <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-slate-900 mb-4 text-balance">
               Tudo o que sua operação precisa para receber.
             </h2>
@@ -291,12 +291,12 @@ export default function Home() {
                 key={f.t}
                 className={`group rounded-2xl border p-6 transition-all hover:-translate-y-1 ${
                   f.featured
-                    ? "border-blue-200 bg-gradient-to-br from-blue-50 to-sky-50 shadow-lg shadow-blue-500/5"
-                    : "border-slate-200 bg-white hover:border-blue-200 hover:shadow-lg hover:shadow-slate-900/5"
+                    ? "border-pink-200 bg-gradient-to-br from-pink-50 to-fuchsia-50 shadow-lg shadow-pink-500/5"
+                    : "border-slate-200 bg-white hover:border-pink-200 hover:shadow-lg hover:shadow-slate-900/5"
                 }`}
               >
-                <span className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-blue-600/10 group-hover:bg-blue-600 transition-colors">
-                  <f.icon className="h-6 w-6 text-blue-600 group-hover:text-white transition-colors" />
+                <span className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-pink-600/10 group-hover:bg-pink-600 transition-colors">
+                  <f.icon className="h-6 w-6 text-pink-600 group-hover:text-white transition-colors" />
                 </span>
                 <h3 className="text-lg font-semibold text-slate-900 mb-1.5">{f.t}</h3>
                 <p className="text-sm text-slate-500 leading-relaxed">{f.d}</p>
@@ -343,7 +343,7 @@ export default function Home() {
             </div>
 
             <div>
-              <p className="text-sm font-semibold text-blue-600 mb-2">Por que a HyperionPay</p>
+              <p className="text-sm font-semibold text-pink-600 mb-2">Por que a HyperionPay</p>
               <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-slate-900 mb-4 text-balance">
                 Feita para escalar junto com você.
               </h2>
@@ -360,8 +360,8 @@ export default function Home() {
                   { icon: Server, t: "99,9% de uptime", d: "Infraestrutura redundante e sempre disponível." },
                 ].map((f) => (
                   <div key={f.t} className="flex gap-3">
-                    <span className="mt-0.5 flex h-10 w-10 flex-none items-center justify-center rounded-xl bg-blue-600/10">
-                      <f.icon className="h-5 w-5 text-blue-600" />
+                    <span className="mt-0.5 flex h-10 w-10 flex-none items-center justify-center rounded-xl bg-pink-600/10">
+                      <f.icon className="h-5 w-5 text-pink-600" />
                     </span>
                     <div>
                       <p className="font-semibold text-slate-900">{f.t}</p>
@@ -381,17 +381,17 @@ export default function Home() {
       {/* CTA */}
       <section className="relative px-4 md:px-6 py-16 md:py-24">
         <div className="max-w-6xl mx-auto">
-          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-blue-600 to-sky-500 px-6 md:px-12 py-14 md:py-20 text-center">
+          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-pink-600 to-pink-400 px-6 md:px-12 py-14 md:py-20 text-center">
             <div className="absolute inset-0 opacity-20" style={{ backgroundImage: "radial-gradient(circle at 20% 20%, white 1px, transparent 1px)", backgroundSize: "28px 28px" }} />
             <div className="relative">
               <h2 className="text-3xl md:text-5xl font-bold tracking-tight text-white mb-4 text-balance">
                 Comece a receber por PIX hoje.
               </h2>
-              <p className="text-base md:text-lg text-blue-50/90 mb-8 max-w-xl mx-auto text-pretty">
+              <p className="text-base md:text-lg text-pink-50/90 mb-8 max-w-xl mx-auto text-pretty">
                 Crie sua conta gratuitamente, integre em minutos e tenha um caixa que nunca para.
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-                <a href={REGISTER_URL} className="group inline-flex items-center justify-center gap-2 px-7 py-3.5 bg-white rounded-full text-sm md:text-base font-semibold text-blue-700 hover:shadow-2xl transition-all">
+                <a href={REGISTER_URL} className="group inline-flex items-center justify-center gap-2 px-7 py-3.5 bg-white rounded-full text-sm md:text-base font-semibold text-pink-700 hover:shadow-2xl transition-all">
                   Criar conta grátis
                   <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </a>
@@ -411,7 +411,7 @@ export default function Home() {
             <Link href="/" className="flex items-center gap-2">
               <Image src="/images/hp-logo.png" alt="Hyperion Pay" width={32} height={32} className="h-7 w-7 object-contain" />
               <span className="text-base font-semibold tracking-tight text-slate-900">
-                Hyperion<span className="text-blue-600">Pay</span>
+                Hyperion<span className="text-pink-600">Pay</span>
               </span>
             </Link>
 
@@ -426,7 +426,7 @@ export default function Home() {
           <div className="mt-8 pt-6 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-400">
             <p>© {new Date().getFullYear()} HyperionPay. Todos os direitos reservados.</p>
             <p className="flex items-center gap-1.5">
-              <ShieldCheck className="h-3.5 w-3.5 text-blue-600" />
+              <ShieldCheck className="h-3.5 w-3.5 text-pink-600" />
               Infraestrutura de pagamentos PIX · 100% livre de MED
             </p>
           </div>

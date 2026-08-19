@@ -20,11 +20,11 @@ const NOMINAIS: Nominal[] = [
 ];
 
 const AVATAR_STYLES: Record<string, string> = {
-  "nominal-1": "from-blue-600 to-sky-500",
-  "nominal-2": "from-indigo-600 to-blue-500",
-  "nominal-3": "from-sky-600 to-cyan-500",
-  "nominal-4": "from-blue-700 to-blue-500",
-  "nominal-5": "from-blue-600 to-indigo-500",
+  "nominal-1": "from-pink-600 to-pink-400",
+  "nominal-2": "from-fuchsia-600 to-pink-500",
+  "nominal-3": "from-fuchsia-600 to-pink-400",
+  "nominal-4": "from-pink-700 to-pink-500",
+  "nominal-5": "from-pink-600 to-fuchsia-500",
 };
 
 export function NominalSelector() {
@@ -34,7 +34,7 @@ export function NominalSelector() {
     <section id="nominal" className="relative px-4 md:px-6 py-16 md:py-24">
       <div className="max-w-7xl mx-auto">
         <div className="max-w-2xl mb-10 md:mb-14">
-          <p className="text-sm font-semibold text-blue-600 mb-2">Nominal personalizada</p>
+          <p className="text-sm font-semibold text-pink-600 mb-2">Nominal personalizada</p>
           <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-slate-900 mb-4 text-balance">
             Você escolhe o nome que aparece no extrato do cliente.
           </h2>
@@ -51,7 +51,7 @@ export function NominalSelector() {
             <div className="flex items-center gap-2 mb-4 rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-400">
               <Search className="h-4 w-4" />
               <span className="text-sm">Nominais disponíveis para a sua conta</span>
-              <span className="ml-auto text-xs font-medium text-blue-600 bg-blue-50 rounded-full px-2.5 py-1">
+              <span className="ml-auto text-xs font-medium text-pink-600 bg-pink-50 rounded-full px-2.5 py-1">
                 {NOMINAIS.length} ativas
               </span>
             </div>
@@ -68,8 +68,8 @@ export function NominalSelector() {
                     onClick={() => setSelected(n)}
                     className={`group flex items-center gap-4 rounded-2xl border p-4 text-left transition-all ${
                       active
-                        ? "border-blue-500 bg-blue-50/70 shadow-lg shadow-blue-500/10"
-                        : "border-slate-200 bg-white hover:border-blue-200 hover:bg-slate-50/80"
+                        ? "border-pink-500 bg-pink-50/70 shadow-lg shadow-pink-500/10"
+                        : "border-slate-200 bg-white hover:border-pink-200 hover:bg-slate-50/80"
                     }`}
                   >
                     <span
@@ -84,12 +84,12 @@ export function NominalSelector() {
                         <span className="font-mono">{n.cnpj}</span>
                       </p>
                     </div>
-                    <span className="hidden sm:inline-flex flex-none rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-medium text-slate-500 group-hover:border-blue-200">
+                    <span className="hidden sm:inline-flex flex-none rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-medium text-slate-500 group-hover:border-pink-200">
                       {n.tag}
                     </span>
                     <span
                       className={`flex h-6 w-6 flex-none items-center justify-center rounded-full border transition-colors ${
-                        active ? "border-blue-600 bg-blue-600 text-white" : "border-slate-300 text-transparent"
+                        active ? "border-pink-600 bg-pink-600 text-white" : "border-slate-300 text-transparent"
                       }`}
                     >
                       <Check className="h-3.5 w-3.5" />
@@ -108,16 +108,16 @@ export function NominalSelector() {
           {/* Live receipt preview */}
           <div className="lg:sticky lg:top-24">
             <div className="relative mx-auto max-w-sm">
-              <div className="absolute -inset-4 bg-gradient-to-br from-blue-400/20 to-sky-300/10 blur-3xl rounded-full" />
+              <div className="absolute -inset-4 bg-gradient-to-br from-pink-400/20 to-pink-300/10 blur-3xl rounded-full" />
               <div className="relative overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-2xl shadow-slate-900/10">
                 {/* Receipt header */}
-                <div className="bg-gradient-to-br from-blue-600 to-sky-500 px-6 pt-7 pb-8 text-center text-white">
+                <div className="bg-gradient-to-br from-pink-600 to-pink-400 px-6 pt-7 pb-8 text-center text-white">
                   <span className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-white/15">
                     <Check className="h-6 w-6" strokeWidth={2.5} />
                   </span>
-                  <p className="text-sm text-blue-50/90">Comprovante de pagamento</p>
+                  <p className="text-sm text-pink-50/90">Comprovante de pagamento</p>
                   <p className="mt-1 text-2xl font-bold tracking-tight">R$ 297,00</p>
-                  <p className="mt-1 text-xs text-blue-50/70">PIX concluído · agora há pouco</p>
+                  <p className="mt-1 text-xs text-pink-50/70">PIX concluído · agora há pouco</p>
                 </div>
 
                 {/* Receipt body */}
@@ -155,7 +155,7 @@ export function NominalSelector() {
                     </div>
                   </dl>
 
-                  <div className="mt-5 flex items-center gap-2 rounded-xl border border-blue-100 bg-blue-50/70 px-3 py-2.5 text-xs text-blue-700">
+                  <div className="mt-5 flex items-center gap-2 rounded-xl border border-pink-100 bg-pink-50/70 px-3 py-2.5 text-xs text-pink-700">
                     <ShieldCheck className="h-4 w-4 flex-none" />
                     <span>É exatamente assim que aparece no app do banco do seu cliente.</span>
                   </div>
