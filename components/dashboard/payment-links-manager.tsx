@@ -19,8 +19,17 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-// Dominio publico dos links de pagamento (checkout)
-const CHECKOUT_BASE_URL = "https://pay-checkout-pagamentoseguros.online";
+// Dominio publico dos links de pagamento (checkout).
+// Usa a env NEXT_PUBLIC_CHECKOUT_BASE_URL quando definida; caso contrario usa o
+// dominio dedicado de checkout ja implantado (mesmo CHECKOUT_DOMAIN do middleware),
+// que serve a rota /link/[code] dos links de pagamento.
+const DEFAULT_CHECKOUT_BASE_URL = "https://pay-checkout-pagamentoseguros.online";
+
+function getCheckoutBaseUrl() {
+  const envUrl = process.env.NEXT_PUBLIC_CHECKOUT_BASE_URL;
+  if (envUrl) return envUrl.replace(/\/$/, "");
+  return DEFAULT_CHECKOUT_BASE_URL;
+}
 
 interface PaymentLink {
   id: string;
@@ -73,6 +82,11 @@ export function PaymentLinksManager() {
   const [error, setError] = useState<string | null>(null);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [baseUrl, setBaseUrl] = useState("");
+
+  useEffect(() => {
+    setBaseUrl(getCheckoutBaseUrl());
+  }, []);
 
   const getToken = () =>
     typeof window !== "undefined" ? localStorage.getItem("auth-token") : null;
@@ -240,7 +254,7 @@ export function PaymentLinksManager() {
   }
 
   function copyLink(link: PaymentLink) {
-    const url = `${CHECKOUT_BASE_URL}/link/${link.code}`;
+    const url = `${getCheckoutBaseUrl()}/link/${link.code}`;
     navigator.clipboard.writeText(url);
     setCopiedCode(link.code);
     setTimeout(() => setCopiedCode(null), 2000);
@@ -382,7 +396,7 @@ export function PaymentLinksManager() {
                     )}
                   </button>
                   <a
-                    href={`${CHECKOUT_BASE_URL}/link/${link.code}`}
+                    href={`${baseUrl}/link/${link.code}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     title="Abrir link"

@@ -281,6 +281,13 @@ export async function middleware(request: NextRequest) {
     ) {
       return NextResponse.next()
     }
+
+    // Rotas que ja estao no formato correto passam direto (sem reescrever
+    // para /pay/[slug]). Ex: link de pagamento /link/[code] (tabela
+    // payment_links) e o proprio /pay/[slug] (tabela checkouts).
+    if (pathname.startsWith('/link/') || pathname.startsWith('/pay/')) {
+      return NextResponse.next()
+    }
     
     // Se acessar a raiz, mostra pagina inicial do checkout
     if (pathname === '/' || pathname === '') {

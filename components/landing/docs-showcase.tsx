@@ -38,7 +38,7 @@ function LineTokens({ line }: { line: string }) {
     if (comment) nodes.push(<span key={key++} className="text-slate-500 italic">{full}</span>);
     else if (str) nodes.push(<span key={key++} className="text-emerald-300">{full}</span>);
     else if (num) nodes.push(<span key={key++} className="text-amber-300">{full}</span>);
-    else if (kw) nodes.push(<span key={key++} className="text-sky-400">{full}</span>);
+    else if (kw) nodes.push(<span key={key++} className="text-pink-400">{full}</span>);
     else nodes.push(<span key={key++}>{full}</span>);
     last = m.index + full.length;
   }
@@ -148,9 +148,9 @@ export function DocsShowcase() {
     <div className="grid lg:grid-cols-[1.1fr_1.4fr] gap-10 lg:gap-14 items-start">
       {/* Left — explanation */}
       <div>
-        <div className="inline-flex items-center gap-2 px-3 py-1 mb-5 bg-blue-50 border border-blue-100 rounded-full">
+        <div className="inline-flex items-center gap-2 px-3 py-1 mb-5 bg-pink-50 border border-pink-100 rounded-full">
           <Code2Icon />
-          <span className="text-xs font-medium text-blue-700">Documentação para desenvolvedores</span>
+          <span className="text-xs font-medium text-pink-700">Documentação para desenvolvedores</span>
         </div>
         <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-slate-900 mb-4 text-balance">
           Integre em minutos, não em semanas.
@@ -168,8 +168,8 @@ export function DocsShowcase() {
             { t: "Confirmação < 2s", d: "Do QR Code ao callback de pago em segundos." },
           ].map((f) => (
             <li key={f.t} className="flex gap-3">
-              <span className="mt-0.5 flex h-6 w-6 flex-none items-center justify-center rounded-full bg-blue-600/10">
-                <Check className="h-3.5 w-3.5 text-blue-600" />
+              <span className="mt-0.5 flex h-6 w-6 flex-none items-center justify-center rounded-full bg-pink-600/10">
+                <Check className="h-3.5 w-3.5 text-pink-600" />
               </span>
               <div>
                 <p className="font-semibold text-slate-900">{f.t}</p>
@@ -232,7 +232,7 @@ export function DocsShowcase() {
         <div className="grid sm:grid-cols-2 gap-5">
           <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
             <div className="flex items-center gap-2 border-b border-slate-100 px-4 py-2.5">
-              <span className="h-2 w-2 rounded-full bg-blue-500" />
+              <span className="h-2 w-2 rounded-full bg-pink-500" />
               <span className="text-xs font-medium text-slate-500">Resposta 200 OK</span>
             </div>
             <pre className="overflow-x-auto bg-[#0b1120] p-4 text-[11.5px] leading-relaxed font-mono">
@@ -260,7 +260,7 @@ export function DocsShowcase() {
 
 function Code2Icon() {
   return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-700">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="text-pink-700">
       <path d="m18 16 4-4-4-4M6 8l-4 4 4 4M14.5 4l-5 16" />
     </svg>
   );

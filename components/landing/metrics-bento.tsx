@@ -66,13 +66,13 @@ export function MetricsBento() {
         <div className="relative overflow-hidden rounded-[2rem] bg-slate-950 px-6 md:px-12 py-14 md:py-20">
           {/* glow + grid */}
           <div className="pointer-events-none absolute inset-0">
-            <div className="absolute -top-24 left-1/4 h-[420px] w-[420px] rounded-full bg-blue-600/25 blur-[140px]" />
-            <div className="absolute bottom-0 right-1/5 h-[360px] w-[360px] rounded-full bg-sky-500/15 blur-[140px]" />
+            <div className="absolute -top-24 left-1/4 h-[420px] w-[420px] rounded-full bg-pink-600/25 blur-[140px]" />
+            <div className="absolute bottom-0 right-1/5 h-[360px] w-[360px] rounded-full bg-fuchsia-500/15 blur-[140px]" />
             <div
               className="absolute inset-0 opacity-[0.35]"
               style={{
                 backgroundImage:
-                  "linear-gradient(rgba(96,165,250,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(96,165,250,0.08) 1px, transparent 1px)",
+                  "linear-gradient(rgba(244,114,182,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(244,114,182,0.08) 1px, transparent 1px)",
                 backgroundSize: "56px 56px",
                 maskImage: "radial-gradient(ellipse 70% 60% at 50% 40%, black, transparent 80%)",
                 WebkitMaskImage: "radial-gradient(ellipse 70% 60% at 50% 40%, black, transparent 80%)",
@@ -82,12 +82,12 @@ export function MetricsBento() {
 
           <div className="relative">
             <div className="max-w-2xl mb-10 md:mb-14">
-              <div className="inline-flex items-center gap-2 px-3 py-1 mb-5 rounded-full border border-blue-400/20 bg-blue-400/10">
-                <span className="text-xs font-medium tracking-wider text-blue-300">INFRAESTRUTURA</span>
+              <div className="inline-flex items-center gap-2 px-3 py-1 mb-5 rounded-full border border-pink-400/20 bg-pink-400/10">
+                <span className="text-xs font-medium tracking-wider text-pink-300">INFRAESTRUTURA</span>
               </div>
               <h2 className="text-3xl md:text-5xl font-bold tracking-tight text-white text-balance">
                 Números que sustentam a{" "}
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-sky-300">
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-fuchsia-300">
                   sua operação.
                 </span>
               </h2>
@@ -103,23 +103,23 @@ export function MetricsBento() {
                   key={m.id}
                   className={`group relative overflow-hidden rounded-2xl border p-5 md:p-6 transition-colors ${m.span} ${
                     m.highlight
-                      ? "border-blue-400/30 bg-gradient-to-br from-blue-600/20 to-slate-900/40"
+                      ? "border-pink-400/30 bg-gradient-to-br from-pink-600/20 to-slate-900/40"
                       : "border-white/10 bg-white/[0.03] hover:border-white/20"
                   }`}
                 >
                   <span
                     className={`mb-5 flex h-10 w-10 items-center justify-center rounded-xl ${
-                      m.highlight ? "bg-blue-500/20" : "bg-white/5"
+                      m.highlight ? "bg-pink-500/20" : "bg-white/5"
                     }`}
                   >
-                    <m.icon className="h-5 w-5 text-blue-300" />
+                    <m.icon className="h-5 w-5 text-pink-300" />
                   </span>
                   <div className="flex items-baseline gap-1.5">
                     <span className="text-4xl md:text-5xl font-bold tracking-tight text-white tabular-nums">
                       {m.value}
                     </span>
                     {m.unit && (
-                      <span className="text-lg md:text-xl font-semibold text-blue-300">{m.unit}</span>
+                      <span className="text-lg md:text-xl font-semibold text-pink-300">{m.unit}</span>
                     )}
                   </div>
                   <p className="mt-3 text-sm font-medium text-white">{m.label}</p>
