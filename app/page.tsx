@@ -52,9 +52,9 @@ export default function Home() {
       <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-xl border-b border-slate-200/70">
         <div className="max-w-7xl mx-auto px-4 md:px-6 h-14 md:h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2">
-            <Image src="/images/hp-logo.png" alt="Hyperion Pay" width={36} height={36} className="h-7 w-7 md:h-8 md:w-8 object-contain" />
-            <span className="text-base md:text-lg font-semibold tracking-tight text-slate-900">
-              Hyperion<span className="text-pink-600">Pay</span>
+            <Image src="/images/hp-logo.png" alt="Hyperion Pay" width={36} height={36} priority className="h-7 w-7 md:h-9 md:w-9 object-contain" />
+            <span className="text-base md:text-lg font-semibold tracking-tight">
+              <span className="text-pink-600">Hyperion</span><span className="text-slate-800">Pay</span>
             </span>
           </Link>
 
@@ -409,9 +409,9 @@ export default function Home() {
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <Link href="/" className="flex items-center gap-2">
-              <Image src="/images/hp-logo.png" alt="Hyperion Pay" width={32} height={32} className="h-7 w-7 object-contain" />
-              <span className="text-base font-semibold tracking-tight text-slate-900">
-                Hyperion<span className="text-pink-600">Pay</span>
+              <Image src="/images/hp-logo.png" alt="Hyperion Pay" width={32} height={32} className="h-8 w-8 object-contain" />
+              <span className="text-base font-semibold tracking-tight">
+                <span className="text-pink-600">Hyperion</span><span className="text-slate-800">Pay</span>
               </span>
             </Link>
 
