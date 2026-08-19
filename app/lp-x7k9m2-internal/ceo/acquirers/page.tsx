@@ -755,11 +755,11 @@ export default function AcquirersPage() {
 
       {/* Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-overlay flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-overlay backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="glass rounded-2xl p-6 w-full max-w-md"
+            className="bg-modal border border-border shadow-2xl rounded-2xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto"
           >
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-semibold text-foreground">
