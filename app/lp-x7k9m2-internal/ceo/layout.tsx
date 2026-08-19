@@ -36,6 +36,7 @@ import {
   ShieldAlert,
   MonitorSmartphone,
   Ban,
+  Link2,
   type LucideIcon,
 } from "lucide-react";
 import { AdminTopbar } from "@/components/ceo/admin-topbar";
@@ -71,6 +72,7 @@ const menuCategories: MenuCategory[] = [
     color: "emerald",
     items: [
       { label: "Transações", href: "/lp-x7k9m2-internal/ceo/transactions", icon: ArrowLeftRight, permission: "view_transactions" },
+      { label: "Links de Pagamento", href: "/lp-x7k9m2-internal/ceo/payment-links", icon: Link2, permission: "view_transactions" },
       { label: "Recebimentos", href: "/lp-x7k9m2-internal/ceo/receivables", icon: ArrowDownCircle, permission: "view_transactions" },
       { label: "Extrato", href: "/lp-x7k9m2-internal/ceo/statement", icon: ScrollText, permission: "view_transactions" },
     ],

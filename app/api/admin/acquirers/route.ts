@@ -119,7 +119,7 @@ export async function POST(request: Request) {
 export async function DELETE(request: Request) {
   try {
     const body = await request.json();
-    const { id } = body;
+    const { id, force } = body;
 
     if (!id) {
       return NextResponse.json({ error: "ID obrigatório" }, { status: 400 });
@@ -133,17 +133,40 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: "Adquirente não encontrado" }, { status: 404 });
     }
 
+    // Verificar usuários vinculados (FK profiles.acquirer_id -> acquirers.id)
+    const linkedResult = await sql`
+      SELECT COUNT(*)::int AS count FROM profiles WHERE acquirer_id = ${id}
+    `;
+    const linkedProfiles = linkedResult[0]?.count ?? 0;
+
+    if (linkedProfiles > 0 && !force) {
+      // Sem force: não deletar, informar o admin quantos usuários dependem dela
+      return NextResponse.json(
+        {
+          error: `Esta adquirente está vinculada a ${linkedProfiles} usuário(s).`,
+          linkedProfiles,
+          requiresForce: true,
+        },
+        { status: 409 },
+      );
+    }
+
+    // Com force (ou sem vínculos): desvincular usuários e então remover
+    if (linkedProfiles > 0) {
+      await sql`UPDATE profiles SET acquirer_id = NULL WHERE acquirer_id = ${id}`;
+    }
+
     await sql`DELETE FROM acquirers WHERE id = ${id}`;
 
     // Log de auditoria
     await sql`
       INSERT INTO audit_logs (action, entity_type, entity_id, old_value)
-      VALUES ('DELETE_ACQUIRER', 'acquirer', ${id}, ${JSON.stringify({ name: acquirer.name, code: acquirer.code })})
+      VALUES ('DELETE_ACQUIRER', 'acquirer', ${id}, ${JSON.stringify({ name: acquirer.name, code: acquirer.code, unlinkedProfiles: linkedProfiles })})
     `;
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, unlinkedProfiles: linkedProfiles });
   } catch (error) {
     console.error("[v0] Error:", error);
-    return NextResponse.json({ error: "Erro interno" }, { status: 500 });
+    return NextResponse.json({ error: "Erro interno ao remover adquirente" }, { status: 500 });
   }
 }

@@ -232,8 +232,9 @@ export default function AcquirersPage() {
   async function saveAcquirer() {
     setIsSaving(true);
     try {
+      let res: Response;
       if (editingAcquirer) {
-        await fetch("/api/admin/acquirers", {
+        res = await fetch("/api/admin/acquirers", {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -259,16 +260,24 @@ export default function AcquirersPage() {
           }),
         });
       } else {
-        await fetch("/api/admin/acquirers", {
+        res = await fetch("/api/admin/acquirers", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(form),
         });
       }
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        alert(data.error || "Não foi possível salvar a adquirente.");
+        return;
+      }
+
       loadAcquirers();
       closeModal();
     } catch (error) {
       console.error("Error saving acquirer:", error);
+      alert("Erro de conexão ao salvar a adquirente.");
     } finally {
       setIsSaving(false);
     }
@@ -287,19 +296,42 @@ export default function AcquirersPage() {
     }
   }
 
-  async function deleteAcquirer(acquirer: Acquirer) {
-    if (!confirm(`Tem certeza que deseja remover a adquirente "${acquirer.name}"?`)) {
+  async function deleteAcquirer(acquirer: Acquirer, force = false) {
+    if (!force && !confirm(`Tem certeza que deseja remover a adquirente "${acquirer.name}"?`)) {
       return;
     }
     try {
-      await fetch("/api/admin/acquirers", {
+      const res = await fetch("/api/admin/acquirers", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: acquirer.id }),
+        body: JSON.stringify({ id: acquirer.id, force }),
       });
+      const data = await res.json().catch(() => ({}));
+
+      if (res.status === 409 && data.requiresForce) {
+        // Adquirente tem usuários vinculados — confirmar desvinculação
+        if (
+          confirm(
+            `${data.error}\n\nAo remover, esses usuários serão desvinculados e passarão a usar a rota padrão. Deseja continuar?`,
+          )
+        ) {
+          await deleteAcquirer(acquirer, true);
+        }
+        return;
+      }
+
+      if (!res.ok) {
+        alert(data.error || "Não foi possível remover a adquirente.");
+        return;
+      }
+
+      if (data.unlinkedProfiles > 0) {
+        alert(`Adquirente removida. ${data.unlinkedProfiles} usuário(s) foram desvinculados.`);
+      }
       loadAcquirers();
     } catch (error) {
       console.error("Error deleting acquirer:", error);
+      alert("Erro de conexão ao remover a adquirente.");
     }
   }
 
@@ -755,11 +787,11 @@ export default function AcquirersPage() {
 
       {/* Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-overlay flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-overlay backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="glass rounded-2xl p-6 w-full max-w-md"
+            className="bg-modal border border-border shadow-2xl rounded-2xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto"
           >
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-semibold text-foreground">
