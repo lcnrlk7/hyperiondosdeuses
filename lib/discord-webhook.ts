@@ -495,6 +495,8 @@ export function logLogin(data: {
   userName: string;
   userEmail: string;
   ip?: string;
+  location?: string;
+  locationFlag?: string;
   userAgent?: string;
   isAdmin?: boolean;
   isNewDevice?: boolean;
@@ -506,12 +508,21 @@ export function logLogin(data: {
       { name: "ID", value: `\`${data.userId}\``, inline: false },
       { name: "Nome", value: data.userName || "N/A", inline: true },
       { name: "Email", value: maskEmail(data.userEmail), inline: true },
-      { name: "IP", value: data.ip || "N/A", inline: true },
+      { name: "IP", value: `\`${data.ip || "N/A"}\``, inline: true },
     ],
     footer: { text: `Hyperion Pay • ${formatDateTime()}` },
     timestamp: new Date().toISOString(),
     author: { name: "Sistema de Login", icon_url: "https://cdn-icons-png.flaticon.com/512/2889/2889676.png" },
   };
+
+  if (data.location) {
+    const flag = data.locationFlag ? `${data.locationFlag} ` : "";
+    embed.fields?.push({ name: "Localizacao", value: `${flag}${data.location}`, inline: true });
+  }
+
+  if (data.isNewDevice) {
+    embed.fields?.push({ name: "Alerta", value: "🆕 Novo dispositivo/local", inline: true });
+  }
 
   if (data.userAgent) {
     const ua = data.userAgent.length > 50 ? data.userAgent.slice(0, 50) + "..." : data.userAgent;
