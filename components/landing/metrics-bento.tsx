@@ -67,12 +67,12 @@ export function MetricsBento() {
           {/* glow + grid */}
           <div className="pointer-events-none absolute inset-0">
             <div className="absolute -top-24 left-1/4 h-[420px] w-[420px] rounded-full bg-pink-600/25 blur-[140px]" />
-            <div className="absolute bottom-0 right-1/5 h-[360px] w-[360px] rounded-full bg-sky-500/15 blur-[140px]" />
+            <div className="absolute bottom-0 right-1/5 h-[360px] w-[360px] rounded-full bg-fuchsia-500/15 blur-[140px]" />
             <div
               className="absolute inset-0 opacity-[0.35]"
               style={{
                 backgroundImage:
-                  "linear-gradient(rgba(96,165,250,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(96,165,250,0.08) 1px, transparent 1px)",
+                  "linear-gradient(rgba(244,114,182,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(244,114,182,0.08) 1px, transparent 1px)",
                 backgroundSize: "56px 56px",
                 maskImage: "radial-gradient(ellipse 70% 60% at 50% 40%, black, transparent 80%)",
                 WebkitMaskImage: "radial-gradient(ellipse 70% 60% at 50% 40%, black, transparent 80%)",
@@ -87,7 +87,7 @@ export function MetricsBento() {
               </div>
               <h2 className="text-3xl md:text-5xl font-bold tracking-tight text-white text-balance">
                 Números que sustentam a{" "}
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-sky-300">
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-fuchsia-300">
                   sua operação.
                 </span>
               </h2>
