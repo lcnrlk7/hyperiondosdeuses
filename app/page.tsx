@@ -17,6 +17,7 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { DocsShowcase } from "@/components/landing/docs-showcase";
+import { NominalSelector } from "@/components/landing/nominal-selector";
 
 const REGISTER_URL = "/auth/register";
 const LOGIN_URL = "/auth/login";
@@ -54,6 +55,7 @@ export default function Home() {
             <Link href="#inicio" className="text-sm text-slate-500 hover:text-slate-900 transition-colors">Início</Link>
             <Link href="#solucoes" className="text-sm text-slate-500 hover:text-slate-900 transition-colors">Soluções</Link>
             <Link href="#sem-med" className="text-sm text-slate-500 hover:text-slate-900 transition-colors">Sem MED</Link>
+            <Link href="#nominal" className="text-sm text-slate-500 hover:text-slate-900 transition-colors">Nominal</Link>
             <Link href="#docs" className="text-sm text-slate-500 hover:text-slate-900 transition-colors">Documentação</Link>
             <Link href="#sobre" className="text-sm text-slate-500 hover:text-slate-900 transition-colors">Sobre nós</Link>
           </nav>
@@ -181,6 +183,25 @@ export default function Home() {
               </div>
             ))}
           </div>
+
+          {/* Compatibilidade bancária */}
+          <div className="mt-10 md:mt-14">
+            <p className="text-center text-xs font-medium uppercase tracking-wider text-slate-400">
+              Seu cliente paga de qualquer banco
+            </p>
+            <div className="mt-5 flex flex-wrap items-center justify-center gap-x-8 gap-y-4 md:gap-x-12">
+              {["Nubank", "Itaú", "Banco do Brasil", "Bradesco", "Caixa", "Inter", "Mercado Pago", "C6 Bank"].map(
+                (bank) => (
+                  <span
+                    key={bank}
+                    className="text-base md:text-lg font-semibold text-slate-400/90 transition-colors hover:text-slate-600"
+                  >
+                    {bank}
+                  </span>
+                ),
+              )}
+            </div>
+          </div>
         </div>
       </section>
 
@@ -228,6 +249,9 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* Nominal personalizada */}
+      <NominalSelector />
 
       {/* Soluções */}
       <section id="solucoes" className="relative px-4 md:px-6 py-8 md:py-12">
