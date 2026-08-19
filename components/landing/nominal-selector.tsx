@@ -12,19 +12,19 @@ type Nominal = {
 };
 
 const NOMINAIS: Nominal[] = [
-  { id: "medusa", name: "MEDUSA INST. DE PAGAMENTO LTDA", cnpj: "48.201.774/0001-30", tag: "Instituição de Pagamento", initials: "MP" },
-  { id: "owem", name: "OWEM SOLUÇÕES FINANCEIRAS S.A.", cnpj: "51.883.402/0001-18", tag: "Adquirência", initials: "OW" },
-  { id: "santsbank", name: "SANTSBANK PAGAMENTOS LTDA", cnpj: "44.917.650/0001-72", tag: "Banking as a Service", initials: "SB" },
-  { id: "merchants", name: "MERCHANTSBANK BR LTDA", cnpj: "39.774.128/0001-05", tag: "Adquirência", initials: "MB" },
-  { id: "hyperion", name: "HYPERION TECH LTDA", cnpj: "55.402.813/0001-64", tag: "Marca própria", initials: "HP" },
+  { id: "nominal-1", name: "Nominal 01", cnpj: "••.•••.•••/0001-••", tag: "Instituição de Pagamento", initials: "01" },
+  { id: "nominal-2", name: "Nominal 02", cnpj: "••.•••.•••/0001-••", tag: "Adquirência", initials: "02" },
+  { id: "nominal-3", name: "Nominal 03", cnpj: "••.•••.•••/0001-••", tag: "Banking as a Service", initials: "03" },
+  { id: "nominal-4", name: "Nominal 04", cnpj: "••.•••.•••/0001-••", tag: "Adquirência", initials: "04" },
+  { id: "nominal-5", name: "Nominal 05", cnpj: "••.•••.•••/0001-••", tag: "Marca própria", initials: "05" },
 ];
 
 const AVATAR_STYLES: Record<string, string> = {
-  medusa: "from-blue-600 to-sky-500",
-  owem: "from-indigo-600 to-blue-500",
-  santsbank: "from-sky-600 to-cyan-500",
-  merchants: "from-blue-700 to-blue-500",
-  hyperion: "from-blue-600 to-indigo-500",
+  "nominal-1": "from-blue-600 to-sky-500",
+  "nominal-2": "from-indigo-600 to-blue-500",
+  "nominal-3": "from-sky-600 to-cyan-500",
+  "nominal-4": "from-blue-700 to-blue-500",
+  "nominal-5": "from-blue-600 to-indigo-500",
 };
 
 export function NominalSelector() {
