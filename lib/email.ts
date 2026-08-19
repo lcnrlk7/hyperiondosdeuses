@@ -260,7 +260,7 @@ export async function sendWelcomeEmail(
       </table>
     </td></tr>
 
-    ${ctaButton("Acessar minha conta", "https://app.hyperionpay.com.br/dashboard")}
+    ${ctaButton("Acessar minha conta", "https://hyperionpay.com.br/dashboard")}
   `;
 
   try {
@@ -327,7 +327,7 @@ export async function sendWithdrawalNotification(
       </tr></table>
     </td></tr>
 
-    ${ctaButton("Ver detalhes", "https://app.hyperionpay.com.br/dashboard/wallet")}
+    ${ctaButton("Ver detalhes", "https://hyperionpay.com.br/dashboard/wallet")}
   `;
 
   try {
@@ -373,7 +373,7 @@ export async function sendDepositNotification(
       <p style="margin:0;color:${C.textMuted};font-size:14px;">O valor ja esta disponivel na sua conta.</p>
     </td></tr>
 
-    ${ctaButton("Ver meu saldo", "https://app.hyperionpay.com.br/dashboard/wallet")}
+    ${ctaButton("Ver meu saldo", "https://hyperionpay.com.br/dashboard/wallet")}
   `;
 
   try {
@@ -413,7 +413,7 @@ export async function sendNotificationEmail(
       </tr></table>
     </td></tr>
 
-    ${ctaButton("Acessar minha conta", "https://app.hyperionpay.com.br/dashboard")}
+    ${ctaButton("Acessar minha conta", "https://hyperionpay.com.br/dashboard")}
   `;
 
   try {

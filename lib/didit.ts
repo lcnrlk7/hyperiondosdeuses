@@ -13,7 +13,7 @@ export function getAppBaseUrl(): string {
   return (
     process.env.NEXT_PUBLIC_APP_URL ||
     process.env.APP_URL ||
-    "https://app.hyperionpay.com.br"
+    "https://hyperionpay.com.br"
   );
 }
 

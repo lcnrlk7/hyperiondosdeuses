@@ -230,7 +230,7 @@ export async function POST(
         const customerName = payer_name || "Cliente";
         const customerDocument = payer_cpf ? payer_cpf.replace(/\D/g, "") : "36009722004";
         const customerEmail = payer_email || "cliente@hyperionpay.com";
-        const medusaWebhookUrl = "https://www.hyperionpay.com.br/api/webhooks/medusa";
+        const medusaWebhookUrl = "https://hyperionpay.com.br/api/webhooks/medusa";
         
         const medusaResult = await medusa.createSimplePixPayment(
           amountInCents,

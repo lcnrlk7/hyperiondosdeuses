@@ -105,7 +105,7 @@ export default function DocsPage() {
     );
   };
 
-  const baseUrl = "https://app.hyperionpay.com.br";
+  const baseUrl = "https://hyperionpay.com.br";
 
   return (
     <div className="min-h-screen bg-background">
@@ -1276,7 +1276,7 @@ const fullIntegrationPrompt = `Preciso integrar a API de pagamentos PIX da Hyper
 
 ## Informacoes da API
 
-**URL Base:** https://app.hyperionpay.com.br
+**URL Base:** https://hyperionpay.com.br
 **Autenticacao:** Basic Auth com Client ID e Client Secret (gere em Dashboard > Integracao).
 Envie de uma destas duas formas em TODAS as requisicoes:
 - Header "Authorization: Basic <base64(client_id:client_secret)>", ou
@@ -1332,7 +1332,7 @@ Por favor, crie uma integracao completa para meu projeto com:
 
 const chargePrompt = `Preciso criar cobrancas PIX com QR Code usando a API Hyperion Pay.
 
-**URL Base:** https://app.hyperionpay.com.br
+**URL Base:** https://hyperionpay.com.br
 **Credenciais:** CLIENT_ID e CLIENT_SECRET (gere em Dashboard > Integracao)
 
 **Endpoint:** POST /api/v1/integration/pix
@@ -1380,7 +1380,7 @@ Crie uma funcao que:
 
 const webhookPrompt = `Preciso configurar um webhook para receber notificacoes de pagamento da Hyperion Pay.
 
-**URL Base:** https://app.hyperionpay.com.br
+**URL Base:** https://hyperionpay.com.br
 **Configuracao:** Cadastre a URL do seu webhook em Dashboard > Integracao.
 
 **Eventos disponiveis:**
@@ -1417,7 +1417,7 @@ Crie um endpoint webhook que:
 
 const transferPrompt = `Preciso realizar saques PIX automaticamente usando a API Hyperion Pay.
 
-**URL Base:** https://app.hyperionpay.com.br
+**URL Base:** https://hyperionpay.com.br
 **Credenciais:** CLIENT_ID e CLIENT_SECRET (gere em Dashboard > Integracao)
 
 **Endpoint:** POST /api/v1/integration/withdrawal

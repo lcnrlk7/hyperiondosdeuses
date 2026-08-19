@@ -275,7 +275,7 @@ export async function POST(request: NextRequest) {
         const customerEmail = profile.email || "cliente@hyperionpay.com";
         
         // URL do webhook Medusa - usar domínio de produção
-        const medusaWebhookUrl = "https://www.hyperionpay.com.br/api/webhooks/medusa";
+        const medusaWebhookUrl = "https://hyperionpay.com.br/api/webhooks/medusa";
         
         const medusaResult = await medusa.createSimplePixPayment(
           amountInCents,

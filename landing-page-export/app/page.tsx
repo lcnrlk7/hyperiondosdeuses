@@ -32,15 +32,15 @@ export default function Home() {
             <Link href="#inicio" className="text-sm text-gray-400 hover:text-white transition-colors">Início</Link>
             <Link href="#solucoes" className="text-sm text-gray-400 hover:text-white transition-colors">Soluções</Link>
             <Link href="#taxas" className="text-sm text-gray-400 hover:text-white transition-colors">Taxas</Link>
-            <a href="https://app.hyperionpay.com.br/dashboard/integration" className="text-sm text-gray-400 hover:text-white transition-colors">Documentação</a>
+            <a href="https://hyperionpay.com.br/dashboard/integration" className="text-sm text-gray-400 hover:text-white transition-colors">Documentação</a>
             <Link href="#sobre" className="text-sm text-gray-400 hover:text-white transition-colors">Sobre nós</Link>
           </nav>
           
           <div className="flex items-center gap-2 md:gap-3">
-            <a href="https://app.hyperionpay.com.br/auth/login" className="px-3 md:px-4 py-1.5 md:py-2 text-xs md:text-sm text-gray-300 hover:text-white transition-colors">
+            <a href="https://hyperionpay.com.br/auth/login" className="px-3 md:px-4 py-1.5 md:py-2 text-xs md:text-sm text-gray-300 hover:text-white transition-colors">
               Entrar
             </a>
-            <a href="https://app.hyperionpay.com.br/auth/register" className="px-3 md:px-5 py-1.5 md:py-2 bg-gradient-to-r from-indigo-500 to-indigo-600 rounded-full text-xs md:text-sm font-medium text-white hover:shadow-lg hover:shadow-indigo-500/25 transition-all">
+            <a href="https://hyperionpay.com.br/auth/register" className="px-3 md:px-5 py-1.5 md:py-2 bg-gradient-to-r from-indigo-500 to-indigo-600 rounded-full text-xs md:text-sm font-medium text-white hover:shadow-lg hover:shadow-indigo-500/25 transition-all">
               Criar conta
             </a>
           </div>
@@ -64,7 +64,7 @@ export default function Home() {
               </p>
               
               <div className="flex flex-col sm:flex-row gap-3 mb-8 md:mb-12">
-                <a href="https://app.hyperionpay.com.br/auth/register" className="group inline-flex items-center justify-center gap-2 px-5 py-2.5 md:px-6 md:py-3 bg-gradient-to-r from-indigo-500 to-indigo-600 rounded-full text-sm md:text-base font-medium text-white hover:shadow-xl hover:shadow-indigo-500/30 transition-all">
+                <a href="https://hyperionpay.com.br/auth/register" className="group inline-flex items-center justify-center gap-2 px-5 py-2.5 md:px-6 md:py-3 bg-gradient-to-r from-indigo-500 to-indigo-600 rounded-full text-sm md:text-base font-medium text-white hover:shadow-xl hover:shadow-indigo-500/30 transition-all">
                   Começar agora
                   <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </a>
@@ -641,7 +641,7 @@ export default function Home() {
                 Todas as premiacoes sao enviadas gratuitamente para os parceiros que atingem as metas.
               </p>
               <a 
-                href="https://app.hyperionpay.com.br/auth/register" 
+                href="https://hyperionpay.com.br/auth/register" 
                 className="inline-flex items-center gap-2 px-5 py-2.5 md:px-6 md:py-3 bg-gradient-to-r from-indigo-500 to-indigo-600 rounded-full text-sm md:text-base font-medium text-white hover:shadow-xl hover:shadow-indigo-500/30 transition-all"
               >
                 Comecar a faturar agora
@@ -673,7 +673,7 @@ export default function Home() {
               <ul className="space-y-1.5 md:space-y-2 text-xs md:text-sm text-gray-500">
                 <li><Link href="#solucoes" className="hover:text-white transition-colors">Pagamentos PIX</Link></li>
                 <li><Link href="#taxas" className="hover:text-white transition-colors">Taxas</Link></li>
-                <li><a href="https://app.hyperionpay.com.br/dashboard/integration" className="hover:text-white transition-colors">API</a></li>
+                <li><a href="https://hyperionpay.com.br/dashboard/integration" className="hover:text-white transition-colors">API</a></li>
               </ul>
             </div>
             
@@ -681,7 +681,7 @@ export default function Home() {
             <div>
               <h4 className="text-sm md:text-base font-semibold mb-2 md:mb-4">Suporte</h4>
               <ul className="space-y-1.5 md:space-y-2 text-xs md:text-sm text-gray-500">
-                <li><a href="https://app.hyperionpay.com.br/dashboard/integration" className="hover:text-white transition-colors">Documentação</a></li>
+                <li><a href="https://hyperionpay.com.br/dashboard/integration" className="hover:text-white transition-colors">Documentação</a></li>
                 <li><Link href="https://wa.me/5534999353187" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">WhatsApp</Link></li>
               </ul>
             </div>

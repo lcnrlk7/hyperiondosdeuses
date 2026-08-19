@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { ChevronDown, Copy, Check, Download, Terminal } from "lucide-react";
 
-const BASE_URL = "https://app.hyperionpay.com.br";
+const BASE_URL = "https://hyperionpay.com.br";
 
 interface EndpointParam {
   name: string;

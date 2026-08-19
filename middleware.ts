@@ -201,36 +201,15 @@ const MAIN_DOMAINS = [
 // Dominio dedicado para todos os checkouts
 const CHECKOUT_DOMAIN = 'pay-checkout-pagamentoseguros.online'
 
-// Dominio do app (dashboard de usuario)
-const APP_DOMAIN = 'app.hyperionpay.com.br'
-
-// Dominio do painel CEO/Admin
-const CEO_DOMAIN = 'ceo.hyperionpay.com.br'
-
 function isMainDomain(hostname: string): boolean {
   const cleanHostname = hostname.replace(/^www\./, '').split(':')[0]
-  
-  // Exclui dominios especificos (app e ceo) da verificacao de dominio principal
-  if (cleanHostname === APP_DOMAIN || cleanHostname === CEO_DOMAIN) {
-    return false
-  }
-  
+
   return MAIN_DOMAINS.some(domain => 
     cleanHostname === domain || 
     cleanHostname === `www.${domain}` ||
     cleanHostname.endsWith(`.${domain}`) ||
     cleanHostname.includes('localhost')
   )
-}
-
-function isAppDomain(hostname: string): boolean {
-  const cleanHostname = hostname.replace(/^www\./, '').split(':')[0]
-  return cleanHostname === APP_DOMAIN || cleanHostname === `www.${APP_DOMAIN}`
-}
-
-function isCeoDomain(hostname: string): boolean {
-  const cleanHostname = hostname.replace(/^www\./, '').split(':')[0]
-  return cleanHostname === CEO_DOMAIN || cleanHostname === `www.${CEO_DOMAIN}`
 }
 
 function isCheckoutDomain(hostname: string): boolean {
@@ -287,72 +266,8 @@ export async function middleware(request: NextRequest) {
   }
   
   // Dominio principal - serve TUDO no mesmo dominio (landing, auth, dashboard, admin).
-  // Sem redirecionamento para subdominios app./ceo.
+  // Sem subdominios: hyperionpay.com.br atende landing, /auth, /dashboard e /lp-x7k9m2-internal/ceo.
   if (isMainDomain(hostname)) {
-    return await handleAuth(request)
-  }
-  
-  // Se for dominio do CEO (ceo.hyperionpay.com.br) - painel admin exclusivo
-  if (isCeoDomain(hostname)) {
-    // Ignora arquivos estaticos
-    if (
-      pathname.startsWith('/_next') ||
-      pathname.startsWith('/api') ||
-      pathname.includes('.') // arquivos com extensao
-    ) {
-      return await handleAuth(request)
-    }
-    
-    // Se acessar a raiz, redireciona para login da equipe ou painel CEO
-    if (pathname === '/' || pathname === '') {
-      const teamUser = request.cookies.get('team_session')?.value
-      
-      if (teamUser) {
-        // Se tem sessao de equipe, vai para o painel CEO
-        const url = request.nextUrl.clone()
-        url.pathname = '/lp-x7k9m2-internal/ceo'
-        return NextResponse.redirect(url)
-      } else {
-        // Se nao tem sessao, vai para login da equipe
-        const url = request.nextUrl.clone()
-        url.pathname = '/lp-x7k9m2-internal/team-login'
-        return NextResponse.redirect(url)
-      }
-    }
-    
-    // Para outras rotas no CEO domain, segue fluxo normal de auth
-    return await handleAuth(request)
-  }
-  
-  // Se for dominio do app (app.hyperionpay.com.br) - dashboard de usuario
-  if (isAppDomain(hostname)) {
-    // Ignora arquivos estaticos
-    if (
-      pathname.startsWith('/_next') ||
-      pathname.startsWith('/api') ||
-      pathname.includes('.') // arquivos com extensao
-    ) {
-      return await handleAuth(request)
-    }
-    
-    // Se acessar a raiz do app, redireciona para login ou dashboard
-    if (pathname === '/' || pathname === '') {
-      const user = request.cookies.get('auth-token')?.value
-      
-      if (user) {
-        // Se tem sessao de usuario, vai para dashboard
-        const url = request.nextUrl.clone()
-        url.pathname = '/dashboard'
-        return NextResponse.redirect(url)
-      } else {
-        // Se nao tem sessao, vai para login
-        const url = request.nextUrl.clone()
-        url.pathname = '/auth/login'
-        return NextResponse.redirect(url)
-      }
-    }
-    
-    // Para outras rotas no app domain, segue fluxo normal de auth
     return await handleAuth(request)
   }
   

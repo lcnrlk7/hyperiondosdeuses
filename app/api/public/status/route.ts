@@ -114,7 +114,7 @@ async function checkWebhooks(): Promise<ServiceStatus> {
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const baseUrl = searchParams.get("baseUrl") || process.env.NEXT_PUBLIC_APP_URL || "https://app.hyperionpay.com.br";
+  const baseUrl = searchParams.get("baseUrl") || process.env.NEXT_PUBLIC_APP_URL || "https://hyperionpay.com.br";
 
   try {
     // Verificar servicos em paralelo
