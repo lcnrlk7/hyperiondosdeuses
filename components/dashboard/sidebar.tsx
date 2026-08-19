@@ -69,7 +69,7 @@ const menuItems: MenuItem[] = [
   { href: "/dashboard/adquirentes", icon: Landmark, label: "Adquirentes" },
   { href: "/dashboard/customers", icon: Users, label: "Clientes" },
   { href: "/dashboard/charges", icon: ReceiptText, label: "Cobrancas" },
-  { href: "/dashboard/payment-links", icon: Link2, label: "Links de Pagamento", beta: true },
+  { href: "/dashboard/payment-links", icon: Link2, label: "Links de Pagamento" },
   { href: "/dashboard/reports", icon: FileBarChart, label: "Relatorios" },
   { href: "/dashboard/integration", icon: Code2, label: "Integracoes" },
   { href: "/dashboard/settings", icon: Settings, label: "Configuracoes" },
