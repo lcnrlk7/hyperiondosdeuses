@@ -12,4 +12,4 @@
 // Se um dia a chave privada for trocada, gere um novo par com
 // `npx web-push generate-vapid-keys` e atualize AMBOS: este valor e a VAPID_PRIVATE_KEY.
 export const VAPID_PUBLIC_KEY =
-  "BD6ArfgWGgPaXXpqm6BD62dYW2Uvg-_85ly9aycJpUQdu5zw31G5k-RaX5E1KCzlk1zoo-Zc9NWcgZvUe8cw2xI";
+  "BFknSg178z66JdSpLl3FnGl-DzpDNhdYsYW6Zzc8Ic5HqKglx2ssp2MrU9evWYpJEZtngcTucPufx-Y_KvT6GHI";

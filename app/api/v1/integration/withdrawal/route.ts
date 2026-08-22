@@ -1,4 +1,5 @@
 import { sql } from "@/lib/db";
+import { notifyWithdrawalRequested } from "@/lib/notifications";
 import { NextRequest, NextResponse } from "next/server";
 import { getSystemFeesForUser, createWithdrawal } from "@/lib/acquirers";
 import { validateWithdrawal, getClientIP, logSuspiciousActivity, rateLimit, isValidPixKey } from "@/lib/security";
@@ -310,6 +311,9 @@ export async function POST(request: NextRequest) {
         // Saque fica pendente para aprovacao manual
       }
     }
+
+    // Notificar usuario que o saque via integracao foi solicitado.
+    await notifyWithdrawalRequested(profile.id, amount, pix_key);
 
     return NextResponse.json({
       success: true,

@@ -5,6 +5,7 @@ import { OnboardingProvider } from "@/components/onboarding/onboarding-provider"
 import { OnboardingOverlay } from "@/components/onboarding/onboarding-overlay";
 import { KeyboardShortcuts } from "@/components/keyboard-shortcuts";
 import { PWAInstallPrompt } from "@/components/pwa-install-prompt";
+import { PushNotificationPrompt } from "@/components/dashboard/push-notification-prompt";
 
 export default function DashboardLayout({
   children,
@@ -20,6 +21,7 @@ export default function DashboardLayout({
           <OnboardingOverlay />
           <KeyboardShortcuts />
           <PWAInstallPrompt />
+          <PushNotificationPrompt />
         </OnboardingProvider>
       </AuthProvider>
     </div>

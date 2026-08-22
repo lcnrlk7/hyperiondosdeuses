@@ -397,10 +397,8 @@ export async function POST(request: NextRequest) {
       pixKeyType: pixKeyType || detectPixKeyType(pixKey),
     });
 
-    // Notificar usuário via push notification
-    notifyWithdrawalRequested(sessionUser.id, netAmount, pixKey).catch(err => {
-      console.error("[Withdrawal] Erro ao enviar notificacao:", err);
-    });
+    // Salvar e enviar antes da resposta; promises soltas podem ser encerradas no serverless.
+    await notifyWithdrawalRequested(sessionUser.id, netAmount, pixKey);
 
     // Determinar mensagem baseada no status e se requer aprovação
     let message = "";

@@ -4,6 +4,7 @@ import { createPixPayment, getSystemFeesForUser } from "@/lib/acquirers";
 import crypto from "crypto";
 import { logNewTransaction, logAPIUsage } from "@/lib/discord-webhook";
 import { assertUserVerified } from "@/lib/kyc-guard";
+import { notifyPixCreated } from "@/lib/notifications";
 
 // Funcao para extrair credenciais do request
 function extractCredentials(request: NextRequest): { clientId: string | null; clientSecret: string | null } {
@@ -295,6 +296,10 @@ export async function POST(request: NextRequest) {
       statusCode: 200,
       amount: amount,
     });
+
+    // Notificar usuario (dono da integracao) que uma cobranca PIX foi gerada.
+    // AWAIT obrigatorio: em serverless a funcao encerra ao retornar a resposta.
+    await notifyPixCreated(profile.id, amount, transaction.id);
 
     // Retornar resposta formatada
     return NextResponse.json({
