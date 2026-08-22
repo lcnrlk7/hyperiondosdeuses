@@ -1,16 +1,8 @@
 import webpush from "web-push";
 import { sql } from "@/lib/db";
-import { VAPID_PUBLIC_KEY } from "@/lib/vapid";
+import { configureWebPush } from "@/lib/configure-web-push";
 
-// Configurar VAPID keys.
-// A chave PUBLICA vem de lib/vapid (fonte unica, forma par com a privada).
-// A chave PRIVADA e secreta e vem SEMPRE da variavel de ambiente VAPID_PRIVATE_KEY.
-const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY || "";
-const VAPID_SUBJECT = process.env.VAPID_SUBJECT || "mailto:contato@hyperionpay.com.br";
-
-if (VAPID_PUBLIC_KEY && VAPID_PRIVATE_KEY) {
-  webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
-}
+const webPushConfigured = configureWebPush(process.env.VAPID_SUBJECT);
 
 export interface PushNotificationPayload {
   title: string;
@@ -35,7 +27,7 @@ export async function sendPushNotification(
 ): Promise<{ success: boolean; sent: number; failed: number }> {
   console.log("[v0] sendPushNotification called:", { userId, title: payload.title });
   
-  if (!VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY) {
+  if (!webPushConfigured) {
     console.log("[v0] VAPID keys not configured, skipping push notification");
     return { success: false, sent: 0, failed: 0 };
   }
@@ -286,7 +278,7 @@ export async function notifyCheckoutPayment(
 export async function sendPushToAllUsers(
   payload: PushNotificationPayload
 ): Promise<{ success: boolean; sent: number; failed: number }> {
-  if (!VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY) {
+  if (!webPushConfigured) {
     return { success: false, sent: 0, failed: 0 };
   }
 
