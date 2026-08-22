@@ -404,7 +404,8 @@ export async function createWithdrawal(
   pixKey: string,
   userId?: string,
   pixKeyType?: string,
-  description?: string
+  description?: string,
+  idempotencyKey?: string,
 ): Promise<WithdrawalResult> {
   const config = userId
     ? await getAcquirerForUser(userId)
@@ -419,13 +420,13 @@ export async function createWithdrawal(
     try {
       const client = new MedusaOnline({ apiKey: config.api_key, baseUrl: config.api_url });
       const keyType = toMedusaOnlinePixKeyType(pixKeyType || detectPixKeyType(pixKey));
-      const idempotencyKey = `wd-${userId || "anon"}-${Date.now()}`;
+      const stableIdempotencyKey = idempotencyKey || `wd-${userId || "anon"}-${crypto.randomUUID()}`;
 
       const result = await client.requestWithdrawal({
         valor: amount,
         chavePix: pixKey,
         chavePixTipo: keyType,
-        idempotencyKey,
+        idempotencyKey: stableIdempotencyKey,
       });
 
       if (!result.success) {

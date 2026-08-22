@@ -68,6 +68,7 @@ export default function IntegrationPage() {
   // UI states
   const [copied, setCopied] = useState<string | null>(null);
   const [showSecrets, setShowSecrets] = useState<Record<string, boolean>>({});
+  const [oneTimeSecrets, setOneTimeSecrets] = useState<Record<string, { client?: string; webhook?: string }>>({});
   const [testingWebhook, setTestingWebhook] = useState<string | null>(null);
   const [webhookTestResult, setWebhookTestResult] = useState<Record<string, { success: boolean; message: string } | null>>({});
   
@@ -202,11 +203,18 @@ export default function IntegrationPage() {
       });
       const data = await response.json();
       if (data.success) {
+        setOneTimeSecrets((current) => ({
+          ...current,
+          [data.integration.id]: {
+            client: data.integration.client_secret,
+            webhook: data.integration.webhook_secret,
+          },
+        }));
         setShowCreateModal(false);
         setFormName("");
         setFormDescription("");
         setFormWebsite("");
-        loadIntegrations();
+        await loadIntegrations();
       } else {
         alert(data.error);
       }
@@ -287,8 +295,15 @@ export default function IntegrationPage() {
       });
       const data = await response.json();
       if (data.success) {
-        loadIntegrations();
-        alert("Secret regenerado com sucesso!");
+        setOneTimeSecrets((current) => ({
+          ...current,
+          [integrationId]: {
+            ...current[integrationId],
+            [type]: type === "client" ? data.integration.client_secret : data.integration.webhook_secret,
+          },
+        }));
+        await loadIntegrations();
+        alert("Secret regenerado. Copie agora: ele sera exibido apenas nesta sessao.");
       }
     } catch {
       alert("Erro ao regenerar secret");
@@ -708,9 +723,9 @@ export default function IntegrationPage() {
                   <label className="text-xs text-muted-foreground mb-1 block">Client Secret</label>
                   <div className="flex items-center gap-1 sm:gap-2">
                     <code className="flex-1 bg-background px-3 py-2 rounded-lg text-xs sm:text-sm font-mono text-foreground truncate">
-                      {showSecrets[`client_${integration.id}`]
-                        ? integration.client_secret
-                        : "••••••••••••••••••••••••"}
+                    {showSecrets[`client_${integration.id}`]
+                      ? oneTimeSecrets[integration.id]?.client || "Secret protegido. Regenere para exibir."
+                      : "••••••••••••••••••••••••"}
                     </code>
                     <Button
                       variant="ghost"
@@ -731,7 +746,11 @@ export default function IntegrationPage() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => copyToClipboard(integration.client_secret, `client_secret_${integration.id}`)}
+                      onClick={() => {
+                    const secret = oneTimeSecrets[integration.id]?.client;
+                    if (secret) copyToClipboard(secret, `client_secret_${integration.id}`);
+                  }}
+                  disabled={!oneTimeSecrets[integration.id]?.client}
                     >
                       {copied === `client_secret_${integration.id}` ? (
                         <Check className="w-4 h-4 text-green-500" />
@@ -856,9 +875,9 @@ export default function IntegrationPage() {
                   <label className="text-xs text-muted-foreground mb-1 block">Webhook Secret</label>
                   <div className="flex items-center gap-1 sm:gap-2">
                     <code className="flex-1 bg-background px-3 py-2 rounded-lg text-xs sm:text-sm font-mono text-foreground truncate">
-                      {showSecrets[`webhook_${integration.id}`]
-                        ? integration.webhook_secret
-                        : "••••••••••••••••••••••••"}
+                    {showSecrets[`webhook_${integration.id}`]
+                      ? oneTimeSecrets[integration.id]?.webhook || "Secret protegido. Regenere para exibir."
+                      : "••••••••••••••••••••••••"}
                     </code>
                     <Button
                       variant="ghost"
@@ -879,7 +898,11 @@ export default function IntegrationPage() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => copyToClipboard(integration.webhook_secret, `webhook_secret_${integration.id}`)}
+                      onClick={() => {
+                    const secret = oneTimeSecrets[integration.id]?.webhook;
+                    if (secret) copyToClipboard(secret, `webhook_secret_${integration.id}`);
+                  }}
+                  disabled={!oneTimeSecrets[integration.id]?.webhook}
                     >
                       {copied === `webhook_secret_${integration.id}` ? (
                         <Check className="w-4 h-4 text-green-500" />

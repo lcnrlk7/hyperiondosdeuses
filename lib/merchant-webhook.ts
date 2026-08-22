@@ -1,4 +1,5 @@
 import crypto from "crypto"
+import { validatePublicHttpsUrl } from "@/lib/safe-webhook-url"
 
 export interface MerchantWebhookOptions {
   url: string
@@ -62,7 +63,8 @@ export async function sendMerchantWebhook({
   const startTime = Date.now()
 
   try {
-    const response = await fetch(url, {
+    const safeUrl = await validatePublicHttpsUrl(url)
+    const response = await fetch(safeUrl, {
       method: "POST",
       headers,
       body,

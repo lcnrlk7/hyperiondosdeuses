@@ -21,6 +21,27 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import QRCode from "qrcode";
 
+/**
+ * Retorna a cor de texto (claro ou escuro) com melhor contraste sobre a cor de fundo.
+ * Permite que o lojista escolha qualquer paleta sem quebrar a legibilidade.
+ */
+function readableOn(hex: string): string {
+  const clean = (hex || "").replace("#", "");
+  const full =
+    clean.length === 3
+      ? clean
+          .split("")
+          .map((c) => c + c)
+          .join("")
+      : clean;
+  if (full.length !== 6) return "#ffffff";
+  const r = parseInt(full.slice(0, 2), 16);
+  const g = parseInt(full.slice(2, 4), 16);
+  const b = parseInt(full.slice(4, 6), 16);
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return luminance > 0.6 ? "#111827" : "#ffffff";
+}
+
 interface PaymentLink {
   id: string;
   code: string;
@@ -61,6 +82,7 @@ export default function PayLinkPage({ params }: { params: Promise<{ code: string
   const [copied, setCopied] = useState(false);
   const [checkingPayment, setCheckingPayment] = useState(false);
   const [qrCodeImage, setQrCodeImage] = useState<string | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     amount: "",
@@ -147,38 +169,40 @@ export default function PayLinkPage({ params }: { params: Promise<{ code: string
   async function handleSubmit() {
     if (!link) return;
 
+    setFormError(null);
+
     // Validacoes
     if (link.require_name && !formData.payer_name.trim()) {
-      alert("Nome e obrigatorio");
+      setFormError("Informe seu nome completo.");
       return;
     }
     if (link.require_email && !formData.payer_email.trim()) {
-      alert("Email e obrigatorio");
+      setFormError("Informe seu email.");
       return;
     }
     if (link.require_phone && !formData.payer_phone.trim()) {
-      alert("Telefone e obrigatorio");
+      setFormError("Informe seu telefone.");
       return;
     }
     if (link.require_cpf && !formData.payer_cpf.trim()) {
-      alert("CPF e obrigatorio");
+      setFormError("Informe seu CPF.");
       return;
     }
 
     const amount = link.amount_type === "fixed" ? Number(link.amount) : Number(formData.amount);
-    
+
     if (!amount || amount <= 0) {
-      alert("Valor invalido");
+      setFormError("Informe um valor valido.");
       return;
     }
 
     if (link.min_amount && amount < Number(link.min_amount)) {
-      alert(`Valor minimo: R$ ${Number(link.min_amount).toFixed(2)}`);
+      setFormError(`Valor minimo: R$ ${Number(link.min_amount).toFixed(2)}`);
       return;
     }
 
     if (link.max_amount && amount > Number(link.max_amount)) {
-      alert(`Valor maximo: R$ ${Number(link.max_amount).toFixed(2)}`);
+      setFormError(`Valor maximo: R$ ${Number(link.max_amount).toFixed(2)}`);
       return;
     }
 
@@ -194,8 +218,8 @@ export default function PayLinkPage({ params }: { params: Promise<{ code: string
       });
 
       if (!response.ok) {
-        const data = await response.json();
-        alert(data.error || "Erro ao processar pagamento");
+        const data = await response.json().catch(() => ({}));
+        setFormError(data.error || "Nao foi possivel gerar o PIX. Tente novamente.");
         return;
       }
 
@@ -204,7 +228,7 @@ export default function PayLinkPage({ params }: { params: Promise<{ code: string
       setStep("payment");
     } catch (err) {
       console.error("Error processing payment:", err);
-      alert("Erro ao processar pagamento");
+      setFormError("Nao foi possivel gerar o PIX. Tente novamente.");
     } finally {
       setProcessing(false);
     }
@@ -261,8 +285,12 @@ export default function PayLinkPage({ params }: { params: Promise<{ code: string
       >
         <div className="text-center">
           <AlertCircle className="w-16 h-16 mx-auto mb-4 text-red-500" />
-          <h1 className="text-xl font-bold text-white mb-2">Link Indisponivel</h1>
-          <p className="text-gray-400">{error || "Este link de pagamento nao existe ou expirou."}</p>
+          <h1 className="text-xl font-bold mb-2" style={{ color: "#ffffff" }}>
+            Link Indisponivel
+          </h1>
+          <p style={{ color: "rgba(255,255,255,0.65)" }}>
+            {error || "Este link de pagamento nao existe ou expirou."}
+          </p>
         </div>
       </div>
     );
@@ -270,9 +298,21 @@ export default function PayLinkPage({ params }: { params: Promise<{ code: string
 
   const primaryColor = link.primary_color || "#f97316";
   const bgColor = link.background_color || "#0a0a0a";
+  const textColor = readableOn(bgColor);
+  const isLightBg = textColor !== "#ffffff";
 
   return (
-    <div className="min-h-screen py-8 px-4" style={{ backgroundColor: bgColor }}>
+    <div
+      className="min-h-screen py-8 px-4"
+      style={
+        {
+          backgroundColor: bgColor,
+          color: textColor,
+          "--ck-surface": isLightBg ? "rgba(0,0,0,0.04)" : "rgba(255,255,255,0.05)",
+          "--ck-border": isLightBg ? "rgba(0,0,0,0.12)" : "rgba(255,255,255,0.10)",
+        } as React.CSSProperties
+      }
+    >
       <div className="max-w-md mx-auto">
         {/* Header */}
         <motion.div
@@ -281,7 +321,7 @@ export default function PayLinkPage({ params }: { params: Promise<{ code: string
           className="text-center mb-8"
         >
           {link.logo_url ? (
-            <div className="w-20 h-20 mx-auto mb-4 rounded-2xl overflow-hidden bg-white/10">
+            <div className="w-20 h-20 mx-auto mb-4 rounded-2xl overflow-hidden bg-[var(--ck-surface)]">
               <img
                 src={link.logo_url}
                 alt={link.title}
@@ -296,9 +336,9 @@ export default function PayLinkPage({ params }: { params: Promise<{ code: string
               <DollarSign className="w-10 h-10" style={{ color: primaryColor }} />
             </div>
           )}
-          <h1 className="text-2xl font-bold text-white mb-2">{link.title}</h1>
+          <h1 className="text-2xl font-bold mb-2">{link.title}</h1>
           {link.description && (
-            <p className="text-gray-400">{link.description}</p>
+            <p className="opacity-70">{link.description}</p>
           )}
         </motion.div>
 
@@ -307,26 +347,26 @@ export default function PayLinkPage({ params }: { params: Promise<{ code: string
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl overflow-hidden"
+          className="bg-[var(--ck-surface)] backdrop-blur-lg border border-[var(--ck-border)] rounded-2xl overflow-hidden"
         >
           {step === "form" && (
             <div className="p-6 space-y-4">
               {/* Valor */}
               {link.amount_type === "fixed" ? (
-                <div className="text-center py-4 bg-white/5 rounded-xl">
-                  <p className="text-sm text-gray-400 mb-1">Valor do pagamento</p>
-                  <p className="text-3xl font-bold text-white">
+                <div className="text-center py-4 bg-[var(--ck-surface)] rounded-xl">
+                  <p className="text-sm opacity-70 mb-1">Valor do pagamento</p>
+                  <p className="text-3xl font-bold">
                     {formatCurrency(Number(link.amount))}
                   </p>
                 </div>
               ) : (
                 <div>
-                  <Label className="text-white flex items-center gap-2">
+                  <Label className="flex items-center gap-2">
                     <DollarSign className="w-4 h-4" />
                     Valor *
                   </Label>
                   <div className="relative mt-1">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 opacity-70">
                       R$
                     </span>
                     <Input
@@ -337,11 +377,11 @@ export default function PayLinkPage({ params }: { params: Promise<{ code: string
                       placeholder="0,00"
                       value={formData.amount}
                       onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
-                      className="pl-10 bg-white/5 border-white/10 text-white"
+                      className="pl-10 bg-[var(--ck-surface)] border-[var(--ck-border)]"
                     />
                   </div>
                   {(link.min_amount || link.max_amount) && (
-                    <p className="text-xs text-gray-400 mt-1">
+                    <p className="text-xs opacity-70 mt-1">
                       {link.min_amount && `Min: ${formatCurrency(Number(link.min_amount))}`}
                       {link.min_amount && link.max_amount && " | "}
                       {link.max_amount && `Max: ${formatCurrency(Number(link.max_amount))}`}
@@ -353,7 +393,7 @@ export default function PayLinkPage({ params }: { params: Promise<{ code: string
               {/* Nome */}
               {link.require_name && (
                 <div>
-                  <Label className="text-white flex items-center gap-2">
+                  <Label className="flex items-center gap-2">
                     <User className="w-4 h-4" />
                     Nome *
                   </Label>
@@ -361,7 +401,7 @@ export default function PayLinkPage({ params }: { params: Promise<{ code: string
                     placeholder="Seu nome completo"
                     value={formData.payer_name}
                     onChange={(e) => setFormData({ ...formData, payer_name: e.target.value })}
-                    className="mt-1 bg-white/5 border-white/10 text-white"
+                    className="mt-1 bg-[var(--ck-surface)] border-[var(--ck-border)]"
                   />
                 </div>
               )}
@@ -369,7 +409,7 @@ export default function PayLinkPage({ params }: { params: Promise<{ code: string
               {/* Email */}
               {link.require_email && (
                 <div>
-                  <Label className="text-white flex items-center gap-2">
+                  <Label className="flex items-center gap-2">
                     <Mail className="w-4 h-4" />
                     Email *
                   </Label>
@@ -378,7 +418,7 @@ export default function PayLinkPage({ params }: { params: Promise<{ code: string
                     placeholder="seu@email.com"
                     value={formData.payer_email}
                     onChange={(e) => setFormData({ ...formData, payer_email: e.target.value })}
-                    className="mt-1 bg-white/5 border-white/10 text-white"
+                    className="mt-1 bg-[var(--ck-surface)] border-[var(--ck-border)]"
                   />
                 </div>
               )}
@@ -386,7 +426,7 @@ export default function PayLinkPage({ params }: { params: Promise<{ code: string
               {/* Telefone */}
               {link.require_phone && (
                 <div>
-                  <Label className="text-white flex items-center gap-2">
+                  <Label className="flex items-center gap-2">
                     <Phone className="w-4 h-4" />
                     Telefone *
                   </Label>
@@ -397,7 +437,7 @@ export default function PayLinkPage({ params }: { params: Promise<{ code: string
                       setFormData({ ...formData, payer_phone: formatPhone(e.target.value) })
                     }
                     maxLength={15}
-                    className="mt-1 bg-white/5 border-white/10 text-white"
+                    className="mt-1 bg-[var(--ck-surface)] border-[var(--ck-border)]"
                   />
                 </div>
               )}
@@ -405,7 +445,7 @@ export default function PayLinkPage({ params }: { params: Promise<{ code: string
               {/* CPF */}
               {link.require_cpf && (
                 <div>
-                  <Label className="text-white flex items-center gap-2">
+                  <Label className="flex items-center gap-2">
                     <FileText className="w-4 h-4" />
                     CPF *
                   </Label>
@@ -416,8 +456,18 @@ export default function PayLinkPage({ params }: { params: Promise<{ code: string
                       setFormData({ ...formData, payer_cpf: formatCPF(e.target.value) })
                     }
                     maxLength={14}
-                    className="mt-1 bg-white/5 border-white/10 text-white"
+                    className="mt-1 bg-[var(--ck-surface)] border-[var(--ck-border)]"
                   />
+                </div>
+              )}
+
+              {formError && (
+                <div
+                  role="alert"
+                  className="flex items-start gap-2 rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2.5 text-sm text-red-200"
+                >
+                  <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+                  <span>{formError}</span>
                 </div>
               )}
 
@@ -425,7 +475,7 @@ export default function PayLinkPage({ params }: { params: Promise<{ code: string
                 onClick={handleSubmit}
                 disabled={processing}
                 className="w-full h-12 text-lg font-semibold"
-                style={{ backgroundColor: primaryColor }}
+                style={{ backgroundColor: primaryColor, color: readableOn(primaryColor) }}
               >
                 {processing ? (
                   <Loader2 className="w-5 h-5 animate-spin" />
@@ -437,7 +487,7 @@ export default function PayLinkPage({ params }: { params: Promise<{ code: string
                 )}
               </Button>
 
-              <div className="flex items-center justify-center gap-2 text-xs text-gray-400">
+              <div className="flex items-center justify-center gap-2 text-xs opacity-70">
                 <Shield className="w-4 h-4" />
                 Pagamento seguro via PIX
               </div>
@@ -447,8 +497,8 @@ export default function PayLinkPage({ params }: { params: Promise<{ code: string
           {step === "payment" && paymentData && (
             <div className="p-6 space-y-4">
               <div className="text-center">
-                <p className="text-sm text-gray-400 mb-1">Valor a pagar</p>
-                <p className="text-3xl font-bold text-white">
+                <p className="text-sm opacity-70 mb-1">Valor a pagar</p>
+                <p className="text-3xl font-bold">
                   {formatCurrency(paymentData.amount)}
                 </p>
               </div>
@@ -465,23 +515,25 @@ export default function PayLinkPage({ params }: { params: Promise<{ code: string
               )}
               {!qrCodeImage && paymentData.pix_code && (
                 <div className="bg-white rounded-2xl p-4 mx-auto w-fit flex items-center justify-center w-48 h-48">
-                  <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
+                  <Loader2 className="w-8 h-8 animate-spin opacity-70" />
                 </div>
               )}
 
               {/* Codigo PIX */}
               <div>
-                <Label className="text-white text-sm mb-2 block">Codigo PIX Copia e Cola</Label>
+                <Label className="text-sm mb-2 block">Codigo PIX Copia e Cola</Label>
                 <div className="flex gap-2">
                   <Input
                     value={paymentData.pix_code}
                     readOnly
-                    className="bg-white/5 border-white/10 text-white text-xs"
+                    className="bg-[var(--ck-surface)] border-[var(--ck-border)] text-xs"
                   />
                   <Button
                     onClick={copyPixCode}
                     variant="outline"
-                    className="border-white/10 shrink-0"
+                    aria-label="Copiar codigo PIX"
+                    className="border-[var(--ck-border)] bg-[var(--ck-surface)] shrink-0 hover:bg-[var(--ck-surface)]"
+                    style={{ color: textColor }}
                   >
                     {copied ? (
                       <Check className="w-4 h-4 text-green-400" />
@@ -492,12 +544,12 @@ export default function PayLinkPage({ params }: { params: Promise<{ code: string
                 </div>
               </div>
 
-              <div className="flex items-center justify-center gap-2 text-sm text-gray-400">
+              <div className="flex items-center justify-center gap-2 text-sm opacity-70">
                 <Clock className="w-4 h-4 animate-pulse" />
                 Aguardando pagamento...
               </div>
 
-              <div className="text-center text-xs text-gray-500">
+              <div className="text-center text-xs opacity-60">
                 <p>Abra o app do seu banco</p>
                 <p>Escolha pagar com PIX</p>
                 <p>Escaneie o QR Code ou cole o codigo</p>
@@ -513,12 +565,12 @@ export default function PayLinkPage({ params }: { params: Promise<{ code: string
               >
                 <Check className="w-10 h-10" style={{ color: primaryColor }} />
               </div>
-              <h2 className="text-xl font-bold text-white mb-2">Pagamento Confirmado!</h2>
-              <p className="text-gray-400">
+              <h2 className="text-xl font-bold mb-2">Pagamento Confirmado!</h2>
+              <p className="opacity-70">
                 {link.success_message || "Obrigado pelo seu pagamento."}
               </p>
               {paymentData && (
-                <p className="text-2xl font-bold text-white mt-4">
+                <p className="text-2xl font-bold mt-4">
                   {formatCurrency(paymentData.amount)}
                 </p>
               )}
@@ -533,9 +585,9 @@ export default function PayLinkPage({ params }: { params: Promise<{ code: string
           transition={{ delay: 0.2 }}
           className="text-center mt-6"
         >
-          <p className="text-xs text-gray-500">
+          <p className="text-xs opacity-60">
             Pagamento processado por{" "}
-            <span className="font-semibold text-gray-400">Hyperion Pay</span>
+            <span className="font-semibold opacity-70">Hyperion Pay</span>
           </p>
         </motion.div>
       </div>

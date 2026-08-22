@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { sql } from "@/lib/db";
 import { notifyPixPaid } from "@/lib/notifications";
 import { notifyDeposit, notifyWithdrawal, notifyUserTransaction } from "@/lib/telegram/notify";
+import { confirmPaymentAtomically } from "@/lib/payment-confirmation";
 
 // Comparacao de strings em tempo constante para evitar timing attacks.
 function safeEqual(a: string, b: string): boolean {
@@ -59,30 +60,28 @@ export async function POST(request: NextRequest) {
         if (txResult.length > 0) {
           const transaction = txResult[0];
 
-          await sql`
-            UPDATE transactions
-            SET status = 'completed', paid_at = ${data.paid_at || new Date().toISOString()}, payer_name = ${data.payer?.name}, payer_document = ${data.payer?.document}
-            WHERE id = ${transaction.id}
-          `;
+          if (data.payer?.name || data.payer?.document) {
+            await sql`
+              UPDATE transactions
+              SET payer_name = COALESCE(${data.payer?.name || null}, payer_name),
+                  payer_document = COALESCE(${data.payer?.document || null}, payer_document)
+              WHERE id = ${transaction.id}
+            `;
+          }
 
-          const newBalance = (Number(transaction.profile_balance) || 0) + Number(transaction.net_amount);
-          await sql`
-            UPDATE profiles SET balance = ${newBalance}, updated_at = NOW() WHERE id = ${transaction.user_id}
-          `;
+          const confirmation = await confirmPaymentAtomically(
+            transaction.id,
+            "payment_webhook",
+            data.paid_at || null,
+          );
 
-          await sql`
-            INSERT INTO audit_logs (id, user_id, action, entity_id, entity_type, description, metadata, created_at)
-            VALUES (${crypto.randomUUID()}, ${transaction.user_id}, 'PAYMENT_CONFIRMED', ${transaction.id}, 'transaction', ${`Pagamento de R$ ${transaction.amount.toFixed(2)} confirmado`}, ${JSON.stringify({ transaction_id: transaction.id, payer: data.payer })}, NOW())
-          `;
+          if (confirmation.credited) {
+            await notifyPixPaid(transaction.user_id, confirmation.grossAmount || 0, confirmation.netAmount || 0, data.payer?.name || undefined, transaction.id);
 
-          // Notificacao (sino + push) idempotente por transacao - evita duplicidade
-          // caso o webhook Medusa, o polling ou o cron tambem detectem este pagamento.
-          await notifyPixPaid(transaction.user_id, Number(transaction.amount), Number(transaction.net_amount), data.payer?.name || undefined, transaction.id);
-          
-          // Notificar no Telegram
-          const fee = Number(transaction.amount) - Number(transaction.net_amount);
-          await notifyDeposit(transaction.user_id, Number(transaction.amount), fee);
-          await notifyUserTransaction(transaction.user_id, "deposit", Number(transaction.net_amount), "completed");
+            const fee = (confirmation.grossAmount || 0) - (confirmation.netAmount || 0);
+            await notifyDeposit(transaction.user_id, confirmation.grossAmount || 0, fee);
+            await notifyUserTransaction(transaction.user_id, "deposit", confirmation.netAmount || 0, "completed");
+          }
         }
         break;
       }

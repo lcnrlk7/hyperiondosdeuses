@@ -278,22 +278,37 @@ export async function POST(request: NextRequest) {
 
     // Buscar adquirente baseado na rota do usuário
     const acquirer = await getAcquirerForUser(sessionUser.id);
+    if (!requiresApproval && !acquirer) {
+      return NextResponse.json({ error: "Nenhuma adquirente disponível para saque" }, { status: 503 });
+    }
 
-    let acquirerWithdrawalId = null;
-    let withdrawalStatus = requiresApproval ? "pending" : "processing";
+    const withdrawalId = crypto.randomUUID();
+    const detectedPixKeyType = pixKeyType || detectPixKeyType(pixKey);
+    let acquirerWithdrawalId: string | null = null;
+    let withdrawalStatus = requiresApproval ? "pending" : "reserved";
 
-    // SEGURANCA: Débito ATÔMICO com trava de saldo. O UPDATE só desconta se o
-    // saldo ainda cobrir o valor no momento da escrita. Isso impede double-spend
-    // por requisições concorrentes (varios saques disparados ao mesmo tempo para
-    // sacar mais do que o saldo real). Se nenhuma linha for afetada, rejeita.
-    const debitResult = await sql`
-      UPDATE profiles 
-      SET balance = balance - ${totalDebit}
-      WHERE id = ${sessionUser.id} AND balance >= ${totalDebit}
+    // Reserva saldo e cria o registro local numa unica transacao SQL. A chamada
+    // externa so acontece depois que existe uma intencao persistida e auditavel.
+    const reservation = await sql`
+      WITH debited AS (
+        UPDATE profiles
+        SET balance = balance - ${totalDebit}, updated_at = NOW()
+        WHERE id = ${sessionUser.id}
+          AND balance >= ${totalDebit}
+        RETURNING id
+      )
+      INSERT INTO withdrawals (
+        id, user_id, amount, fee, net_amount,
+        pix_key, pix_key_type, status, created_at
+      )
+      SELECT
+        ${withdrawalId}, ${sessionUser.id}, ${totalDebit}, ${totalFee}, ${netAmount},
+        ${pixKey}, ${detectedPixKeyType}, ${withdrawalStatus}, NOW()
+      FROM debited
       RETURNING id
     `;
 
-    if (debitResult.length === 0) {
+    if (reservation.length === 0) {
       await logSuspiciousActivity(
         sessionUser.id,
         "WITHDRAWAL_RACE_BLOCKED",
@@ -306,67 +321,46 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Se não requer aprovação, processar automaticamente
     if (!requiresApproval && acquirer) {
-      const detectedPixKeyType = pixKeyType || detectPixKeyType(pixKey);
-      
       const withdrawalResult = await processWithdrawal(
         netAmount,
         pixKey,
         sessionUser.id,
         detectedPixKeyType,
-        `Saque Hyperion Pay - ${user.name || user.email}`
+        `Saque Hyperion Pay - ${user.name || user.email}`,
+        `wd-${withdrawalId}`,
       );
 
       if (withdrawalResult.success && withdrawalResult.withdrawalId) {
         acquirerWithdrawalId = String(withdrawalResult.withdrawalId);
         withdrawalStatus = "processing";
-      } else {
-        // Se falhar no processamento automático, devolver saldo e marcar como failed
-        console.error("[Withdrawal] Falha ao processar saque automático:", withdrawalResult.error);
-        
-        // Devolver saldo ao usuário
         await sql`
-          UPDATE profiles SET balance = balance + ${totalDebit} WHERE id = ${sessionUser.id}
+          UPDATE withdrawals
+          SET status = 'processing', acquirer_withdrawal_id = ${acquirerWithdrawalId}, updated_at = NOW()
+          WHERE id = ${withdrawalId} AND status = 'reserved'
         `;
-        
-        // Retornar erro com mensagem da adquirente
-        const errorMessage = withdrawalResult.error || "Falha ao processar saque na adquirente";
+      } else {
+        // Erro definitivo sem ID externo: marca failed e devolve a reserva uma unica vez.
+        const refund = await sql`
+          WITH failed AS (
+            UPDATE withdrawals
+            SET status = 'failed', failure_reason = ${withdrawalResult.error || "Falha na adquirente"}, updated_at = NOW()
+            WHERE id = ${withdrawalId} AND status = 'reserved'
+            RETURNING user_id, amount
+          )
+          UPDATE profiles p
+          SET balance = p.balance + failed.amount, updated_at = NOW()
+          FROM failed
+          WHERE p.id = failed.user_id
+          RETURNING p.id
+        `;
+        console.error("[Withdrawal] Falha ao processar saque automático:", withdrawalResult.error);
         return NextResponse.json({
           success: false,
-          error: errorMessage,
+          error: withdrawalResult.error || "Falha ao processar saque na adquirente",
+          refunded: refund.length > 0,
         }, { status: 400 });
       }
-    }
-
-    // Salvar saque no banco (incluindo acquirer_withdrawal_id diretamente)
-    // amount = valor a receber, totalDebit = valor debitado (amount + taxa)
-    const withdrawalId = crypto.randomUUID();
-    const savedResult = await sql`
-      INSERT INTO withdrawals (
-        id, user_id, amount, fee, net_amount,
-        pix_key, pix_key_type, status, acquirer_withdrawal_id, created_at
-      )
-      VALUES (
-        ${withdrawalId}, ${sessionUser.id},
-        ${totalDebit}, ${totalFee}, ${netAmount}, ${pixKey}, ${pixKeyType || detectPixKeyType(pixKey)},
-        ${withdrawalStatus}, ${acquirerWithdrawalId}, NOW()
-      )
-      RETURNING id, acquirer_withdrawal_id
-    `;
-    
-    console.log(`[Withdrawal] Saque salvo: id=${withdrawalId}, total_debit=${totalDebit}, net=${netAmount}, fee=${totalFee}, status=${withdrawalStatus}`);
-
-    if (savedResult.length === 0) {
-      // Reverter saldo se falhar ao salvar
-      await sql`
-        UPDATE profiles SET balance = balance + ${totalDebit} WHERE id = ${sessionUser.id}
-      `;
-        
-      return NextResponse.json(
-        { error: "Erro ao processar saque. Tente novamente." },
-        { status: 500 }
-      );
     }
 
     // Registrar log de auditoria

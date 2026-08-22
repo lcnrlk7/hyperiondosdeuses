@@ -5,6 +5,7 @@ import { notifyPixPaid } from "@/lib/notifications";
 import { logTransactionStatusUpdate } from "@/lib/discord-webhook";
 import { sendMerchantWebhook } from "@/lib/merchant-webhook";
 import { MedusaOnline, MEDUSA_ONLINE_STATUS_MAP } from "@/lib/acquirers/medusa-online";
+import { confirmPaymentAtomically } from "@/lib/payment-confirmation";
 
 /**
  * Webhook receptor da liquidante Medusa Online (api.medusapayments.online)
@@ -28,27 +29,54 @@ import { MedusaOnline, MEDUSA_ONLINE_STATUS_MAP } from "@/lib/acquirers/medusa-o
  * webhook seja forjado, nenhum saldo e creditado sem o aval da adquirente.
  */
 
-// Verifica a assinatura HMAC SHA-256 (quando presente). Retorna true se
-// nao houver assinatura/secret (a confirmacao server-to-server garante a seguranca).
+// Comparacao em tempo constante, tolerante a tamanhos diferentes.
+function safeEqual(a: string, b: string): boolean {
+  const bufA = Buffer.from(a);
+  const bufB = Buffer.from(b);
+  if (bufA.length !== bufB.length) return false;
+  return crypto.timingSafeEqual(bufA, bufB);
+}
+
+/**
+ * Verifica a assinatura HMAC SHA-256 do evento.
+ *
+ * Retorna true quando nao ha assinatura ou secret configurado: nesse caso a
+ * seguranca fica a cargo da reconfirmacao server-to-server com a adquirente.
+ * Aceita digest em hex e base64, com ou sem o prefixo "sha256=", porque o
+ * formato varia entre provedores.
+ */
 function verifyHmac(rawBody: string, secret: string | null, signature: string | null): boolean {
-  if (!secret || !signature) return true; // sem segredo configurado -> confia na reconfirmacao
+  if (!secret) return true; // reconfirmacao server-to-server permanece obrigatoria
+  if (!signature) return false;
   try {
-    const expected = crypto.createHmac("sha256", secret).update(rawBody).digest("hex");
-    const provided = signature.replace(/^sha256=/, "").trim();
-    if (expected.length !== provided.length) return false;
-    return crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(provided));
+    const provided = signature.replace(/^sha256=/i, "").trim();
+    // Um objeto Hmac nao pode ser reaproveitado apos digest(), por isso um por encoding.
+    const hex = crypto.createHmac("sha256", secret).update(rawBody).digest("hex");
+    const base64 = crypto.createHmac("sha256", secret).update(rawBody).digest("base64");
+    return safeEqual(hex, provided.toLowerCase()) || safeEqual(base64, provided);
   } catch {
     return false;
   }
 }
 
-async function confirmWithAcquirer(acquirerId: string | undefined, vendaId: string): Promise<string | null> {
-  if (!acquirerId) return null;
-  const rows = await sql`SELECT api_key, api_url FROM acquirers WHERE id = ${acquirerId} LIMIT 1`;
+async function confirmWithAcquirer(
+  acquirerId: string | undefined,
+  vendaId: string,
+  empresaId?: string
+): Promise<{ status: string | null; amount?: number; simulated?: boolean } | null> {
+  // Prioriza a adquirente registrada na transacao; se ausente (ex.: transacoes
+  // antigas), localiza pela empresa que assinou o evento.
+  const rows = acquirerId
+    ? await sql`SELECT api_key, api_url FROM acquirers WHERE id = ${acquirerId} LIMIT 1`
+    : empresaId
+      ? await sql`SELECT api_key, api_url FROM acquirers WHERE company_id = ${empresaId} AND is_active = true LIMIT 1`
+      : [];
   if (rows.length === 0) return null;
   const client = new MedusaOnline({ apiKey: rows[0].api_key, baseUrl: rows[0].api_url });
   const result = await client.getPix(vendaId);
-  return result.success ? result.status || null : null;
+  return result.success
+    ? { status: result.status || null, amount: result.amount, simulated: result.simulated }
+    : null;
 }
 
 export async function POST(request: NextRequest) {
@@ -57,7 +85,9 @@ export async function POST(request: NextRequest) {
     const signature =
       request.headers.get("x-webhook-signature") ||
       request.headers.get("x-signature") ||
-      request.headers.get("x-medusa-signature");
+      request.headers.get("x-medusa-signature") ||
+      request.headers.get("x-hub-signature-256") ||
+      request.headers.get("signature");
 
     let payload: any;
     try {
@@ -73,14 +103,6 @@ export async function POST(request: NextRequest) {
     const simulada: boolean = Boolean(dados.simulada ?? payload.simulada ?? false);
 
     console.log(`[Medusa Online Webhook] evento=${evento} vendaId=${vendaId} eventId=${eventId} simulada=${simulada}`);
-
-    // Log bruto do webhook para auditoria
-    try {
-      await sql`
-        INSERT INTO webhook_logs (id, url, payload, response_status, success, created_at)
-        VALUES (${crypto.randomUUID()}, 'medusa-online', ${JSON.stringify(payload)}, 200, true, NOW())
-      `;
-    } catch {}
 
     // Vendas simuladas (modo teste) nunca geram saldo — apenas confirmar recebimento.
     if (simulada) {
@@ -119,11 +141,49 @@ export async function POST(request: NextRequest) {
     const transaction = transactions[0];
 
     // Verifica HMAC usando o secret da adquirente (se configurado)
-    const acqSecret = await sql`SELECT webhook_secret FROM acquirers WHERE id = ${transaction.acquirer_id} LIMIT 1`;
+    // Prioriza a adquirente gravada na transacao; se ausente (transacoes antigas),
+    // localiza pela empresa que assinou o evento.
+    const empresaId: string | undefined = payload.empresaId || payload.companyId;
+    const acqSecret = transaction.acquirer_id
+      ? await sql`SELECT webhook_secret, company_id FROM acquirers WHERE id = ${transaction.acquirer_id} LIMIT 1`
+      : empresaId
+        ? await sql`SELECT webhook_secret, company_id FROM acquirers WHERE company_id = ${empresaId} LIMIT 1`
+        : [];
     const secret = acqSecret.length > 0 ? acqSecret[0].webhook_secret : null;
     if (!verifyHmac(rawBody, secret, signature)) {
       console.warn(`[Medusa Online Webhook] Assinatura HMAC inválida para venda ${vendaId}`);
+      try {
+        await sql`
+          INSERT INTO webhook_logs (id, url, payload, response_status, success, response_body, created_at)
+          VALUES (${crypto.randomUUID()}, 'medusa-online', ${JSON.stringify(payload)}, 401, false,
+                  'Assinatura HMAC invalida', NOW())
+        `;
+      } catch {}
       return NextResponse.json({ error: "Assinatura inválida" }, { status: 401 });
+    }
+
+    const configuredCompanyId = acqSecret[0]?.company_id as string | undefined;
+    if (empresaId && configuredCompanyId && empresaId !== configuredCompanyId) {
+      return NextResponse.json({ error: "Empresa divergente" }, { status: 400 });
+    }
+
+    // Timestamp e eventId sao controles adicionais; a transicao atomica continua
+    // sendo a barreira final caso o provedor omita qualquer um deles.
+    const eventTimestamp = payload.timestamp ? Date.parse(payload.timestamp) : NaN;
+    if (Number.isFinite(eventTimestamp) && Math.abs(Date.now() - eventTimestamp) > 10 * 60 * 1000) {
+      return NextResponse.json({ error: "Evento expirado" }, { status: 400 });
+    }
+    if (eventId) {
+      const duplicate = await sql`
+        SELECT id FROM webhook_logs
+        WHERE url = 'medusa-online'
+          AND success = true
+          AND payload->>'eventId' = ${eventId}
+        LIMIT 1
+      `;
+      if (duplicate.length > 0) {
+        return NextResponse.json({ success: true, message: "Evento já processado" });
+      }
     }
 
     // Já creditado?
@@ -150,24 +210,35 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true, message: "Transação já creditada" });
     }
 
-    const confirmedStatus = await confirmWithAcquirer(transaction.acquirer_id, String(vendaId));
-    if (confirmedStatus !== "completed") {
-      console.warn(`[Medusa Online Webhook] Pagamento ${vendaId} NÃO confirmado pela adquirente (status=${confirmedStatus}). Ignorando crédito.`);
+    const confirmed = await confirmWithAcquirer(
+      transaction.acquirer_id,
+      String(vendaId),
+      payload.empresaId || payload.companyId
+    );
+    if (confirmed?.status !== "completed" || confirmed.simulated) {
+      console.warn(`[Medusa Online Webhook] Pagamento não confirmado pela adquirente para venda ${vendaId}`);
       return NextResponse.json({ success: true, message: "Pagamento não confirmado pela adquirente" });
     }
 
-    // Creditar saldo
-    const netAmount = Number(transaction.net_amount) || (Number(transaction.amount) - Number(transaction.fee || 0));
-    const currentBalance = Number(transaction.profile_balance) || 0;
-    const newBalance = currentBalance + netAmount;
+    const expectedAmount = Number(transaction.amount);
+    if (!Number.isFinite(confirmed.amount) || Math.abs(Number(confirmed.amount) - expectedAmount) > 0.009) {
+      console.warn(`[Medusa Online Webhook] Valor divergente para venda ${vendaId}`);
+      return NextResponse.json({ error: "Valor divergente" }, { status: 400 });
+    }
 
-    await sql`
-      UPDATE transactions SET status = 'completed', paid_at = COALESCE(paid_at, NOW()), updated_at = NOW()
-      WHERE id = ${transaction.id}
-    `;
-    await sql`UPDATE profiles SET balance = ${newBalance}, updated_at = NOW() WHERE id = ${transaction.user_id}`;
+    // Transicao de status + credito + auditoria em uma unica operacao atomica.
+    const confirmation = await confirmPaymentAtomically(
+      transaction.id as string,
+      "medusa_online_webhook",
+      dados.paidAt || dados.paid_at || null,
+    );
+    if (!confirmation.credited) {
+      return NextResponse.json({ success: true, message: "Transação já creditada" });
+    }
 
-    const grossAmount = Number(transaction.amount) || 0;
+    const netAmount = confirmation.netAmount || 0;
+    const grossAmount = confirmation.grossAmount || 0;
+    const newBalance = confirmation.newBalance || 0;
     await notifyPixPaid(transaction.user_id as string, grossAmount, netAmount, transaction.payer_name as string | undefined, transaction.id as string);
 
     logTransactionStatusUpdate({
@@ -178,12 +249,6 @@ export async function POST(request: NextRequest) {
       oldStatus: "pending",
       newStatus: "completed",
     });
-
-    await sql`
-      INSERT INTO audit_logs (id, user_id, action, entity_type, entity_id, new_value, created_at)
-      VALUES (${crypto.randomUUID()}, ${transaction.user_id}, 'PAYMENT_CONFIRMED', 'transaction', ${transaction.id},
-        ${JSON.stringify({ amount: grossAmount, net_amount: netAmount, new_balance: newBalance, source: "medusa_online_webhook" })}, NOW())
-    `;
 
     // Comissao de afiliado (R$ 0,05 por transacao) — mesmo padrao do webhook legado
     try {
@@ -223,7 +288,20 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    console.log(`[Medusa Online Webhook] Creditado R$ ${netAmount.toFixed(2)} para usuário ${transaction.user_id}. Novo saldo: R$ ${newBalance.toFixed(2)}`);
+    try {
+      await sql`
+        INSERT INTO webhook_logs (id, user_id, transaction_id, url, payload, response_status, success, created_at)
+        VALUES (${crypto.randomUUID()}, ${transaction.user_id}, ${transaction.id}, 'medusa-online', ${JSON.stringify({
+          eventId: eventId || null,
+          evento,
+          vendaId,
+          empresaId: empresaId || null,
+          timestamp: payload.timestamp || null,
+        })}, 200, true, NOW())
+      `;
+    } catch {}
+
+    console.log(`[Medusa Online Webhook] Pagamento ${transaction.id} confirmado e creditado`);
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("[Medusa Online Webhook] Erro:", error);

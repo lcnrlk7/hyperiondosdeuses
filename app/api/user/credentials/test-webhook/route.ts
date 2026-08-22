@@ -93,7 +93,7 @@ export async function POST(request: NextRequest) {
       },
     })
   } catch (error) {
-    console.error("[v0] Error testing webhook:", error)
+    console.error("Error testing webhook:", error)
     return NextResponse.json({ error: "Erro interno" }, { status: 500 })
   }
 }

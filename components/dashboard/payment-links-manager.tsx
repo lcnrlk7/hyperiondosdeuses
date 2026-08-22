@@ -16,6 +16,8 @@ import {
   ExternalLink,
   Ban,
   RotateCcw,
+  Palette,
+  ImageIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -44,6 +46,9 @@ interface PaymentLink {
   status: string;
   total_received: number | null;
   created_at: string;
+  logo_url: string | null;
+  primary_color: string | null;
+  background_color: string | null;
 }
 
 interface FormState {
@@ -53,7 +58,22 @@ interface FormState {
   amount: string;
   expires_at: string;
   max_uses: string;
+  logo_url: string;
+  primary_color: string;
+  background_color: string;
 }
+
+const DEFAULT_PRIMARY = "#f97316";
+const DEFAULT_BACKGROUND = "#0a0a0a";
+
+const COLOR_PRESETS: { name: string; primary: string; background: string }[] = [
+  { name: "Hyperion", primary: "#f97316", background: "#0a0a0a" },
+  { name: "Oceano", primary: "#0ea5e9", background: "#071019" },
+  { name: "Esmeralda", primary: "#10b981", background: "#06120f" },
+  { name: "Rubi", primary: "#e11d48", background: "#140508" },
+  { name: "Indigo", primary: "#6366f1", background: "#0b0b18" },
+  { name: "Claro", primary: "#111827", background: "#f5f5f4" },
+];
 
 const emptyForm: FormState = {
   title: "",
@@ -61,6 +81,9 @@ const emptyForm: FormState = {
   amount: "",
   expires_at: "",
   max_uses: "",
+  logo_url: "",
+  primary_color: DEFAULT_PRIMARY,
+  background_color: DEFAULT_BACKGROUND,
 };
 
 const formatCurrency = (value: number | null | undefined) =>
@@ -158,6 +181,9 @@ export function PaymentLinksManager() {
       amount: link.amount != null ? String(link.amount) : "",
       expires_at: link.expires_at ? link.expires_at.slice(0, 10) : "",
       max_uses: link.max_uses != null ? String(link.max_uses) : "",
+      logo_url: link.logo_url || "",
+      primary_color: link.primary_color || DEFAULT_PRIMARY,
+      background_color: link.background_color || DEFAULT_BACKGROUND,
     });
     setError(null);
     setModalOpen(true);
@@ -186,6 +212,9 @@ export function PaymentLinksManager() {
         amount_type: "fixed",
         expires_at: form.expires_at || null,
         max_uses: form.max_uses ? Number(form.max_uses) : null,
+        logo_url: form.logo_url.trim() || null,
+        primary_color: form.primary_color || DEFAULT_PRIMARY,
+        background_color: form.background_color || DEFAULT_BACKGROUND,
       };
 
       const res = await fetch("/api/payment-links", {
@@ -450,7 +479,7 @@ export function PaymentLinksManager() {
             className="absolute inset-0 bg-overlay"
             onClick={() => !saving && setModalOpen(false)}
           />
-          <div className="relative w-full max-w-md rounded-2xl border border-border bg-card shadow-xl">
+          <div className="relative w-full max-w-md max-h-[90vh] overflow-y-auto rounded-2xl border border-border bg-card shadow-xl">
             <div className="flex items-center justify-between px-6 py-4 border-b border-border">
               <div className="flex items-center gap-2">
                 <span className="w-1 h-5 rounded-full bg-primary" />
@@ -541,6 +570,152 @@ export function PaymentLinksManager() {
                     placeholder="Ilimitado"
                     className="w-full rounded-lg border border-border bg-input-solid px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary"
                   />
+                </div>
+              </div>
+
+              {/* Personalizacao visual do checkout */}
+              <div className="pt-2 border-t border-border">
+                <div className="flex items-center gap-1.5 mb-3">
+                  <Palette className="w-3.5 h-3.5 text-primary" />
+                  <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
+                    Personalizacao do checkout
+                  </span>
+                </div>
+
+                <div className="flex flex-wrap gap-2 mb-4">
+                  {COLOR_PRESETS.map((preset) => {
+                    const selected =
+                      form.primary_color.toLowerCase() === preset.primary &&
+                      form.background_color.toLowerCase() === preset.background;
+                    return (
+                      <button
+                        key={preset.name}
+                        type="button"
+                        onClick={() =>
+                          setForm({
+                            ...form,
+                            primary_color: preset.primary,
+                            background_color: preset.background,
+                          })
+                        }
+                        className={`flex items-center gap-2 rounded-lg border px-2.5 py-1.5 text-xs transition-colors ${
+                          selected
+                            ? "border-primary text-foreground"
+                            : "border-border text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        <span className="flex -space-x-1">
+                          <span
+                            className="w-3 h-3 rounded-full border border-border"
+                            style={{ backgroundColor: preset.primary }}
+                          />
+                          <span
+                            className="w-3 h-3 rounded-full border border-border"
+                            style={{ backgroundColor: preset.background }}
+                          />
+                        </span>
+                        {preset.name}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-1.5">
+                      Cor principal
+                    </label>
+                    <div className="flex items-center gap-2 rounded-lg border border-border bg-input-solid px-2 py-1.5">
+                      <input
+                        type="color"
+                        value={form.primary_color}
+                        onChange={(e) =>
+                          setForm({ ...form, primary_color: e.target.value })
+                        }
+                        aria-label="Cor principal do checkout"
+                        className="w-7 h-7 rounded cursor-pointer bg-transparent border-0 p-0"
+                      />
+                      <input
+                        type="text"
+                        value={form.primary_color}
+                        onChange={(e) =>
+                          setForm({ ...form, primary_color: e.target.value })
+                        }
+                        className="w-full bg-transparent text-xs font-mono text-foreground focus:outline-none"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-1.5">
+                      Cor de fundo
+                    </label>
+                    <div className="flex items-center gap-2 rounded-lg border border-border bg-input-solid px-2 py-1.5">
+                      <input
+                        type="color"
+                        value={form.background_color}
+                        onChange={(e) =>
+                          setForm({ ...form, background_color: e.target.value })
+                        }
+                        aria-label="Cor de fundo do checkout"
+                        className="w-7 h-7 rounded cursor-pointer bg-transparent border-0 p-0"
+                      />
+                      <input
+                        type="text"
+                        value={form.background_color}
+                        onChange={(e) =>
+                          setForm({ ...form, background_color: e.target.value })
+                        }
+                        className="w-full bg-transparent text-xs font-mono text-foreground focus:outline-none"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-3">
+                  <label className="flex items-center gap-1.5 text-sm font-medium text-foreground mb-1.5">
+                    <ImageIcon className="w-3.5 h-3.5" />
+                    Logo (URL)
+                  </label>
+                  <input
+                    type="url"
+                    value={form.logo_url}
+                    onChange={(e) => setForm({ ...form, logo_url: e.target.value })}
+                    placeholder="https://sua-marca.com/logo.png"
+                    className="w-full rounded-lg border border-border bg-input-solid px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary"
+                  />
+                </div>
+
+                {/* Previa */}
+                <div
+                  className="mt-4 rounded-xl border border-border p-4 flex items-center gap-3"
+                  style={{ backgroundColor: form.background_color }}
+                >
+                  {form.logo_url ? (
+                    <img
+                      src={form.logo_url || "/placeholder.svg"}
+                      alt=""
+                      className="w-10 h-10 rounded-lg object-cover shrink-0"
+                    />
+                  ) : (
+                    <span
+                      className="w-10 h-10 rounded-lg shrink-0 flex items-center justify-center"
+                      style={{ backgroundColor: `${form.primary_color}33` }}
+                    >
+                      <DollarSign
+                        className="w-5 h-5"
+                        style={{ color: form.primary_color }}
+                      />
+                    </span>
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold truncate" style={{ color: form.primary_color }}>
+                      {form.title || "Titulo do link"}
+                    </p>
+                    <span
+                      className="mt-2 block h-8 rounded-lg"
+                      style={{ backgroundColor: form.primary_color }}
+                    />
+                  </div>
                 </div>
               </div>
 

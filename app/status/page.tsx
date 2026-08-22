@@ -414,7 +414,7 @@ export default function StatusPage() {
         <div className="text-center py-8 border-t border-border">
           <p className="text-sm text-muted-foreground">
             Problemas? Entre em contato pelo{" "}
-            <a href="https://discord.gg/sGmMSYjdnA" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+            <a href="https://discord.gg/Babac43dDJ" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
               Discord
             </a>{" "}
             ou{" "}

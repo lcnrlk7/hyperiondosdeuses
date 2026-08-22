@@ -1,9 +1,13 @@
 import { NextResponse } from "next/server";
 import { sql } from "@/lib/db";
+import { verifyAdmin, accessDeniedResponse } from "@/lib/admin-auth";
 
 // GET - Criar tabela payment_links
 export async function GET() {
   try {
+    const admin = await verifyAdmin();
+    if (!admin) return accessDeniedResponse();
+
     // Criar tabela payment_links
     await sql`
       CREATE TABLE IF NOT EXISTS payment_links (

@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { sql } from "@/lib/db";
 import { notifyPixPaid } from "@/lib/notifications";
+import { confirmPaymentAtomically } from "@/lib/payment-confirmation";
+import { isCronAuthorized } from "@/lib/cron-auth";
 
 // Mapeamento de status da Medusa para status interno
 const MEDUSA_STATUS_MAP: Record<string, string> = {
@@ -43,12 +45,7 @@ export async function GET(request: Request) {
   const dbSql = sql;
   
   try {
-    // Verificar se é uma requisição interna ou do Vercel Cron
-    const authHeader = request.headers.get("authorization");
-    const url = new URL(request.url);
-    const isInternal = url.searchParams.get("internal") === "true";
-    
-    if (!isInternal && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    if (!isCronAuthorized(request)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -183,29 +180,18 @@ export async function GET(request: Request) {
       if (internalStatus !== "pending" && internalStatus !== transaction.status) {
         try {
           if (internalStatus === "completed") {
-            // Atualizar transação
-            await sql`
-              UPDATE transactions 
-              SET status = 'completed', paid_at = NOW()
-              WHERE id = ${transaction.id}
-            `;
+            const confirmation = await confirmPaymentAtomically(transaction.id, "cron_sync_transactions");
 
-            // Creditar saldo ao usuário
-            const netAmount = Number(transaction.net_amount) || 0;
-            const currentBalance = Number(transaction.user_balance) || 0;
-            const newBalance = currentBalance + netAmount;
-
-            await sql`
-              UPDATE profiles SET balance = ${newBalance}
-              WHERE id = ${transaction.user_id}
-            `;
-
-            // Notificacao (sino + push) idempotente por transacao - evita duplicidade
-            // caso o webhook ou o polling tambem detectem este pagamento.
-            const grossAmount = Number(transaction.amount) || netAmount;
-            await notifyPixPaid(transaction.user_id, grossAmount, netAmount, transaction.payer_name || undefined, transaction.id);
-
-            console.log(`[Sync Transactions] Creditado R$ ${netAmount.toFixed(2)} para usuário ${transaction.user_id}`);
+            if (confirmation.credited) {
+              await notifyPixPaid(
+                transaction.user_id,
+                confirmation.grossAmount || 0,
+                confirmation.netAmount || 0,
+                transaction.payer_name || undefined,
+                transaction.id,
+              );
+              console.log(`[Sync Transactions] Pagamento ${transaction.id} creditado com sucesso`);
+            }
           } else if (internalStatus === "failed" || internalStatus === "refunded") {
             await sql`
               UPDATE transactions SET status = ${internalStatus} WHERE id = ${transaction.id}

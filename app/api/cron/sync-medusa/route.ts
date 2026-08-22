@@ -1,19 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sql } from "@/lib/db";
 import { MedusaPayments } from "@/lib/acquirers/medusa";
+import { confirmPaymentAtomically } from "@/lib/payment-confirmation";
+import { isCronAuthorized } from "@/lib/cron-auth";
 
 // API para sincronizar status das transações pendentes com a Medusa
 // Pode ser chamada manualmente ou via cron job
 
 export async function GET(request: NextRequest) {
   try {
-    // Verificar secret para segurança (opcional para cron)
-    const authHeader = request.headers.get("authorization");
-    const cronSecret = process.env.CRON_SECRET;
-    
-    if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
-      // Permitir acesso sem auth para testes (remover em produção)
-      console.log("[Sync Medusa] Acesso sem autenticação");
+    if (!isCronAuthorized(request)) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     // Buscar chave da Medusa
@@ -184,18 +181,16 @@ export async function POST(request: NextRequest) {
     if (medusaStatus === "paid" || medusaStatus === "approved" || medusaStatus === "completed") {
       if (tx.status !== "completed") {
         await sql`
-          UPDATE transactions 
-          SET status = 'completed', acquirer_transaction_id = ${String(txMedusaId)}, updated_at = NOW()
+          UPDATE transactions
+          SET acquirer_transaction_id = ${String(txMedusaId)}, updated_at = NOW()
           WHERE id = ${tx.id}
         `;
-        
-        const netAmount = parseFloat(tx.net_amount);
-        await sql`UPDATE profiles SET balance = balance + ${netAmount} WHERE id = ${tx.user_id}`;
+        const confirmation = await confirmPaymentAtomically(tx.id, "cron_sync_medusa");
 
         return NextResponse.json({
           success: true,
-          message: "Transação atualizada para completed",
-          credited: netAmount,
+          message: confirmation.credited ? "Transação atualizada para completed" : "Transação já processada",
+          credited: confirmation.credited ? confirmation.netAmount : 0,
           medusa_status: medusaStatus,
         });
       }
