@@ -3,6 +3,7 @@ import { sql } from "@/lib/db"
 import { getSession } from "@/lib/auth"
 import { v4 as uuidv4 } from "uuid"
 import crypto from "crypto"
+import { validatePublicHttpsUrl } from "@/lib/safe-webhook-url"
 
 const MAX_INTEGRATIONS = 7
 
@@ -34,9 +35,15 @@ export async function GET() {
       ORDER BY created_at DESC
     `
 
+    const safeIntegrations = (integrations || []).map((integration) => ({
+      ...integration,
+      client_secret: integration.client_secret ? "••••••••" : null,
+      webhook_secret: integration.webhook_secret ? "••••••••" : null,
+    }))
+
     return NextResponse.json({
       success: true,
-      integrations: integrations || [],
+      integrations: safeIntegrations,
       limit: MAX_INTEGRATIONS,
       remaining: MAX_INTEGRATIONS - (integrations?.length || 0),
     })
@@ -131,7 +138,20 @@ export async function PUT(request: Request) {
     const newName = name !== undefined ? name.trim() : current.name
     const newDescription = description !== undefined ? (description?.trim() || null) : current.description
     const newWebsiteUrl = website_url !== undefined ? (website_url?.trim() || null) : current.website_url
-    const newWebhookUrl = webhook_url !== undefined ? (webhook_url?.trim() || null) : current.webhook_url
+    let newWebhookUrl = current.webhook_url
+    if (webhook_url !== undefined) {
+      newWebhookUrl = webhook_url?.trim() || null
+      if (newWebhookUrl) {
+        try {
+          await validatePublicHttpsUrl(newWebhookUrl)
+        } catch (error) {
+          return NextResponse.json(
+            { error: error instanceof Error ? error.message : "Webhook URL invalida" },
+            { status: 400 },
+          )
+        }
+      }
+    }
     const newIsActive = is_active !== undefined ? is_active : current.is_active
     const newClientSecret = regenerate_secret === "client" ? generateClientSecret() : current.client_secret
     const newWebhookSecret = regenerate_secret === "webhook" ? generateWebhookSecret() : current.webhook_secret

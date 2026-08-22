@@ -253,18 +253,27 @@ export async function POST(request: NextRequest) {
     // Criar ID do saque
     const withdrawalId = `wd_${crypto.randomUUID()}`;
 
-    // SEGURANCA: débito ATÔMICO com trava de saldo ANTES de registrar o saque.
-    // Impede double-spend por requisições concorrentes na API. Se o saldo já
-    // não cobrir (outra requisição debitou antes), nenhuma linha é afetada e
-    // rejeitamos sem inserir o saque.
-    const debitResult = await sql`
-      UPDATE profiles
-      SET balance = balance - ${totalDebit}, updated_at = NOW()
-      WHERE id = ${profile.id} AND balance >= ${totalDebit}
+    // Reserva o saldo e persiste a intencao em uma unica instrucao atomica.
+    const reservation = await sql`
+      WITH debited AS (
+        UPDATE profiles
+        SET balance = balance - ${totalDebit}, updated_at = NOW()
+        WHERE id = ${profile.id} AND balance >= ${totalDebit}
+        RETURNING id
+      )
+      INSERT INTO withdrawals (
+        id, user_id, amount, fee, pix_key, pix_key_type,
+        external_id, description, status, created_at
+      )
+      SELECT
+        ${withdrawalId}, ${profile.id}, ${amount}, ${withdrawalFee}, ${pix_key},
+        ${pix_key_type.toLowerCase()}, ${external_id || null}, ${description || null},
+        'reserved', NOW()
+      FROM debited
       RETURNING id
     `;
 
-    if (debitResult.length === 0) {
+    if (reservation.length === 0) {
       await logSuspiciousActivity(profile.id, "API_WITHDRAWAL_RACE_BLOCKED", `Débito concorrente/saldo insuficiente. TotalDebit: ${totalDebit}`, ip);
       return NextResponse.json(
         { success: false, error: "Saldo insuficiente ou operacao concorrente detectada.", code: "INSUFFICIENT_BALANCE" },
@@ -272,14 +281,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Inserir saque no banco (saldo ja debitado com trava)
-    await sql`
-      INSERT INTO withdrawals (id, user_id, amount, fee, pix_key, pix_key_type, external_id, description, status, created_at)
-      VALUES (${withdrawalId}, ${profile.id}, ${amount}, ${withdrawalFee}, ${pix_key}, ${pix_key_type.toLowerCase()}, ${external_id || null}, ${description || null}, 'pending', NOW())
-    `;
-
     // Processar saque automaticamente se valor <= R$ 500
-    let status = 'pending';
+    let status = 'reserved';
 
     if (amount <= 500) {
       try {
