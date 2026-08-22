@@ -19,6 +19,7 @@ import {
   ChevronDown,
 } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import { MobileDashboard } from "./mobile-dashboard";
 import {
   AreaChart,
@@ -213,6 +214,18 @@ export function DashboardContent({ profile, transactions, pixKeys }: DashboardCo
 
   return (
     <>
+      <div className="mb-6 overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+        <Image
+          src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/967fe929-a539-44bd-b42d-50feaa57f174-OqXx52mfxATzAeTcKY7wFcFrH3e7Dn.png"
+          alt="Beneficios da Hyperion Pay com estabilidade nas transacoes, premiacoes e novidades"
+          width={2048}
+          height={409}
+          priority
+          sizes="(max-width: 1024px) 100vw, 1200px"
+          className="h-auto w-full object-cover"
+        />
+      </div>
+
       {/* Mobile */}
       <div className="lg:hidden">
         <MobileDashboard profile={profile} transactions={transactions} />
