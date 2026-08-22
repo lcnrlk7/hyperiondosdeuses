@@ -28,15 +28,30 @@ import { MedusaOnline, MEDUSA_ONLINE_STATUS_MAP } from "@/lib/acquirers/medusa-o
  * webhook seja forjado, nenhum saldo e creditado sem o aval da adquirente.
  */
 
-// Verifica a assinatura HMAC SHA-256 (quando presente). Retorna true se
-// nao houver assinatura/secret (a confirmacao server-to-server garante a seguranca).
+// Comparacao em tempo constante, tolerante a tamanhos diferentes.
+function safeEqual(a: string, b: string): boolean {
+  const bufA = Buffer.from(a);
+  const bufB = Buffer.from(b);
+  if (bufA.length !== bufB.length) return false;
+  return crypto.timingSafeEqual(bufA, bufB);
+}
+
+/**
+ * Verifica a assinatura HMAC SHA-256 do evento.
+ *
+ * Retorna true quando nao ha assinatura ou secret configurado: nesse caso a
+ * seguranca fica a cargo da reconfirmacao server-to-server com a adquirente.
+ * Aceita digest em hex e base64, com ou sem o prefixo "sha256=", porque o
+ * formato varia entre provedores.
+ */
 function verifyHmac(rawBody: string, secret: string | null, signature: string | null): boolean {
-  if (!secret || !signature) return true; // sem segredo configurado -> confia na reconfirmacao
+  if (!secret || !signature) return true;
   try {
-    const expected = crypto.createHmac("sha256", secret).update(rawBody).digest("hex");
-    const provided = signature.replace(/^sha256=/, "").trim();
-    if (expected.length !== provided.length) return false;
-    return crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(provided));
+    const provided = signature.replace(/^sha256=/i, "").trim();
+    // Um objeto Hmac nao pode ser reaproveitado apos digest(), por isso um por encoding.
+    const hex = crypto.createHmac("sha256", secret).update(rawBody).digest("hex");
+    const base64 = crypto.createHmac("sha256", secret).update(rawBody).digest("base64");
+    return safeEqual(hex, provided.toLowerCase()) || safeEqual(base64, provided);
   } catch {
     return false;
   }
@@ -66,7 +81,9 @@ export async function POST(request: NextRequest) {
     const signature =
       request.headers.get("x-webhook-signature") ||
       request.headers.get("x-signature") ||
-      request.headers.get("x-medusa-signature");
+      request.headers.get("x-medusa-signature") ||
+      request.headers.get("x-hub-signature-256") ||
+      request.headers.get("signature");
 
     let payload: any;
     try {
@@ -128,10 +145,24 @@ export async function POST(request: NextRequest) {
     const transaction = transactions[0];
 
     // Verifica HMAC usando o secret da adquirente (se configurado)
-    const acqSecret = await sql`SELECT webhook_secret FROM acquirers WHERE id = ${transaction.acquirer_id} LIMIT 1`;
+    // Prioriza a adquirente gravada na transacao; se ausente (transacoes antigas),
+    // localiza pela empresa que assinou o evento.
+    const empresaId: string | undefined = payload.empresaId || payload.companyId;
+    const acqSecret = transaction.acquirer_id
+      ? await sql`SELECT webhook_secret FROM acquirers WHERE id = ${transaction.acquirer_id} LIMIT 1`
+      : empresaId
+        ? await sql`SELECT webhook_secret FROM acquirers WHERE company_id = ${empresaId} LIMIT 1`
+        : [];
     const secret = acqSecret.length > 0 ? acqSecret[0].webhook_secret : null;
     if (!verifyHmac(rawBody, secret, signature)) {
       console.warn(`[Medusa Online Webhook] Assinatura HMAC inválida para venda ${vendaId}`);
+      try {
+        await sql`
+          INSERT INTO webhook_logs (id, url, payload, response_status, success, response_body, created_at)
+          VALUES (${crypto.randomUUID()}, 'medusa-online', ${JSON.stringify(payload)}, 401, false,
+                  'Assinatura HMAC invalida', NOW())
+        `;
+      } catch {}
       return NextResponse.json({ error: "Assinatura inválida" }, { status: 401 });
     }
 
