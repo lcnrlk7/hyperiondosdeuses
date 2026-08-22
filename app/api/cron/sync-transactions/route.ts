@@ -45,12 +45,7 @@ export async function GET(request: Request) {
   const dbSql = sql;
   
   try {
-    // Verificar se é uma requisição interna ou do Vercel Cron
-    const authHeader = request.headers.get("authorization");
-    const url = new URL(request.url);
-    const isInternal = url.searchParams.get("internal") === "true";
-    
-    if (!isInternal && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    if (!isCronAuthorized(request)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 

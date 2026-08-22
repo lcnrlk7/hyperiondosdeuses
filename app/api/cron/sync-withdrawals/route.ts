@@ -43,13 +43,7 @@ export async function GET(request: Request) {
   const dbSql = sql;
   
   try {
-    // Verificar autorização
-    const authHeader = request.headers.get("authorization");
-    const cronSecret = process.env.CRON_SECRET;
-    const { searchParams } = new URL(request.url);
-    const isInternal = searchParams.get("internal") === "true";
-
-    if (!isInternal && cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+    if (!isCronAuthorized(request)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 

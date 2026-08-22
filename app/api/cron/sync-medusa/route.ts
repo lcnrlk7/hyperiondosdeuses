@@ -9,13 +9,8 @@ import { isCronAuthorized } from "@/lib/cron-auth";
 
 export async function GET(request: NextRequest) {
   try {
-    // Verificar secret para segurança (opcional para cron)
-    const authHeader = request.headers.get("authorization");
-    const cronSecret = process.env.CRON_SECRET;
-    
-    if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
-      // Permitir acesso sem auth para testes (remover em produção)
-      console.log("[Sync Medusa] Acesso sem autenticação");
+    if (!isCronAuthorized(request)) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     // Buscar chave da Medusa
