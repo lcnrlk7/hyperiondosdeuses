@@ -214,7 +214,12 @@ export async function POST(
         ${txId}, ${link.user_id}, 'pix_in', 'pending', ${finalAmount}, ${fee}, ${netAmount},
         ${payer_name || null}, ${payer_email || null}, ${payer_cpf || null},
         ${`Pagamento via link: ${link.title}`}, ${transactionId},
-        ${JSON.stringify({ payment_link_id: link.id, payment_link_code: link.code })}
+        ${JSON.stringify({
+          payment_link_id: link.id,
+          payment_link_code: link.code,
+          acquirer_id: profile.acquirer_id,
+          acquirer_code: profile.acquirer_code,
+        })}
       )
       RETURNING *
     `;

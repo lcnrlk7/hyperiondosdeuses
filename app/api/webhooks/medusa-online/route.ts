@@ -42,9 +42,18 @@ function verifyHmac(rawBody: string, secret: string | null, signature: string | 
   }
 }
 
-async function confirmWithAcquirer(acquirerId: string | undefined, vendaId: string): Promise<string | null> {
-  if (!acquirerId) return null;
-  const rows = await sql`SELECT api_key, api_url FROM acquirers WHERE id = ${acquirerId} LIMIT 1`;
+async function confirmWithAcquirer(
+  acquirerId: string | undefined,
+  vendaId: string,
+  empresaId?: string
+): Promise<string | null> {
+  // Prioriza a adquirente registrada na transacao; se ausente (ex.: transacoes
+  // antigas), localiza pela empresa que assinou o evento.
+  const rows = acquirerId
+    ? await sql`SELECT api_key, api_url FROM acquirers WHERE id = ${acquirerId} LIMIT 1`
+    : empresaId
+      ? await sql`SELECT api_key, api_url FROM acquirers WHERE company_id = ${empresaId} AND is_active = true LIMIT 1`
+      : [];
   if (rows.length === 0) return null;
   const client = new MedusaOnline({ apiKey: rows[0].api_key, baseUrl: rows[0].api_url });
   const result = await client.getPix(vendaId);
@@ -150,7 +159,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true, message: "Transação já creditada" });
     }
 
-    const confirmedStatus = await confirmWithAcquirer(transaction.acquirer_id, String(vendaId));
+    const confirmedStatus = await confirmWithAcquirer(
+      transaction.acquirer_id,
+      String(vendaId),
+      payload.empresaId || payload.companyId
+    );
     if (confirmedStatus !== "completed") {
       console.warn(`[Medusa Online Webhook] Pagamento ${vendaId} NÃO confirmado pela adquirente (status=${confirmedStatus}). Ignorando crédito.`);
       return NextResponse.json({ success: true, message: "Pagamento não confirmado pela adquirente" });

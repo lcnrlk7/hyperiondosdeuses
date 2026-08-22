@@ -115,15 +115,17 @@ export class MedusaOnline {
       });
 
       const venda = data.venda || {};
-      const dp = data.dadosPagamento || {};
+      // A API pode devolver os dados do PIX em venda.dadosPix, data.dadosPagamento
+      // ou direto na raiz. Cobrimos os tres formatos.
+      const dp = venda.dadosPix || data.dadosPix || data.dadosPagamento || {};
       const rawStatus = String(venda.status || data.status || "pendente");
 
       return {
         success: true,
         transactionId: String(venda.id || data.id || ""),
-        qrCode: data.pixCopiaECola || dp.copiaECola || undefined,
-        qrCodeBase64: data.pixQrCode || dp.qrCode || undefined,
-        expiresAt: data.pixExpiresAt || dp.expiresAt || undefined,
+        qrCode: dp.copiaECola || dp.pixCopiaECola || data.pixCopiaECola || undefined,
+        qrCodeBase64: dp.qrCode || data.pixQrCode || undefined,
+        expiresAt: dp.expiresAt || data.pixExpiresAt || undefined,
         amount: Number(venda.valor || data.valor || params.valor),
         status: MEDUSA_ONLINE_STATUS_MAP[rawStatus] || rawStatus,
         simulated: Boolean(data.simulada ?? venda.simulada ?? false),
