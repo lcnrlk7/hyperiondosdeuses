@@ -55,14 +55,10 @@ export function ServiceWorkerRegister() {
           return;
         }
 
-        // Solicitar permissão se ainda não foi concedida
+        // O pedido de permissao precisa partir do clique no prompt visivel.
+        // Aqui apenas restauramos/atualizamos uma inscricao ja autorizada.
         if (Notification.permission === "default") {
-          const permission = await Notification.requestPermission();
-          setPermissionState(permission);
-          if (permission !== "granted") {
-            console.log("[SW] Notification permission not granted");
-            return;
-          }
+          return;
         }
 
         // Obter registration do SW

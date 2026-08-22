@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { sql } from "@/lib/db";
 import { isCronAuthorized } from "@/lib/cron-auth";
+import { notifyWithdrawalCompleted, notifyWithdrawalFailed } from "@/lib/notifications";
 
 // Mapeamento de status da Medusa para status interno
 const MEDUSA_STATUS_MAP: Record<string, string> = {
@@ -51,7 +52,7 @@ export async function GET(request: Request) {
 
     // Buscar saques em processamento com acquirer_withdrawal_id
     const pendingWithdrawals = await sql`
-      SELECT id, user_id, amount, net_amount, pix_key, acquirer_withdrawal_id, status, created_at
+      SELECT id, user_id, amount, net_amount, fee, pix_key, acquirer_withdrawal_id, status, created_at
       FROM withdrawals
       WHERE status = 'processing'
         AND acquirer_withdrawal_id IS NOT NULL
@@ -159,35 +160,26 @@ export async function GET(request: Request) {
         `;
 
         if (internalStatus === "completed") {
-          await sql`
-            INSERT INTO user_notifications (id, user_id, title, message, type, created_at)
-            VALUES (
-              ${crypto.randomUUID()},
-              ${withdrawal.user_id},
-              'Saque Concluído!',
-              ${`Seu saque de R$ ${Number(withdrawal.net_amount).toFixed(2)} foi enviado para sua chave PIX.`},
-              'success',
-              NOW()
-            )
-          `;
+          await notifyWithdrawalCompleted(
+            withdrawal.user_id,
+            Number(withdrawal.amount),
+            Number(withdrawal.net_amount),
+            Number(withdrawal.fee) || 0,
+            withdrawal.pix_key || "",
+            withdrawal.acquirer_withdrawal_id
+          );
         } else if (internalStatus === "failed") {
           // Devolver saldo
           await sql`
             UPDATE profiles SET balance = balance + ${Number(withdrawal.amount)}
             WHERE id = ${withdrawal.user_id}
           `;
-          
-          await sql`
-            INSERT INTO user_notifications (id, user_id, title, message, type, created_at)
-            VALUES (
-              ${crypto.randomUUID()},
-              ${withdrawal.user_id},
-              'Saque Falhou',
-              ${`Seu saque de R$ ${Number(withdrawal.amount).toFixed(2)} falhou. O valor foi devolvido ao seu saldo.`},
-              'error',
-              NOW()
-            )
-          `;
+
+          await notifyWithdrawalFailed(
+            withdrawal.user_id,
+            Number(withdrawal.amount),
+            "A adquirente recusou o saque"
+          );
         }
 
         results.push({

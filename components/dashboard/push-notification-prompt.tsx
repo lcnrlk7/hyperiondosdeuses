@@ -5,17 +5,21 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Bell, X, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { VAPID_PUBLIC_KEY } from "@/lib/vapid";
+import { useAuth } from "@/components/auth-provider";
 
-interface PushNotificationPromptProps {
-  userId: string;
-}
-
-export function PushNotificationPrompt({ userId }: PushNotificationPromptProps) {
+export function PushNotificationPrompt() {
+  const { user } = useAuth();
+  const userId = user?.id;
   const [showPrompt, setShowPrompt] = useState(false);
   const [isSubscribing, setIsSubscribing] = useState(false);
   const [isSubscribed, setIsSubscribed] = useState(false);
 
   useEffect(() => {
+    // So mostra o prompt depois que o usuario esta autenticado
+    if (!userId) {
+      return;
+    }
+
     // Verificar se o navegador suporta notificações
     if (!("Notification" in window) || !("serviceWorker" in navigator)) {
       return;
