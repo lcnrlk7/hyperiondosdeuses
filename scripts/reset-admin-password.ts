@@ -1,11 +1,15 @@
 import bcrypt from 'bcryptjs';
 import { neon } from '@neondatabase/serverless';
 
-const DATABASE_URL = process.env.DATABASE_URL || 'postgresql://neondb_owner:npg_To8gys4jEZpb@ep-snowy-pine-ancq443l-pooler.c-6.us-east-1.aws.neon.tech/neondb?sslmode=require';
-const sql = neon(DATABASE_URL);
+const DATABASE_URL = process.env.DATABASE_URL;
+const email = process.env.RESET_ADMIN_EMAIL;
+const newPassword = process.env.RESET_ADMIN_PASSWORD;
 
-const email = 'elicecontadodiscord@gmail.com';
-const newPassword = 'Hyp3r10n@C30#2024!Sec';
+if (!DATABASE_URL || !email || !newPassword || newPassword.length < 12) {
+  throw new Error('Defina DATABASE_URL, RESET_ADMIN_EMAIL e RESET_ADMIN_PASSWORD (minimo 12 caracteres)');
+}
+
+const sql = neon(DATABASE_URL);
 
 async function run() {
   const users = await sql`SELECT id, email, name, is_admin FROM profiles WHERE email = ${email}`;

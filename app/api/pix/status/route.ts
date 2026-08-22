@@ -4,6 +4,7 @@ import { sql } from "@/lib/db";
 import { MedusaPayments, MEDUSA_STATUS_MAP } from "@/lib/acquirers/medusa";
 import { MedusaOnline } from "@/lib/acquirers/medusa-online";
 import { notifyPixPaid } from "@/lib/notifications";
+import { confirmPaymentAtomically } from "@/lib/payment-confirmation";
 
 export async function GET(request: NextRequest) {
   try {
@@ -176,52 +177,31 @@ export async function GET(request: NextRequest) {
         if (newStatus !== transaction.status) {
           paidAt = paidAt || (newStatus === "completed" ? new Date().toISOString() : null);
 
-          await sql`
-            UPDATE transactions SET status = ${newStatus}, paid_at = ${paidAt}, updated_at = NOW()
-            WHERE id = ${transactionId}
-          `;
-
           if (newStatus === "completed") {
-            const profileResult = await sql`SELECT balance FROM profiles WHERE id = ${userId}`;
-            const currentBalance = Number(profileResult[0]?.balance) || 0;
-            const netAmount = Number(transaction.net_amount) || Number(transaction.amount);
-            const feeAmount = Number(transaction.fee) || 0;
+            const confirmation = await confirmPaymentAtomically(
+              transactionId,
+              `pix_status:${acquirerCode || "unknown"}`,
+              paidAt,
+            );
 
-            await sql`UPDATE profiles SET balance = ${currentBalance + netAmount} WHERE id = ${userId}`;
-
-            // Notificacao (sino + push) idempotente por transacao - evita duplicidade
-            // caso o webhook tambem detecte este pagamento.
-            try {
-              const grossAmount = Number(transaction.amount) || netAmount;
-              await notifyPixPaid(userId, grossAmount, netAmount, transaction.payer_name || undefined, transactionId);
-            } catch (notifError) {
-              console.error("Error creating notification:", notifError);
+            if (confirmation.credited) {
+              try {
+                await notifyPixPaid(
+                  userId,
+                  confirmation.grossAmount || 0,
+                  confirmation.netAmount || 0,
+                  transaction.payer_name || undefined,
+                  transactionId,
+                );
+              } catch (notifError) {
+                console.error("Error creating notification:", notifError);
+              }
             }
-
-            // Log da transação completada
-            try {
-              await sql`
-                INSERT INTO audit_logs (id, user_id, action, entity_type, entity_id, new_value, created_at)
-                VALUES (
-                  ${crypto.randomUUID()}, 
-                  ${userId}, 
-                  ${'PIX_COMPLETED'}, 
-                  ${'transaction'}, 
-                  ${transaction.id},
-                  ${JSON.stringify({ 
-                    transaction_id: transaction.id, 
-                    amount: Number(transaction.amount),
-                    fee: feeAmount,
-                    net_amount: netAmount,
-                    acquirer: acquirerCode,
-                    description: `PIX de R$ ${Number(transaction.amount).toFixed(2)} recebido (Taxa: R$ ${feeAmount.toFixed(2)} | Líquido: R$ ${netAmount.toFixed(2)})`
-                  })}, 
-                  NOW()
-                )
-              `;
-            } catch (logError) {
-              console.error("Error creating audit log:", logError);
-            }
+          } else {
+            await sql`
+              UPDATE transactions SET status = ${newStatus}, paid_at = ${paidAt}, updated_at = NOW()
+              WHERE id = ${transactionId} AND status IN ('pending', 'processing')
+            `;
           }
 
           return NextResponse.json({

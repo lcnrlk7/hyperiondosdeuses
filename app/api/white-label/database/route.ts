@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { neon } from "@neondatabase/serverless"
 import { cookies } from "next/headers"
 import { jwtVerify } from "jose"
+import { getJwtSecret } from "@/lib/jwt-secret"
 import { testDatabaseConnection, setupTenantDatabase } from "@/lib/white-label"
 
 function getDb() {
@@ -11,9 +12,7 @@ function getDb() {
   return neon(process.env.DATABASE_URL)
 }
 
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || "fallback-secret-change-in-production"
-)
+const JWT_SECRET = getJwtSecret()
 
 async function getUserId(): Promise<string | null> {
   try {

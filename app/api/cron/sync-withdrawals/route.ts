@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { sql } from "@/lib/db";
+import { isCronAuthorized } from "@/lib/cron-auth";
 
 // Mapeamento de status da Medusa para status interno
 const MEDUSA_STATUS_MAP: Record<string, string> = {

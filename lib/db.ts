@@ -1,7 +1,11 @@
 import { neon, NeonQueryFunction } from '@neondatabase/serverless'
 
-// URL do banco de dados principal
-const DATABASE_URL = process.env.DATABASE_URL || 'postgresql://neondb_owner:npg_To8gys4jEZpb@ep-snowy-pine-ancq443l-pooler.c-6.us-east-1.aws.neon.tech/neondb?sslmode=require'
+// URL do banco de dados principal. Falha fechada: credenciais nunca ficam no codigo.
+const DATABASE_URL = process.env.DATABASE_URL
+
+if (!DATABASE_URL) {
+  throw new Error('DATABASE_URL nao configurada')
+}
 
 // Conexao lazy
 let _sql: NeonQueryFunction<false, false> | null = null
