@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { sql } from "@/lib/db";
 import { MedusaPayments } from "@/lib/acquirers/medusa";
 import { getSystemFeesForUser } from "@/lib/acquirers";
+import { MedusaOnline, isMedusaOnline } from "@/lib/acquirers/medusa-online";
 
 // GET - Buscar payment link por codigo (publico)
 export async function GET(
@@ -168,8 +169,10 @@ export async function POST(
         p.*,
         a.id as acquirer_id,
         a.code as acquirer_code,
+        a.api_url as acquirer_api_url,
         a.api_key as acquirer_api_key,
         a.api_secret as acquirer_api_secret,
+        a.max_ticket as acquirer_max_ticket,
         a.is_active as acquirer_active
       FROM profiles p
       LEFT JOIN acquirers a ON a.id = p.acquirer_id
@@ -217,9 +220,67 @@ export async function POST(
     `;
 
     // Gerar PIX via Medusa (mesmo padrao do /api/pix/create)
-    let pixResult: { success: boolean; data?: { qrCode?: string; transactionId?: string }; error?: string };
+    let pixResult: {
+      success: boolean;
+      data?: { qrCode?: string; qrCodeBase64?: string; transactionId?: string; expiresAt?: string };
+      error?: string;
+    };
 
-    if (profile.acquirer_code === 'medusa' || profile.acquirer_code === 'medusa_white') {
+    const acquirerConfig = {
+      code: profile.acquirer_code as string | undefined,
+      api_url: profile.acquirer_api_url as string | undefined,
+    };
+
+    if (isMedusaOnline(acquirerConfig)) {
+      // Liquidante Medusa Online (api.medusapayments.online) - Bearer + valores em reais
+      try {
+        const maxTicket = Number(profile.acquirer_max_ticket) || 0;
+        if (maxTicket > 0 && finalAmount > maxTicket) {
+          await sql`UPDATE transactions SET status = 'failed' WHERE id = ${txId}`;
+          return NextResponse.json(
+            { error: `Valor maximo permitido para este checkout: R$ ${maxTicket.toFixed(2)}` },
+            { status: 400 }
+          );
+        }
+
+        const client = new MedusaOnline({
+          apiKey: profile.acquirer_api_key,
+          baseUrl: profile.acquirer_api_url || undefined,
+        });
+
+        const result = await client.createPix({
+          valor: finalAmount,
+          clienteNome: (payer_name || "Cliente").trim(),
+          clienteEmail: (payer_email || "cliente@hyperionpay.com.br").trim(),
+          clienteCpf: payer_cpf ? String(payer_cpf).replace(/\D/g, "") : "36009722004",
+          clienteTelefone: payer_phone ? String(payer_phone).replace(/\D/g, "") : undefined,
+          produto: link.title,
+          idempotencyKey: transactionId,
+        });
+
+        if (!result.success) {
+          pixResult = { success: false, error: result.error };
+        } else if (!result.qrCode) {
+          pixResult = { success: false, error: "A adquirente nao retornou o codigo PIX" };
+        } else {
+          pixResult = {
+            success: true,
+            data: {
+              qrCode: result.qrCode,
+              qrCodeBase64: result.qrCodeBase64,
+              transactionId: result.transactionId,
+              expiresAt: result.expiresAt,
+            },
+          };
+        }
+      } catch (error) {
+        console.error("[payment-links] Medusa Online error:", error);
+        pixResult = {
+          success: false,
+          error: error instanceof Error ? error.message : "Erro ao criar cobranca PIX",
+        };
+      }
+    } else if (profile.acquirer_code === 'medusa' || profile.acquirer_code === 'medusa_white') {
       try {
         const medusa = new MedusaPayments({
           secretKey: profile.acquirer_api_key,
@@ -302,7 +363,9 @@ export async function POST(
       amount: finalAmount,
       pix_code: pixResult.data.qrCode,
       qr_code: pixResult.data.qrCode,
-      expires_at: new Date(Date.now() + 30 * 60 * 1000).toISOString(), // 30 min
+      qr_code_image: pixResult.data.qrCodeBase64 || null,
+      expires_at:
+        pixResult.data.expiresAt || new Date(Date.now() + 30 * 60 * 1000).toISOString(),
     });
   } catch (error) {
     console.error("Error creating payment:", error);
