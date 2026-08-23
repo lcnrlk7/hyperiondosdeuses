@@ -3,6 +3,7 @@ import { cookies } from 'next/headers'
 import { sql } from './db'
 import bcrypt from 'bcryptjs'
 import { getJwtSecret } from './jwt-secret'
+import { ensureMultiAccountSchema, resolveActiveAccountId } from './multi-account'
 
 const JWT_SECRET = getJwtSecret()
 
@@ -93,14 +94,34 @@ export async function removeAuthCookie() {
   cookieStore.delete(COOKIE_NAME)
 }
 
-// Get current user from cookie (for Server Components)
-export async function getCurrentUser(): Promise<SessionUser | null> {
+// Get the authenticated principal encoded in the signed JWT.
+export async function getPrincipalUser(): Promise<SessionUser | null> {
   const cookieStore = await cookies()
   const token = cookieStore.get(COOKIE_NAME)?.value
-  
   if (!token) return null
-  
   return verifyToken(token)
+}
+
+// Resolve the financial account selected by the authenticated principal.
+// Ownership is checked server-side on every request, preventing account ID spoofing.
+export async function getCurrentUser(): Promise<SessionUser | null> {
+  const principal = await getPrincipalUser()
+  if (!principal) return null
+
+  const activeId = await resolveActiveAccountId(principal.id)
+  if (activeId === principal.id) return principal
+
+  const result = await sql`
+    SELECT child.id, child.email, child.account_name as name,
+           CASE WHEN parent.is_admin THEN 'admin' ELSE 'user' END as role,
+           parent.kyc_status
+    FROM profiles child
+    JOIN profiles parent ON parent.id = child.parent_profile_id
+    WHERE child.id = ${activeId} AND parent.id = ${principal.id}
+    LIMIT 1
+  `
+
+  return (result[0] as SessionUser) || principal
 }
 
 // Get session (alias for getCurrentUser with userId format)
@@ -126,11 +147,18 @@ export async function verifyAuth(token: string): Promise<{ userId: string; email
 export async function getFullUser(userId: string): Promise<User | null> {
   try {
     const result = await sql`
-      SELECT id, email, name, phone, cpf_cnpj as document, 'cpf' as document_type, 
-             CASE WHEN is_admin THEN 'admin' ELSE 'user' END as role, kyc_status, 
-             created_at, api_key, client_secret as api_secret, webhook_url
-      FROM profiles
-      WHERE id = ${userId}
+      SELECT child.id,
+             CASE WHEN child.parent_profile_id IS NOT NULL THEN parent.email ELSE child.email END as email,
+             COALESCE(child.account_name, child.name) as name,
+             COALESCE(parent.phone, child.phone) as phone,
+             COALESCE(parent.cpf_cnpj, child.cpf_cnpj) as document,
+             'cpf' as document_type,
+             CASE WHEN COALESCE(parent.is_admin, child.is_admin) THEN 'admin' ELSE 'user' END as role,
+             COALESCE(parent.kyc_status, child.kyc_status) as kyc_status,
+             child.created_at, child.api_key, child.client_secret as api_secret, child.webhook_url
+      FROM profiles child
+      LEFT JOIN profiles parent ON parent.id = child.parent_profile_id
+      WHERE child.id = ${userId}
     `
     return result[0] as User || null
   } catch {
@@ -203,10 +231,11 @@ export async function loginUser(
   password: string
 ): Promise<{ user: SessionUser | null; error: string | null }> {
   try {
+    await ensureMultiAccountSchema()
     console.log("[v0] loginUser called with email:", email)
     
     const result = await sql`
-      SELECT id, email, name, CASE WHEN is_admin THEN 'admin' ELSE 'user' END as role, kyc_status, password_hash, is_active, is_blocked
+      SELECT id, email, name, CASE WHEN is_admin THEN 'admin' ELSE 'user' END as role, kyc_status, password_hash, is_active, is_blocked, COALESCE(login_disabled, false) as login_disabled
       FROM profiles
       WHERE email = ${email}
     `
@@ -218,7 +247,11 @@ export async function loginUser(
       return { user: null, error: 'Email ou senha incorretos' }
     }
 
-    const user = result[0] as User & { password_hash: string; is_active: boolean; is_blocked: boolean }
+    const user = result[0] as User & { password_hash: string; is_active: boolean; is_blocked: boolean; login_disabled: boolean }
+
+    if (user.login_disabled) {
+      return { user: null, error: 'Esta conta vinculada deve ser acessada pelo seletor da conta principal.' }
+    }
     
     console.log("[v0] User found:", { id: user.id, email: user.email, is_active: user.is_active, is_blocked: user.is_blocked, hasPasswordHash: !!user.password_hash })
     

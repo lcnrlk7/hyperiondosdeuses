@@ -37,6 +37,7 @@ import {
   MonitorSmartphone,
   Ban,
   Link2,
+  Building2,
   type LucideIcon,
 } from "lucide-react";
 import { AdminTopbar } from "@/components/ceo/admin-topbar";
@@ -92,6 +93,7 @@ const menuCategories: MenuCategory[] = [
     color: "blue",
     items: [
       { label: "Todos Usuários", href: "/lp-x7k9m2-internal/ceo/users", icon: Users, permission: "view_users" },
+      { label: "Subcontas", href: "/lp-x7k9m2-internal/ceo/subaccounts", icon: Building2, permission: "view_users" },
       { label: "Verificação KYC", href: "/lp-x7k9m2-internal/ceo/kyc", icon: FileCheck, permission: "view_kyc" },
       { label: "Equipe Admin", href: "/lp-x7k9m2-internal/ceo/team", icon: UserCog, permission: "view_team" },
       { label: "Cargos & Permissões", href: "/lp-x7k9m2-internal/ceo/roles", icon: Shield, permission: "view_team" },

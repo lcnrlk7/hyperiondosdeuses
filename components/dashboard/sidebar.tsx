@@ -32,6 +32,7 @@ import {
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useProfile } from "@/components/profile-provider"
+import { AccountSwitcher } from "@/components/dashboard/account-switcher"
 
 interface Profile {
   id: string
@@ -111,6 +112,8 @@ export function DashboardSidebar({ user, profile: profileProp }: SidebarProps) {
           </div>
         </Link>
       </div>
+
+      <AccountSwitcher activeAccountId={profile?.id || user.id} />
 
       {/* Navigation */}
       <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto scrollbar-hide">

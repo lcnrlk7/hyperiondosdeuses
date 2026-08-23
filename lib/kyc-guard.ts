@@ -18,9 +18,13 @@ import { NextResponse } from "next/server";
  */
 export async function assertUserVerified(userId: string): Promise<NextResponse | null> {
   const rows = await sql`
-    SELECT kyc_status, liveness_status, is_active, is_blocked
-    FROM profiles
-    WHERE id = ${userId}
+    SELECT COALESCE(parent.kyc_status, child.kyc_status) as kyc_status,
+           COALESCE(parent.liveness_status, child.liveness_status) as liveness_status,
+           child.is_active,
+           COALESCE(parent.is_blocked, child.is_blocked) as is_blocked
+    FROM profiles child
+    LEFT JOIN profiles parent ON parent.id = child.parent_profile_id
+    WHERE child.id = ${userId}
   `;
   const p = rows[0];
 
