@@ -1,19 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sql } from "@/lib/db";
-import { verifyToken } from "@/lib/auth";
+import { getCurrentUser, verifyToken } from "@/lib/auth";
 import { nanoid } from "nanoid";
 
 // GET - Listar payment links do usuario
 export async function GET(request: NextRequest) {
   try {
     const token = request.headers.get("authorization")?.replace("Bearer ", "");
-    if (!token) {
-      return NextResponse.json({ error: "Nao autorizado" }, { status: 401 });
-    }
-
-    const payload = await verifyToken(token);
+    const payload = await getCurrentUser() || (token ? await verifyToken(token) : null);
     if (!payload?.id) {
-      return NextResponse.json({ error: "Token invalido" }, { status: 401 });
+      return NextResponse.json({ error: "Nao autorizado" }, { status: 401 });
     }
 
     // Criar tabela se nao existir
@@ -67,13 +63,9 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const token = request.headers.get("authorization")?.replace("Bearer ", "");
-    if (!token) {
-      return NextResponse.json({ error: "Nao autorizado" }, { status: 401 });
-    }
-
-    const payload = await verifyToken(token);
+    const payload = await getCurrentUser() || (token ? await verifyToken(token) : null);
     if (!payload?.id) {
-      return NextResponse.json({ error: "Token invalido" }, { status: 401 });
+      return NextResponse.json({ error: "Nao autorizado" }, { status: 401 });
     }
 
     const body = await request.json();
@@ -145,13 +137,9 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     const token = request.headers.get("authorization")?.replace("Bearer ", "");
-    if (!token) {
-      return NextResponse.json({ error: "Nao autorizado" }, { status: 401 });
-    }
-
-    const payload = await verifyToken(token);
+    const payload = await getCurrentUser() || (token ? await verifyToken(token) : null);
     if (!payload?.id) {
-      return NextResponse.json({ error: "Token invalido" }, { status: 401 });
+      return NextResponse.json({ error: "Nao autorizado" }, { status: 401 });
     }
 
     const body = await request.json();
@@ -215,13 +203,9 @@ export async function PUT(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   try {
     const token = request.headers.get("authorization")?.replace("Bearer ", "");
-    if (!token) {
-      return NextResponse.json({ error: "Nao autorizado" }, { status: 401 });
-    }
-
-    const payload = await verifyToken(token);
+    const payload = await getCurrentUser() || (token ? await verifyToken(token) : null);
     if (!payload?.id) {
-      return NextResponse.json({ error: "Token invalido" }, { status: 401 });
+      return NextResponse.json({ error: "Nao autorizado" }, { status: 401 });
     }
 
     const { searchParams } = new URL(request.url);
