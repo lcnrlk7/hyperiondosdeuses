@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
 import { removeAuthCookie } from "@/lib/auth";
+import { clearActiveAccountCookie } from "@/lib/multi-account";
 
 export async function POST() {
   try {
     await removeAuthCookie();
+    await clearActiveAccountCookie();
     
     return NextResponse.json({ success: true });
   } catch (error) {

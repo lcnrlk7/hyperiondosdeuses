@@ -4,21 +4,21 @@ import { verifyDiditSignature } from "@/lib/didit";
 
 // Mapeia o status da Didit para o status interno de liveness
 function mapStatus(diditStatus: string): string | null {
-  switch (diditStatus) {
-    case "Approved":
+  switch (diditStatus?.trim().toLowerCase().replaceAll("_", " ")) {
+    case "approved":
       return "approved";
-    case "Declined":
+    case "declined":
       return "declined";
-    case "In Review":
+    case "in review":
       return "in_review";
-    case "In Progress":
+    case "in progress":
       return "in_progress";
-    case "Resubmitted":
+    case "resubmitted":
       return "resubmitted";
-    case "Kyc Expired":
-    case "Expired":
+    case "kyc expired":
+    case "expired":
       return "expired";
-    case "Abandoned":
+    case "abandoned":
       return "abandoned";
     default:
       return null; // "Not Started" | "Awaiting User" — sem acao
@@ -89,18 +89,20 @@ export async function POST(request: NextRequest) {
       } catch (e) {
         console.error("[v0] Erro ao atualizar desafio facial:", e);
       }
-    } else if (internalStatus && vendorData) {
+    } else if (internalStatus && (vendorData || sessionId)) {
       try {
         if (internalStatus === "approved") {
-          // Sistema automatico: ao aprovar a prova de vida, libera o KYC na hora.
+          // Usa vendor_data quando disponível e session_id como fallback. Alguns
+          // formatos de webhook da Didit não repetem vendor_data no evento final.
           await sql`
             UPDATE profiles
             SET
               liveness_status = 'approved',
-              liveness_verified_at = NOW(),
+              liveness_verified_at = COALESCE(liveness_verified_at, NOW()),
               liveness_updated_at = NOW(),
               kyc_status = 'approved'
-            WHERE id = ${vendorData}
+            WHERE (${vendorData ?? null}::text IS NOT NULL AND id = ${vendorData ?? null})
+               OR (${sessionId ?? null}::text IS NOT NULL AND liveness_session_id = ${sessionId ?? null})
           `;
         } else {
           await sql`
@@ -108,7 +110,8 @@ export async function POST(request: NextRequest) {
             SET
               liveness_status = ${internalStatus},
               liveness_updated_at = NOW()
-            WHERE id = ${vendorData}
+            WHERE (${vendorData ?? null}::text IS NOT NULL AND id = ${vendorData ?? null})
+               OR (${sessionId ?? null}::text IS NOT NULL AND liveness_session_id = ${sessionId ?? null})
           `;
         }
       } catch (e) {

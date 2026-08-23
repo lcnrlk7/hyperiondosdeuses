@@ -4,18 +4,12 @@ import { sql } from "@/lib/db";
 
 export async function GET(request: NextRequest) {
   try {
-    // Primeiro tenta pegar do header Authorization, depois do cookie
-    let user = null;
-    
+    // The dashboard cookie resolves the selected subaccount. Bearer auth remains
+    // available for API clients that do not have a browser session.
+    let user = await getCurrentUser();
     const authHeader = request.headers.get("authorization");
-    if (authHeader?.startsWith("Bearer ")) {
-      const token = authHeader.slice(7);
-      user = await verifyToken(token);
-    }
-    
-    // Se não encontrou no header, tenta pelo cookie
-    if (!user) {
-      user = await getCurrentUser();
+    if (!user && authHeader?.startsWith("Bearer ")) {
+      user = await verifyToken(authHeader.slice(7));
     }
 
     if (!user) {
@@ -26,9 +20,20 @@ export async function GET(request: NextRequest) {
     }
 
     const result = await sql`
-      SELECT id, name, email, phone, cpf_cnpj as cpf, kyc_status, created_at, route_type, balance, api_key, avatar_url, bio, liveness_status, liveness_verified_at
-      FROM profiles
-      WHERE id = ${user.id}
+      SELECT child.id,
+             COALESCE(child.account_name, child.name) as name,
+             COALESCE(parent.email, child.email) as email,
+             COALESCE(parent.phone, child.phone) as phone,
+             COALESCE(parent.cpf_cnpj, child.cpf_cnpj) as cpf,
+             COALESCE(parent.kyc_status, child.kyc_status) as kyc_status,
+             child.created_at, child.route_type, child.balance, child.api_key,
+             COALESCE(parent.avatar_url, child.avatar_url) as avatar_url,
+             COALESCE(parent.bio, child.bio) as bio,
+             COALESCE(parent.liveness_status, child.liveness_status) as liveness_status,
+             COALESCE(parent.liveness_verified_at, child.liveness_verified_at) as liveness_verified_at
+      FROM profiles child
+      LEFT JOIN profiles parent ON parent.id = child.parent_profile_id
+      WHERE child.id = ${user.id}
     `;
 
     if (result.length === 0) {
@@ -70,18 +75,12 @@ export async function GET(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
-    // Primeiro tenta pegar do header Authorization, depois do cookie
-    let user = null;
-    
+    // The dashboard cookie resolves the selected subaccount. Bearer auth remains
+    // available for API clients that do not have a browser session.
+    let user = await getCurrentUser();
     const authHeader = request.headers.get("authorization");
-    if (authHeader?.startsWith("Bearer ")) {
-      const token = authHeader.slice(7);
-      user = await verifyToken(token);
-    }
-    
-    // Se não encontrou no header, tenta pelo cookie
-    if (!user) {
-      user = await getCurrentUser();
+    if (!user && authHeader?.startsWith("Bearer ")) {
+      user = await verifyToken(authHeader.slice(7));
     }
 
     if (!user) {
@@ -103,7 +102,7 @@ export async function PUT(request: NextRequest) {
           phone = COALESCE(${phone}, phone),
           bio = COALESCE(${bio}, bio),
           updated_at = NOW()
-        WHERE id = ${user.id}
+        WHERE id = (SELECT COALESCE(parent_profile_id, id) FROM profiles WHERE id = ${user.id})
       `;
     }
 

@@ -1,21 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sql } from "@/lib/db";
 import webpush from "web-push";
-import { VAPID_PUBLIC_KEY } from "@/lib/vapid";
+import { configureWebPush } from "@/lib/configure-web-push";
 
-// Configurar VAPID (chave publica de lib/vapid, privada do ambiente)
-const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY;
-
-if (VAPID_PUBLIC_KEY && VAPID_PRIVATE_KEY) {
-  webpush.setVapidDetails(
-    "mailto:suporte@hyperionpay.com.br",
-    VAPID_PUBLIC_KEY,
-    VAPID_PRIVATE_KEY
-  );
-}
+const webPushConfigured = configureWebPush("mailto:suporte@hyperionpay.com.br");
 
 export async function GET(request: NextRequest) {
   try {
+    if (!webPushConfigured) {
+      return NextResponse.json({ error: "VAPID keys not configured" }, { status: 503 });
+    }
+
     const email = request.nextUrl.searchParams.get("email");
     
     if (!email) {

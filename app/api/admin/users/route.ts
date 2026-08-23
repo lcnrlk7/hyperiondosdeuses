@@ -2,6 +2,7 @@ import { sql } from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { verifyAdmin, accessDeniedResponse } from "@/lib/admin-auth";
+import { ensureMultiAccountSchema } from "@/lib/multi-account";
 
 export async function GET(request: NextRequest) {
   // Verificar se e admin (fora do try/catch para garantir 403)
@@ -9,7 +10,7 @@ export async function GET(request: NextRequest) {
   if (!admin) return accessDeniedResponse();
   
   try {
-    
+    await ensureMultiAccountSchema();
     const { searchParams } = new URL(request.url);
     const search = searchParams.get("search");
     const id = searchParams.get("id");
@@ -25,9 +26,10 @@ export async function GET(request: NextRequest) {
       const searchPattern = `%${search}%`;
       const result = await sql`
         SELECT * FROM profiles 
-        WHERE email ILIKE ${searchPattern} 
+        WHERE parent_profile_id IS NULL
+          AND (email ILIKE ${searchPattern} 
            OR name ILIKE ${searchPattern} 
-           OR cpf_cnpj ILIKE ${searchPattern}
+           OR cpf_cnpj ILIKE ${searchPattern})
         LIMIT 10
       `;
       return NextResponse.json({ users: result || [] });
@@ -38,6 +40,7 @@ export async function GET(request: NextRequest) {
         CASE WHEN tfa.is_enabled = true THEN true ELSE false END as has_2fa
       FROM profiles p
       LEFT JOIN two_factor_auth tfa ON tfa.user_id = p.id
+      WHERE p.parent_profile_id IS NULL
       ORDER BY p.created_at DESC
     `;
 

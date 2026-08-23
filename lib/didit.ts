@@ -10,11 +10,18 @@ export const DIDIT_BASE_URL = "https://verification.didit.me";
 
 // URL base da aplicacao (para callback de retorno do usuario)
 export function getAppBaseUrl(): string {
-  return (
+  const configuredUrl =
     process.env.NEXT_PUBLIC_APP_URL ||
     process.env.APP_URL ||
-    "https://hyperionpay.com.br"
-  );
+    "https://www.hyperionpay.com.br";
+  const url = new URL(configuredUrl);
+
+  // O domínio sem www responde com 308. A Didit precisa de callbacks diretos.
+  if (url.hostname === "hyperionpay.com.br") {
+    url.hostname = "www.hyperionpay.com.br";
+  }
+
+  return url.origin;
 }
 
 export interface DiditSession {
@@ -59,6 +66,7 @@ export async function createDiditSession(params: {
     workflow_id: DIDIT_WORKFLOW_ID,
     vendor_data: params.vendorData,
     callback: params.callback,
+    callback_method: "both",
   };
 
   const user = params.user;
@@ -105,6 +113,37 @@ export async function createDiditSession(params: {
   }
 
   return (await res.json()) as DiditSession;
+}
+
+export interface DiditDecision {
+  session_id: string;
+  status?: string;
+  vendor_data?: string;
+}
+
+// Consulta a decisão diretamente na Didit. Isso funciona como reconciliação
+// quando o webhook atrasar ou não chegar, mantendo o banco como fonte local.
+export async function getDiditSessionDecision(
+  sessionId: string,
+): Promise<DiditDecision | null> {
+  const apiKey = process.env.DIDIT_API_KEY;
+  if (!apiKey) return null;
+
+  const res = await fetch(
+    `${DIDIT_BASE_URL}/v3/session/${encodeURIComponent(sessionId)}/decision/`,
+    {
+      headers: { "x-api-key": apiKey },
+      cache: "no-store",
+    },
+  );
+
+  if (!res.ok) {
+    if (res.status === 404) return null;
+    const detail = await res.text();
+    throw new Error(`Didit decision_retrieve_failed (${res.status}): ${detail}`);
+  }
+
+  return (await res.json()) as DiditDecision;
 }
 
 // --- Verificacao de assinatura de webhook (X-Signature-V2) ---

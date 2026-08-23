@@ -15,33 +15,48 @@ export function LivenessBlocker({ livenessStatus, onRefresh }: LivenessBlockerPr
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Liberacao automatica: enquanto bloqueado, consulta o status periodicamente.
-  // Assim que a Didit aprovar (via webhook), o perfil e atualizado e o bloqueio
-  // some sozinho, sem o usuario precisar clicar ou recarregar a pagina.
+  // Liberação automática: no retorno da Didit, envia o verificationSessionId
+  // imediatamente para o servidor reconciliar a decisão oficial. Continua
+  // consultando enquanto estiver em análise para liberar sem recarregar a página.
   useEffect(() => {
     if (livenessStatus === "approved" || !onRefresh) return;
 
-    const interval = setInterval(async () => {
+    let cancelled = false;
+    const checkStatus = async () => {
       try {
-        const token =
-          typeof window !== "undefined"
-            ? localStorage.getItem("auth-token")
-            : null;
-        const res = await fetch("/api/verify/liveness", {
+        const token = localStorage.getItem("auth-token");
+        const params = new URLSearchParams(window.location.search);
+        const sessionId = params.get("verificationSessionId");
+        const endpoint = sessionId
+          ? `/api/verify/liveness?sessionId=${encodeURIComponent(sessionId)}`
+          : "/api/verify/liveness";
+        const res = await fetch(endpoint, {
           headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+          cache: "no-store",
         });
-        if (!res.ok) return;
+        if (!res.ok || cancelled) return;
         const data = await res.json();
         if (data.status && data.status !== livenessStatus) {
-          // Status mudou (ex: aprovado) — recarrega o perfil para refletir na UI
-          onRefresh();
+          await onRefresh();
+        }
+        if (data.status === "approved") {
+          const cleanUrl = new URL(window.location.href);
+          cleanUrl.searchParams.delete("liveness");
+          cleanUrl.searchParams.delete("verificationSessionId");
+          cleanUrl.searchParams.delete("status");
+          window.history.replaceState({}, "", cleanUrl.toString());
         }
       } catch {
-        // Silencioso — tenta novamente no proximo ciclo
+        // Silencioso — tenta novamente no próximo ciclo.
       }
-    }, 5000);
+    };
 
-    return () => clearInterval(interval);
+    void checkStatus();
+    const interval = window.setInterval(checkStatus, 5000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(interval);
+    };
   }, [livenessStatus, onRefresh]);
 
   // Se aprovado, nao bloqueia
@@ -163,6 +178,12 @@ export function LivenessBlocker({ livenessStatus, onRefresh }: LivenessBlockerPr
         headers: token ? { Authorization: `Bearer ${token}` } : undefined,
       });
       const data = await response.json();
+
+      if (response.ok && data.status === "approved") {
+        await onRefresh?.();
+        setLoading(false);
+        return;
+      }
 
       if (!response.ok || !data.url) {
         setError(

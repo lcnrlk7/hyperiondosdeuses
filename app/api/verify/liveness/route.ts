@@ -1,16 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser, verifyToken } from "@/lib/auth";
 import { sql } from "@/lib/db";
-import { createDiditSession, getAppBaseUrl } from "@/lib/didit";
+import {
+  createDiditSession,
+  getAppBaseUrl,
+  getDiditSessionDecision,
+} from "@/lib/didit";
 
 async function resolveUser(request: NextRequest) {
-  let user = null;
+  // Prefer the browser session because it resolves the currently selected
+  // account. Bearer auth remains available for non-browser API clients.
+  let user = await getCurrentUser();
   const authHeader = request.headers.get("authorization");
-  if (authHeader?.startsWith("Bearer ")) {
+  if (!user && authHeader?.startsWith("Bearer ")) {
     user = await verifyToken(authHeader.slice(7));
-  }
-  if (!user) {
-    user = await getCurrentUser();
   }
   return user;
 }
@@ -24,19 +27,81 @@ export async function GET(request: NextRequest) {
     }
 
     const result = await sql`
-      SELECT liveness_status, liveness_verified_at, liveness_updated_at
-      FROM profiles
-      WHERE id = ${user.id}
+      SELECT principal.id,
+             principal.liveness_status,
+             principal.liveness_verified_at,
+             principal.liveness_updated_at,
+             principal.liveness_session_id
+      FROM profiles selected
+      JOIN profiles principal
+        ON principal.id = COALESCE(selected.parent_profile_id, selected.id)
+      WHERE selected.id = ${user.id}
     `;
 
     if (result.length === 0) {
       return NextResponse.json({ error: "Perfil não encontrado" }, { status: 404 });
     }
 
+    const profile = result[0];
+    let status = profile.liveness_status || "not_started";
+    let verifiedAt = profile.liveness_verified_at;
+    const callbackSessionId = request.nextUrl.searchParams.get("sessionId");
+    const sessionId = callbackSessionId || profile.liveness_session_id;
+
+    // O callback da Didit informa a sessão que acabou de ser analisada. Consultar
+    // exatamente essa sessão evita depender de um webhook atrasado ou de um ID
+    // antigo salvo no perfil.
+    if (status !== "approved" && sessionId) {
+      try {
+        const decision = await getDiditSessionDecision(sessionId);
+        const diditStatus = decision?.status?.trim().toLowerCase().replaceAll(" ", "_");
+        const belongsToUser =
+          sessionId === profile.liveness_session_id || decision?.vendor_data === profile.id;
+
+        if (decision && belongsToUser && diditStatus) {
+          const allowedStatuses = new Set([
+            "not_started",
+            "in_progress",
+            "in_review",
+            "approved",
+            "declined",
+            "resubmitted",
+            "abandoned",
+            "expired",
+            "kyc_expired",
+          ]);
+          const normalizedStatus = allowedStatuses.has(diditStatus)
+            ? diditStatus
+            : status;
+          const updated = await sql`
+            UPDATE profiles
+            SET liveness_session_id = ${sessionId},
+                liveness_status = ${normalizedStatus},
+                liveness_verified_at = CASE
+                  WHEN ${normalizedStatus} = 'approved'
+                  THEN COALESCE(liveness_verified_at, NOW())
+                  ELSE liveness_verified_at
+                END,
+                liveness_updated_at = NOW(),
+                kyc_status = CASE
+                  WHEN ${normalizedStatus} = 'approved' THEN 'approved'
+                  ELSE kyc_status
+                END
+            WHERE id = ${profile.id}
+            RETURNING liveness_status, liveness_verified_at
+          `;
+          status = updated[0]?.liveness_status || normalizedStatus;
+          verifiedAt = updated[0]?.liveness_verified_at || verifiedAt;
+        }
+      } catch (error) {
+        console.error("Erro ao reconciliar status com a Didit:", error);
+      }
+    }
+
     return NextResponse.json({
-      status: result[0].liveness_status || "not_started",
-      verified_at: result[0].liveness_verified_at,
-      updated_at: result[0].liveness_updated_at,
+      status,
+      verified_at: verifiedAt,
+      updated_at: profile.liveness_updated_at,
     });
   } catch (error) {
     console.error("Erro ao buscar status de liveness:", error);
@@ -72,20 +137,26 @@ export async function POST(request: NextRequest) {
     }
     const callback = `${getAppBaseUrl()}${returnPath}`;
 
-    // Busca TODOS os dados cadastrais disponiveis para enviar a Didit
-    // (pre-preenche e compara com o documento durante a verificacao).
+    // KYC e identidade pertencem à conta principal e são compartilhados pelas
+    // subcontas. Também evita criar outra sessão quando a Didit já foi aprovada.
     const profile = await sql`
-      SELECT name, email, phone, cpf_cnpj, cpf
-      FROM profiles
-      WHERE id = ${user.id}
+      SELECT principal.id, principal.name, principal.email, principal.phone,
+             principal.cpf_cnpj, principal.liveness_status
+      FROM profiles selected
+      JOIN profiles principal
+        ON principal.id = COALESCE(selected.parent_profile_id, selected.id)
+      WHERE selected.id = ${user.id}
     `;
     const p = profile[0] || {};
 
-    // O documento pode estar em cpf_cnpj (padrao) ou, em cadastros antigos, em cpf.
-    const documentNumber = p.cpf_cnpj || p.cpf || null;
+    if (p.liveness_status === "approved") {
+      return NextResponse.json({ status: "approved", already_verified: true });
+    }
+
+    const documentNumber = p.cpf_cnpj || null;
 
     const session = await createDiditSession({
-      vendorData: user.id,
+      vendorData: p.id,
       callback,
       user: {
         fullName: p.name,
@@ -102,7 +173,7 @@ export async function POST(request: NextRequest) {
         liveness_session_id = ${session.session_id},
         liveness_status = 'in_progress',
         liveness_updated_at = NOW()
-      WHERE id = ${user.id}
+      WHERE id = ${p.id}
     `;
 
     return NextResponse.json({
@@ -111,9 +182,18 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error("Erro ao criar sessão de liveness:", error);
+    const message = error instanceof Error ? error.message : "";
+    const permissionDenied =
+      message.includes("(403)") || message.includes("permission to perform this action");
+
     return NextResponse.json(
-      { error: "Não foi possível iniciar a verificação" },
-      { status: 502 },
+      {
+        error: permissionDenied
+          ? "A chave da Didit não tem permissão para criar verificações. Atualize DIDIT_API_KEY com uma chave de API ativa."
+          : "Não foi possível iniciar a verificação. Tente novamente.",
+        code: permissionDenied ? "DIDIT_API_KEY_FORBIDDEN" : "DIDIT_SESSION_ERROR",
+      },
+      { status: permissionDenied ? 503 : 502 },
     );
   }
 }

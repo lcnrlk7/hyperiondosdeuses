@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -37,6 +37,7 @@ import {
   MonitorSmartphone,
   Ban,
   Link2,
+  Building2,
   type LucideIcon,
 } from "lucide-react";
 import { AdminTopbar } from "@/components/ceo/admin-topbar";
@@ -92,6 +93,7 @@ const menuCategories: MenuCategory[] = [
     color: "blue",
     items: [
       { label: "Todos Usuários", href: "/lp-x7k9m2-internal/ceo/users", icon: Users, permission: "view_users" },
+      { label: "Subcontas", href: "/lp-x7k9m2-internal/ceo/subaccounts", icon: Building2, permission: "view_users" },
       { label: "Verificação KYC", href: "/lp-x7k9m2-internal/ceo/kyc", icon: FileCheck, permission: "view_kyc" },
       { label: "Equipe Admin", href: "/lp-x7k9m2-internal/ceo/team", icon: UserCog, permission: "view_team" },
       { label: "Cargos & Permissões", href: "/lp-x7k9m2-internal/ceo/roles", icon: Shield, permission: "view_team" },
@@ -210,6 +212,7 @@ export default function CEOLayout({ children }: { children: React.ReactNode }) {
   const [sessionExpired, setSessionExpired] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
+  const desktopNavRef = useRef<HTMLElement>(null);
 
   // Filtrar menu baseado nas permissoes
   const filteredMenuCategories = useMemo(() => {
@@ -294,6 +297,22 @@ export default function CEOLayout({ children }: { children: React.ReactNode }) {
     setIsLoading(false);
   }, [router]);
 
+  // Keep the navigation independent from page scrolling and preserve its
+  // position while moving between admin routes.
+  useEffect(() => {
+    const nav = desktopNavRef.current;
+    if (!nav) return;
+
+    const savedPosition = sessionStorage.getItem("ceo-sidebar-scroll");
+    if (savedPosition !== null) {
+      nav.scrollTop = Number(savedPosition);
+    } else {
+      nav.querySelector<HTMLElement>("[aria-current='page']")?.scrollIntoView({
+        block: "nearest",
+      });
+    }
+  }, [pathname, filteredMenuCategories]);
+
   // Atualizar timer a cada segundo
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -367,7 +386,7 @@ export default function CEOLayout({ children }: { children: React.ReactNode }) {
 
       <div className="flex">
         {/* Sidebar Desktop */}
-        <aside className="hidden lg:flex lg:flex-col lg:w-64 lg:min-h-screen bg-card border-r border-border sticky top-0">
+        <aside className="fixed inset-y-0 left-0 z-40 hidden h-dvh w-64 flex-col overflow-hidden border-r border-border bg-card lg:flex">
           <div className="p-6 border-b border-border">
             <div className="flex items-center gap-3">
               <div className="relative w-11 h-11 rounded-2xl flex items-center justify-center overflow-hidden">
@@ -389,7 +408,14 @@ export default function CEOLayout({ children }: { children: React.ReactNode }) {
             </div>
           </div>
 
-          <nav className="flex-1 p-4 space-y-1 overflow-y-auto scrollbar-hide">
+          <nav
+            ref={desktopNavRef}
+            onScroll={(event) => {
+              sessionStorage.setItem("ceo-sidebar-scroll", String(event.currentTarget.scrollTop));
+            }}
+            className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 scrollbar-hide"
+            aria-label="Navegação administrativa"
+          >
             {filteredMenuCategories.map((category, categoryIndex) => {
               const colorClasses = getColorClasses(category.color, false)
               return (
@@ -422,6 +448,7 @@ export default function CEOLayout({ children }: { children: React.ReactNode }) {
                       <Link
                         key={item.href}
                         href={item.href}
+                        aria-current={isActive ? "page" : undefined}
                         className={`group flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 ${
                           isActive
                             ? colorClasses.active
@@ -510,7 +537,10 @@ export default function CEOLayout({ children }: { children: React.ReactNode }) {
                   </div>
                 </div>
 
-                <nav className="flex-1 p-4 space-y-1 overflow-y-auto scrollbar-hide">
+                <nav
+                  className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 scrollbar-hide"
+                  aria-label="Navegação administrativa móvel"
+                >
                   {filteredMenuCategories.map((category, categoryIndex) => {
                     const colorClasses = getColorClasses(category.color, false)
                     return (
@@ -586,7 +616,7 @@ export default function CEOLayout({ children }: { children: React.ReactNode }) {
         </AnimatePresence>
 
         {/* Main Content */}
-        <div className="flex flex-1 flex-col min-h-screen">
+        <div className="flex min-h-screen min-w-0 flex-1 flex-col lg:ml-64">
           <AdminTopbar
             adminUser={adminUser}
             adminRole={adminRole}

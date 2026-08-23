@@ -2,18 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { sql } from "@/lib/db";
 import webpush from "web-push";
 import { generateUniqueMotivationalMessage } from "@/lib/motivational-messages";
-import { VAPID_PUBLIC_KEY } from "@/lib/vapid";
+import { configureWebPush } from "@/lib/configure-web-push";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
-// Configurar VAPID (chave publica de lib/vapid, privada do ambiente)
-const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY;
-const VAPID_SUBJECT = "mailto:contato@hyperionpay.com.br";
-
-if (VAPID_PUBLIC_KEY && VAPID_PRIVATE_KEY) {
-  webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
-}
+const webPushConfigured = configureWebPush();
 
 /**
  * API para enviar mensagens motivacionais para todos os usuarios
@@ -39,7 +33,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Chave invalida" }, { status: 401 });
     }
 
-    if (!VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY) {
+    if (!webPushConfigured) {
       return NextResponse.json({ error: "VAPID keys not configured" }, { status: 500 });
     }
 
@@ -152,7 +146,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "userId or email required" }, { status: 400 });
     }
 
-    if (!VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY) {
+    if (!webPushConfigured) {
       return NextResponse.json({ error: "VAPID keys not configured" }, { status: 500 });
     }
 

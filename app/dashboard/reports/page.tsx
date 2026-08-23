@@ -803,7 +803,7 @@ export default function ReportsPage() {
               <div className="p-6 pb-0">
                 <div className="flex items-start justify-between mb-2">
                   <div className="flex items-center gap-3">
-                    <h2 className="text-lg font-semibold text-white">
+                    <h2 className="text-lg font-semibold text-foreground">
                       Detalhes do {getTypeLabel(selectedTransaction.type)}
                     </h2>
                     {getStatusBadge(selectedTransaction.status)}
@@ -822,11 +822,11 @@ export default function ReportsPage() {
 
               {/* Amount Card */}
               <div className="p-6">
-                <div className="bg-[#1e293b] rounded-xl p-6 text-center mb-6">
+                <div className="bg-muted rounded-xl p-6 text-center mb-6">
                   <p className="text-xs text-muted-foreground uppercase tracking-wider mb-2">
                     Valor da Operação
                   </p>
-                  <p className="text-3xl font-bold text-white">
+                  <p className="text-3xl font-bold text-foreground">
                     {formatCurrency(selectedTransaction.amount)}
                   </p>
                   <p className="text-sm text-muted-foreground mt-2">
@@ -838,25 +838,25 @@ export default function ReportsPage() {
                 <div className="space-y-0">
                   <div className="flex justify-between items-center py-4 border-b border-border">
                     <span className="text-muted-foreground">Pagador</span>
-                    <span className="text-white font-medium">
+                    <span className="text-foreground font-medium">
                       {selectedTransaction.payer_name || "Não informado"}
                     </span>
                   </div>
                   <div className="flex justify-between items-center py-4 border-b border-border">
                     <span className="text-muted-foreground">End to End</span>
-                    <span className="text-white">
+                    <span className="text-foreground">
                       {selectedTransaction.end_to_end_id || "-"}
                     </span>
                   </div>
                   <div className="flex justify-between items-center py-4 border-b border-border">
                     <span className="text-muted-foreground">Documento</span>
-                    <span className="text-white">
+                    <span className="text-foreground">
                       {selectedTransaction.payer_document || "Não informado"}
                     </span>
                   </div>
                   <div className="flex justify-between items-center py-4 border-b border-border">
                     <span className="text-muted-foreground">Taxa da Transação</span>
-                    <span className="text-white">
+                    <span className="text-foreground">
                       {formatCurrency(selectedTransaction.fee)}
                     </span>
                   </div>
@@ -876,7 +876,7 @@ export default function ReportsPage() {
                       {copied ? "Copiado!" : "Copiar"}
                     </button>
                   </div>
-                  <div className="bg-[#1e293b] rounded-lg p-3">
+                  <div className="bg-muted rounded-lg p-3">
                     <p className="text-sm font-mono text-muted-foreground break-all">
                       {selectedTransaction.id}
                     </p>
@@ -886,7 +886,7 @@ export default function ReportsPage() {
                 {/* Download PDF Button */}
                 <button
                   onClick={() => handleDownloadTransactionPDF(selectedTransaction)}
-                  className="w-full mt-6 flex items-center justify-center gap-2 py-3 bg-transparent border border-border rounded-xl text-muted-foreground hover:bg-white/5 hover:text-white transition-colors"
+                  className="w-full mt-6 flex items-center justify-center gap-2 py-3 bg-transparent border border-border rounded-xl text-muted-foreground hover:bg-white/5 hover:text-foreground transition-colors"
                 >
                   <Download className="w-4 h-4" />
                   Baixar PDF
