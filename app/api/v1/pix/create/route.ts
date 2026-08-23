@@ -60,8 +60,6 @@ export async function POST(request: NextRequest) {
 
     const user = userResult[0];
     
-    console.log("[v0] User found:", { id: user.id, user_id: user.user_id, email: user.email });
-
     if (!user.api_enabled && user.api_enabled !== null) {
       return NextResponse.json(
         { error: "API desabilitada para esta conta", code: "API_DISABLED" },
@@ -69,7 +67,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // SEGURANCA: exige KYC + prova de vida (Didit) antes de gerar cobranca.
+    // SEGURANCA: exige KYC manual aprovado antes de gerar cobranca.
     const denied = await assertUserVerified(user.id);
     if (denied) return denied;
 

@@ -26,8 +26,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // SEGURANCA: conta precisa estar ativa e nao bloqueada. A verificacao de
-    // identidade (Didit) e feita na liberacao da conta, NAO a cada saque.
+    // SEGURANCA: conta precisa estar ativa e nao bloqueada. O KYC manual e
+    // validado pela camada de movimentacao financeira.
     if (profile.is_blocked) {
       return NextResponse.json(
         { error: "Conta bloqueada. Entre em contato com o suporte." },

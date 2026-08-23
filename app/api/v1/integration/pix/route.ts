@@ -130,7 +130,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // SEGURANCA: exige KYC + prova de vida (Didit) antes de gerar cobranca.
+    // SEGURANCA: exige KYC manual aprovado antes de gerar cobranca.
     const denied = await assertUserVerified(profile.id);
     if (denied) return denied;
 
