@@ -141,7 +141,7 @@ export async function POST(request: NextRequest) {
     // subcontas. Também evita criar outra sessão quando a Didit já foi aprovada.
     const profile = await sql`
       SELECT principal.id, principal.name, principal.email, principal.phone,
-             principal.cpf_cnpj, principal.cpf, principal.liveness_status
+             principal.cpf_cnpj, principal.liveness_status
       FROM profiles selected
       JOIN profiles principal
         ON principal.id = COALESCE(selected.parent_profile_id, selected.id)
@@ -153,8 +153,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ status: "approved", already_verified: true });
     }
 
-    // O documento pode estar em cpf_cnpj (padrao) ou, em cadastros antigos, em cpf.
-    const documentNumber = p.cpf_cnpj || p.cpf || null;
+    const documentNumber = p.cpf_cnpj || null;
 
     const session = await createDiditSession({
       vendorData: p.id,

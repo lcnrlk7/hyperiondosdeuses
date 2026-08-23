@@ -10,11 +10,18 @@ export const DIDIT_BASE_URL = "https://verification.didit.me";
 
 // URL base da aplicacao (para callback de retorno do usuario)
 export function getAppBaseUrl(): string {
-  return (
+  const configuredUrl =
     process.env.NEXT_PUBLIC_APP_URL ||
     process.env.APP_URL ||
-    "https://hyperionpay.com.br"
-  );
+    "https://www.hyperionpay.com.br";
+  const url = new URL(configuredUrl);
+
+  // O domínio sem www responde com 308. A Didit precisa de callbacks diretos.
+  if (url.hostname === "hyperionpay.com.br") {
+    url.hostname = "www.hyperionpay.com.br";
+  }
+
+  return url.origin;
 }
 
 export interface DiditSession {
