@@ -14,6 +14,16 @@ interface LivenessBlockerProps {
 export function LivenessBlocker({ livenessStatus, onRefresh }: LivenessBlockerProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [callbackStatus, setCallbackStatus] = useState<string | null>(null);
+
+  useEffect(() => {
+    const status = new URLSearchParams(window.location.search)
+      .get("status")
+      ?.trim()
+      .toLowerCase()
+      .replaceAll(" ", "_");
+    setCallbackStatus(status || null);
+  }, []);
 
   // Liberação automática: no retorno da Didit, envia o verificationSessionId
   // imediatamente para o servidor reconciliar a decisão oficial. Continua
@@ -27,8 +37,12 @@ export function LivenessBlocker({ livenessStatus, onRefresh }: LivenessBlockerPr
         const token = localStorage.getItem("auth-token");
         const params = new URLSearchParams(window.location.search);
         const sessionId = params.get("verificationSessionId");
-        const endpoint = sessionId
-          ? `/api/verify/liveness?sessionId=${encodeURIComponent(sessionId)}`
+        const returnedStatus = params.get("status");
+        const query = new URLSearchParams();
+        if (sessionId) query.set("sessionId", sessionId);
+        if (returnedStatus) query.set("callbackStatus", returnedStatus);
+        const endpoint = query.size
+          ? `/api/verify/liveness?${query.toString()}`
           : "/api/verify/liveness";
         const res = await fetch(endpoint, {
           headers: token ? { Authorization: `Bearer ${token}` } : undefined,
@@ -164,7 +178,11 @@ export function LivenessBlocker({ livenessStatus, onRefresh }: LivenessBlockerPr
     },
   };
 
-  const config = statusConfig[livenessStatus] || statusConfig.not_started;
+  const effectiveStatus =
+    callbackStatus === "in_review" && livenessStatus !== "approved"
+      ? "in_review"
+      : livenessStatus;
+  const config = statusConfig[effectiveStatus] || statusConfig.not_started;
   const StatusIcon = config.icon;
 
   async function startVerification() {
@@ -180,6 +198,12 @@ export function LivenessBlocker({ livenessStatus, onRefresh }: LivenessBlockerPr
       const data = await response.json();
 
       if (response.ok && data.status === "approved") {
+        await onRefresh?.();
+        setLoading(false);
+        return;
+      }
+      if (response.ok && data.verification_pending) {
+        setCallbackStatus(data.status);
         await onRefresh?.();
         setLoading(false);
         return;

@@ -1,9 +1,8 @@
 import crypto from "node:crypto";
 
 // Workflow de verificacao da Didit (config por sessao, NAO e segredo).
-// Pode ser sobrescrito por env; o padrao aponta para o workflow atual da conta.
-export const DIDIT_WORKFLOW_ID =
-  process.env.DIDIT_WORKFLOW_ID || "e9dcd725-a87a-4144-bc79-f03534bcb34c";
+// Deve pertencer a mesma organizacao e ambiente da DIDIT_API_KEY.
+export const DIDIT_WORKFLOW_ID = process.env.DIDIT_WORKFLOW_ID;
 
 // Base URL da API de verificacao da Didit
 export const DIDIT_BASE_URL = "https://verification.didit.me";
@@ -60,6 +59,9 @@ export async function createDiditSession(params: {
   const apiKey = process.env.DIDIT_API_KEY;
   if (!apiKey) {
     throw new Error("DIDIT_API_KEY nao configurada");
+  }
+  if (!DIDIT_WORKFLOW_ID) {
+    throw new Error("DIDIT_WORKFLOW_ID nao configurado");
   }
 
   const payload: Record<string, unknown> = {

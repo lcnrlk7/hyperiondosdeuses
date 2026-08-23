@@ -46,11 +46,32 @@ export async function GET(request: NextRequest) {
     let status = profile.liveness_status || "not_started";
     let verifiedAt = profile.liveness_verified_at;
     const callbackSessionId = request.nextUrl.searchParams.get("sessionId");
+    const callbackStatus = request.nextUrl.searchParams
+      .get("callbackStatus")
+      ?.trim()
+      .toLowerCase()
+      .replaceAll(" ", "_");
     const sessionId = callbackSessionId || profile.liveness_session_id;
 
+    // Um retorno "In Review" apenas mantém a conta bloqueada e pode ser salvo
+    // imediatamente. Aprovação nunca é confiada à URL: exige decisão oficial ou webhook.
+    if (
+      status !== "approved" &&
+      callbackSessionId &&
+      callbackStatus === "in_review"
+    ) {
+      await sql`
+        UPDATE profiles
+        SET liveness_session_id = ${callbackSessionId},
+            liveness_status = 'in_review',
+            liveness_updated_at = NOW()
+        WHERE id = ${profile.id}
+      `;
+      status = "in_review";
+    }
+
     // O callback da Didit informa a sessão que acabou de ser analisada. Consultar
-    // exatamente essa sessão evita depender de um webhook atrasado ou de um ID
-    // antigo salvo no perfil.
+    // exatamente essa sessão evita depender de um webhook atrasado ou de um ID antigo.
     if (status !== "approved" && sessionId) {
       try {
         const decision = await getDiditSessionDecision(sessionId);
@@ -117,9 +138,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
     }
 
-    if (!process.env.DIDIT_API_KEY) {
+    if (!process.env.DIDIT_API_KEY || !process.env.DIDIT_WORKFLOW_ID) {
       return NextResponse.json(
-        { error: "Integração de verificação não configurada" },
+        {
+          error: !process.env.DIDIT_API_KEY
+            ? "A chave da integração Didit não está configurada."
+            : "O workflow da Didit não está configurado.",
+          code: !process.env.DIDIT_API_KEY
+            ? "DIDIT_API_KEY_MISSING"
+            : "DIDIT_WORKFLOW_ID_MISSING",
+        },
         { status: 503 },
       );
     }
@@ -151,6 +179,12 @@ export async function POST(request: NextRequest) {
 
     if (p.liveness_status === "approved") {
       return NextResponse.json({ status: "approved", already_verified: true });
+    }
+    if (["in_review", "in_progress"].includes(p.liveness_status)) {
+      return NextResponse.json({
+        status: p.liveness_status,
+        verification_pending: true,
+      });
     }
 
     const documentNumber = p.cpf_cnpj || null;
@@ -185,15 +219,22 @@ export async function POST(request: NextRequest) {
     const message = error instanceof Error ? error.message : "";
     const permissionDenied =
       message.includes("(403)") || message.includes("permission to perform this action");
+    const workflowMissing = message.includes("DIDIT_WORKFLOW_ID nao configurado");
 
     return NextResponse.json(
       {
-        error: permissionDenied
-          ? "A chave da Didit não tem permissão para criar verificações. Atualize DIDIT_API_KEY com uma chave de API ativa."
-          : "Não foi possível iniciar a verificação. Tente novamente.",
-        code: permissionDenied ? "DIDIT_API_KEY_FORBIDDEN" : "DIDIT_SESSION_ERROR",
+        error: workflowMissing
+          ? "O workflow da Didit não está configurado."
+          : permissionDenied
+            ? "A chave da Didit não tem acesso ao workflow configurado. Confirme que DIDIT_API_KEY e DIDIT_WORKFLOW_ID pertencem à mesma organização e ambiente."
+            : "Não foi possível iniciar a verificação. Tente novamente.",
+        code: workflowMissing
+          ? "DIDIT_WORKFLOW_ID_MISSING"
+          : permissionDenied
+            ? "DIDIT_WORKFLOW_ACCESS_DENIED"
+            : "DIDIT_SESSION_ERROR",
       },
-      { status: permissionDenied ? 503 : 502 },
+      { status: permissionDenied || workflowMissing ? 503 : 502 },
     );
   }
 }
