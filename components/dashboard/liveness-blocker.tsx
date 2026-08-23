@@ -164,6 +164,12 @@ export function LivenessBlocker({ livenessStatus, onRefresh }: LivenessBlockerPr
       });
       const data = await response.json();
 
+      if (response.ok && data.status === "approved") {
+        await onRefresh?.();
+        setLoading(false);
+        return;
+      }
+
       if (!response.ok || !data.url) {
         setError(
           data.error || "Não foi possível iniciar a verificação. Tente novamente.",
