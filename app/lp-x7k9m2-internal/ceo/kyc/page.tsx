@@ -18,9 +18,9 @@ import {
 
 interface KYCDocument {
   id: string;
-  user_id: string;
+  user_id?: string;
   document_type: string;
-  file_url: string;
+  file_url?: string;
   file_name: string | null;
   status: string;
   rejection_reason: string | null;
@@ -150,12 +150,12 @@ export default function KYCPage() {
 
   const getDocumentTypeLabel = (type: string) => {
     switch (type) {
-      case "identity":
-        return "Documento de Identidade";
-      case "address_proof":
-        return "Comprovante de Residência";
-      case "selfie":
-        return "Selfie com Documento";
+      case "document_front":
+        return "Frente do documento";
+      case "document_back":
+        return "Verso do documento";
+      case "selfie_with_document":
+        return "Selfie segurando o documento";
       default:
         return type;
     }
@@ -178,15 +178,12 @@ export default function KYCPage() {
 
   return (
     <div className="p-6 lg:p-8 space-y-6">
-      {/* Aviso: verificacao agora e automatica */}
-      <div className="flex items-start gap-3 rounded-xl border border-green-500/30 bg-green-500/10 p-4">
-        <ShieldCheck className="w-5 h-5 text-green-500 shrink-0 mt-0.5" />
+      <div className="flex items-start gap-3 rounded-xl border border-primary/30 bg-primary/10 p-4">
+        <ShieldCheck className="w-5 h-5 text-primary shrink-0 mt-0.5" />
         <div>
-          <p className="text-sm font-semibold text-foreground">Verificação automática ativada</p>
+          <p className="text-sm font-semibold text-foreground">Revisão manual protegida</p>
           <p className="text-sm text-muted-foreground mt-0.5">
-            O KYC agora é aprovado automaticamente pela verificação de prova de vida (biometria).
-            Não é mais necessário analisar documentos manualmente — os usuários são liberados assim
-            que concluem a prova de vida. Esta tela é mantida apenas para consulta e casos excepcionais.
+            Confira os dados cadastrais e as três imagens obrigatórias antes de aprovar. Os documentos são descriptografados somente nesta área restrita a CEO e Manager.
           </p>
         </div>
       </div>
@@ -412,14 +409,9 @@ export default function KYCPage() {
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {selectedUser.documents.map((doc) => {
-                      // Se viewUrl existe, usar. Senão, se file_url começa com http é URL pública, usar direto
-                      const docUrl = doc.viewUrl 
-                        ? doc.viewUrl 
-                        : doc.file_url?.startsWith('http') 
-                          ? doc.file_url 
-                          : `/api/kyc/file?pathname=${encodeURIComponent(doc.file_url)}`;
-                      const isImage = doc.file_url?.match(/\.(jpg|jpeg|png|webp|gif)$/i) || doc.file_url?.includes('blob.vercel-storage.com');
+                  {selectedUser.documents.map((doc) => {
+                    const docUrl = `/api/admin/kyc/document/${encodeURIComponent(doc.id)}`;
+                    const isImage = true;
                       
                       return (
                         <div key={doc.id} className="rounded-xl bg-secondary border border-border overflow-hidden">

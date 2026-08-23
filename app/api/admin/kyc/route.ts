@@ -1,145 +1,40 @@
-import { verifyAdmin, accessDeniedResponse } from "@/lib/admin-auth";
+import { NextRequest, NextResponse } from "next/server";
 import { sql } from "@/lib/db";
-import { NextResponse } from "next/server";
-import { list } from "@vercel/blob";
-
-// Cache para URLs do Blob (evita múltiplas chamadas ao list)
-let blobUrlCache: Map<string, string> | null = null;
-let cacheTimestamp = 0;
-const CACHE_TTL = 60000; // 1 minuto
-
-async function getBlobUrlMap(): Promise<Map<string, string>> {
-  const now = Date.now();
-  
-  // Retorna cache se ainda válido
-  if (blobUrlCache && (now - cacheTimestamp) < CACHE_TTL) {
-    return blobUrlCache;
-  }
-
-  try {
-    const urlMap = new Map<string, string>();
-    let cursor: string | undefined;
-    
-    // Lista todos os blobs na pasta kyc
-    do {
-      const response = await list({ prefix: "kyc/", cursor, limit: 1000 });
-      for (const blob of response.blobs) {
-        // Mapeia pathname para URL completa
-        urlMap.set(blob.pathname, blob.url);
-      }
-      cursor = response.cursor;
-    } while (cursor);
-
-    blobUrlCache = urlMap;
-    cacheTimestamp = now;
-    return urlMap;
-  } catch (error) {
-    console.error("[Admin KYC] Error listing blobs:", error);
-    return new Map();
-  }
-}
+import { ensureKycStorageSchema } from "@/lib/kyc-storage";
+import { verifyKycReviewer } from "@/lib/kyc-reviewer-auth";
 
 export async function GET() {
-  try {
-    // Verificar se e admin
-    const admin = await verifyAdmin();
-    if (!admin) return accessDeniedResponse();
-    
-    // Buscar todos os usuarios
-    const profiles = await sql`
-      SELECT id, email, name, kyc_status, created_at
-      FROM profiles
-      ORDER BY created_at DESC
-    `;
-
-    // Buscar todos os documentos KYC
-    const documents = await sql`
-      SELECT * FROM kyc_documents ORDER BY created_at DESC
-    `;
-
-    // Obter mapa de URLs do Blob
-    const blobUrlMap = await getBlobUrlMap();
-
-    // Agrupar documentos por usuário e adicionar URLs de visualização
-    const usersWithDocs = profiles.map((profile: { id: string; email: string; name: string; kyc_status: string; created_at: string }) => {
-      const userDocs = documents.filter((doc: { user_id: string }) => doc.user_id === profile.id) || [];
-      
-      return {
-        ...profile,
-        documents: userDocs.map((doc: { file_url: string; [key: string]: unknown }) => {
-          let viewUrl = doc.file_url;
-          
-          // Se já é URL completa, usar diretamente
-          if (doc.file_url && doc.file_url.startsWith('http')) {
-            viewUrl = doc.file_url;
-          } else if (doc.file_url) {
-            // Buscar URL completa no mapa do Blob
-            const blobUrl = blobUrlMap.get(doc.file_url);
-            if (blobUrl) {
-              viewUrl = blobUrl;
-            } else {
-              // Fallback: tentar construir URL manualmente (pode não funcionar para blobs privados)
-              viewUrl = `/api/kyc/file?pathname=${encodeURIComponent(doc.file_url)}`;
-            }
-          }
-          
-          return {
-            ...doc,
-            viewUrl,
-          };
-        }),
-      };
-    });
-
-    return NextResponse.json({ users: usersWithDocs });
-  } catch (error) {
-    console.error("[v0] API Error:", error);
-    return NextResponse.json({ error: "Erro interno do servidor" }, { status: 500 });
-  }
+  const reviewer = await verifyKycReviewer();
+  if (!reviewer) return NextResponse.json({ error: "Acesso restrito a CEO e Manager" }, { status: 403 });
+  await ensureKycStorageSchema();
+  const users = await sql`
+    SELECT p.id, p.name, p.email, p.phone, p.cpf_cnpj,
+           p.kyc_status, p.kyc_rejection_reason, p.created_at,
+           COALESCE(json_agg(json_build_object(
+             'id', d.id, 'document_type', d.document_type, 'file_name', d.file_name,
+             'status', d.status, 'created_at', d.created_at
+           )) FILTER (WHERE d.id IS NOT NULL), '[]') AS documents
+    FROM profiles p
+    LEFT JOIN kyc_documents d ON d.user_id = p.id
+    WHERE p.parent_profile_id IS NULL
+    GROUP BY p.id
+    ORDER BY CASE WHEN p.kyc_status = 'pending' THEN 0 ELSE 1 END, p.created_at DESC
+  `;
+  return NextResponse.json({ users }, { headers: { "Cache-Control": "private, no-store" } });
 }
 
-export async function PUT(request: Request) {
-  try {
-    const body = await request.json();
-    const { userId, action, rejectionReason } = body;
+export async function PUT(request: NextRequest) {
+  const reviewer = await verifyKycReviewer();
+  if (!reviewer) return NextResponse.json({ error: "Acesso restrito a CEO e Manager" }, { status: 403 });
+  await ensureKycStorageSchema();
+  const { userId, action, rejectionReason } = await request.json();
+  if (!userId || !["approve", "reject"].includes(action)) return NextResponse.json({ error: "Decisão inválida" }, { status: 400 });
+  if (action === "reject" && (!rejectionReason || rejectionReason.trim().length < 5)) return NextResponse.json({ error: "Informe um motivo com ao menos 5 caracteres" }, { status: 400 });
 
-    if (!userId || !action) {
-      return NextResponse.json({ error: "userId e action são obrigatórios" }, { status: 400 });
-    }
-
-    const newStatus = action === "approve" ? "approved" : "rejected";
-
-    // Atualizar documentos do usuário
-    await sql`
-      UPDATE kyc_documents
-      SET status = ${newStatus},
-          rejection_reason = ${action === "reject" ? rejectionReason : null},
-          reviewed_at = NOW()
-      WHERE user_id = ${userId}
-    `;
-
-    // Atualizar perfil do usuário
-    await sql`
-      UPDATE profiles
-      SET kyc_status = ${newStatus}, updated_at = NOW()
-      WHERE id = ${userId}
-    `;
-
-    // Criar notificação para o usuário
-    const notificationTitle = action === "approve" ? "KYC Aprovado!" : "KYC Rejeitado";
-    const notificationMessage = action === "approve"
-      ? "Parabéns! Sua verificação de identidade foi aprovada. Você já pode usar todas as funcionalidades da plataforma."
-      : `Sua verificação foi rejeitada. Motivo: ${rejectionReason}. Por favor, envie novos documentos.`;
-    const notificationType = action === "approve" ? "success" : "error";
-
-    await sql`
-      INSERT INTO user_notifications (id, user_id, title, message, type, created_at)
-      VALUES (${crypto.randomUUID()}, ${userId}, ${notificationTitle}, ${notificationMessage}, ${notificationType}, NOW())
-    `;
-
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error("[v0] API Error:", error);
-    return NextResponse.json({ error: "Erro interno do servidor" }, { status: 500 });
-  }
+  const docs = await sql`SELECT COUNT(DISTINCT document_type)::int AS count FROM kyc_documents WHERE user_id = ${userId} AND document_type IN ('document_front', 'document_back', 'selfie_with_document') AND encrypted_data IS NOT NULL`;
+  if (action === "approve" && docs[0]?.count !== 3) return NextResponse.json({ error: "Os três documentos são obrigatórios" }, { status: 409 });
+  const status = action === "approve" ? "approved" : "rejected";
+  await sql`UPDATE kyc_documents SET status = ${status}, rejection_reason = ${action === "reject" ? rejectionReason.trim() : null}, reviewed_by = NULL, reviewed_at = NOW(), updated_at = NOW() WHERE user_id = ${userId}`;
+  await sql`UPDATE profiles SET kyc_status = ${status}, kyc_rejection_reason = ${action === "reject" ? rejectionReason.trim() : null}, kyc_reviewed_by = ${reviewer.id}, kyc_reviewed_at = NOW(), liveness_status = ${action === "approve" ? "approved" : "declined"}, updated_at = NOW() WHERE id = ${userId}`;
+  return NextResponse.json({ success: true, status });
 }

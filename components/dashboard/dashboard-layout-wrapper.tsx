@@ -7,14 +7,15 @@ import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { DashboardSidebar } from "@/components/dashboard/sidebar";
 import { DashboardHeader } from "@/components/dashboard/header";
-import { LivenessBlocker } from "@/components/dashboard/liveness-blocker";
+import { usePathname } from "next/navigation";
 import { NotificationListener } from "@/components/notification-listener";
 import { MobileBottomNav } from "@/components/dashboard/mobile-bottom-nav";
 
 function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
   const { user, token, isLoading: authLoading } = useAuth();
-  const { profile, isLoading: profileLoading, refreshProfile } = useProfile();
+  const { profile, isLoading: profileLoading } = useProfile();
   const router = useRouter();
+  const pathname = usePathname();
   const [hasRedirected, setHasRedirected] = useState(false);
 
   useEffect(() => {
@@ -45,16 +46,15 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
     email: user.email,
   };
 
-  // Verificacao obrigatoria de prova de vida (Didit). Quando aprovada, o KYC e
-  // liberado automaticamente, entao a prova de vida e o unico portao de acesso.
-  const livenessStatus = (profile?.liveness_status as string) || "not_started";
-  const isVerified = livenessStatus === "approved";
+  const isVerified = profile?.kyc_status === "approved";
+  const mustOpenKyc = !isVerified && pathname !== "/dashboard/kyc";
+  if (mustOpenKyc) {
+    router.replace("/dashboard/kyc");
+    return <div className="flex min-h-screen items-center justify-center bg-background"><Loader2 className="size-8 animate-spin text-primary" /></div>;
+  }
 
   return (
     <div className="min-h-screen bg-background flex overflow-x-hidden">
-      {!isVerified && (
-        <LivenessBlocker livenessStatus={livenessStatus} onRefresh={refreshProfile} />
-      )}
       <NotificationListener userId={user.id} />
       <DashboardSidebar user={userForComponents} profile={profile} />
       <div className="flex-1 flex flex-col min-w-0 pt-14 lg:pt-0 lg:ml-[var(--sidebar-width,256px)] transition-all duration-300">

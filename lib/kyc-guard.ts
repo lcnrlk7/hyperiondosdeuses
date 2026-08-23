@@ -19,7 +19,6 @@ import { NextResponse } from "next/server";
 export async function assertUserVerified(userId: string): Promise<NextResponse | null> {
   const rows = await sql`
     SELECT COALESCE(parent.kyc_status, child.kyc_status) as kyc_status,
-           COALESCE(parent.liveness_status, child.liveness_status) as liveness_status,
            child.is_active,
            COALESCE(parent.is_blocked, child.is_blocked) as is_blocked
     FROM profiles child
@@ -55,17 +54,6 @@ export async function assertUserVerified(userId: string): Promise<NextResponse |
         success: false,
         error: "KYC não aprovado. Complete a verificação de identidade no dashboard.",
         code: "KYC_REQUIRED",
-      },
-      { status: 403 }
-    );
-  }
-
-  if (p.liveness_status !== "approved") {
-    return NextResponse.json(
-      {
-        success: false,
-        error: "Verificação de identidade (prova de vida) obrigatória. Conclua a verificação no dashboard.",
-        code: "LIVENESS_REQUIRED",
       },
       { status: 403 }
     );

@@ -1,307 +1,57 @@
 "use client";
 
-import { useState, useEffect, useCallback, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
-import { motion } from "framer-motion";
-import {
-  ShieldCheck,
-  CheckCircle2,
-  Clock,
-  XCircle,
-  ScanFace,
-  Loader2,
-  Zap,
-  Lock,
-  Camera,
-} from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { CheckCircle2, Clock, FileImage, Loader2, ShieldCheck, Upload, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 
-type KycStatus =
-  | "not_started"
-  | "in_progress"
-  | "in_review"
-  | "resubmitted"
-  | "approved"
-  | "declined"
-  | "expired"
-  | "abandoned";
+type DocType = "document_front" | "document_back" | "selfie_with_document";
+const fields: Array<{ type: DocType; title: string; description: string }> = [
+  { type: "document_front", title: "Frente do documento", description: "RG, CNH ou documento oficial, legível e sem cortes." },
+  { type: "document_back", title: "Verso do documento", description: "Fotografe todo o verso, com boa iluminação." },
+  { type: "selfie_with_document", title: "Selfie com o documento", description: "Segure o documento ao lado do rosto; ambos devem estar nítidos." },
+];
 
-function KYCPageInner() {
-  const params = useSearchParams();
-  const justReturned = params.get("kyc") === "done";
+interface KycData { kyc_status: string; rejection_reason?: string | null; documents: Array<{ document_type: DocType; file_name: string; status: string }> }
 
-  const [status, setStatus] = useState<KycStatus>("not_started");
+export default function KycPage() {
+  const [data, setData] = useState<KycData>({ kyc_status: "not_started", documents: [] });
   const [loading, setLoading] = useState(true);
-  const [starting, setStarting] = useState(false);
+  const [uploading, setUploading] = useState<DocType | null>(null);
   const [error, setError] = useState<string | null>(null);
-
-  const loadStatus = useCallback(async () => {
-    try {
-      const res = await fetch("/api/verify/liveness");
-      const data = await res.json();
-      if (res.ok && data.status) {
-        setStatus(data.status as KycStatus);
-      }
-    } catch {
-      // silencioso — mantem o status atual
-    } finally {
-      setLoading(false);
-    }
+  const load = useCallback(async () => {
+    const response = await fetch("/api/kyc/documents", { cache: "no-store" });
+    if (response.ok) setData(await response.json());
+    setLoading(false);
   }, []);
+  useEffect(() => { void load(); }, [load]);
 
-  useEffect(() => {
-    loadStatus();
-  }, [loadStatus]);
-
-  // Ao voltar da Didit, faz um polling curto ate o webhook atualizar o status.
-  useEffect(() => {
-    if (!justReturned) return;
-    let attempts = 0;
-    let stopped = false;
-    const tick = async () => {
-      if (stopped) return;
-      attempts++;
-      await loadStatus();
-      if (attempts < 12 && !stopped) {
-        setTimeout(tick, 3000);
-      }
-    };
-    const id = setTimeout(tick, 2000);
-    return () => {
-      stopped = true;
-      clearTimeout(id);
-    };
-  }, [justReturned, loadStatus]);
-
-  const startVerification = async () => {
-    setStarting(true);
-    setError(null);
-    try {
-      const res = await fetch("/api/verify/liveness", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ returnPath: "/dashboard/kyc?kyc=done" }),
-      });
-      const data = await res.json();
-      if (!res.ok || !data.url) {
-        setError(data.error || "Não foi possível iniciar a verificação. Tente novamente.");
-        setStarting(false);
-        return;
-      }
-      // Redireciona para o fluxo hospedado da Didit
-      window.location.href = data.url;
-    } catch {
-      setError("Erro de conexão. Tente novamente.");
-      setStarting(false);
-    }
-  };
-
-  const isApproved = status === "approved";
-  const isPending =
-    status === "in_progress" ||
-    status === "in_review" ||
-    status === "resubmitted" ||
-    justReturned;
-  const isRejected = status === "declined" || status === "expired" || status === "abandoned";
-
-  const StatusBadge = () => {
-    if (isApproved) {
-      return (
-        <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-green-500/20 text-green-500">
-          <CheckCircle2 className="w-5 h-5" />
-          <span className="font-medium">Verificado</span>
-        </div>
-      );
-    }
-    if (isPending) {
-      return (
-        <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-yellow-500/20 text-yellow-500">
-          <Clock className="w-5 h-5" />
-          <span className="font-medium">Em análise</span>
-        </div>
-      );
-    }
-    if (isRejected) {
-      return (
-        <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-red-500/20 text-red-500">
-          <XCircle className="w-5 h-5" />
-          <span className="font-medium">Não concluída</span>
-        </div>
-      );
-    }
-    return (
-      <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-muted text-muted-foreground">
-        <ShieldCheck className="w-5 h-5" />
-        <span className="font-medium">Pendente</span>
-      </div>
-    );
-  };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
+  async function upload(type: DocType, file?: File) {
+    if (!file) return;
+    setUploading(type); setError(null);
+    const form = new FormData(); form.set("file", file); form.set("documentType", type);
+    const response = await fetch("/api/kyc/upload", { method: "POST", body: form });
+    const result = await response.json();
+    if (!response.ok) setError(result.error || "Falha ao enviar documento");
+    await load(); setUploading(null);
   }
 
-  return (
-    <div className="space-y-8">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Verificação de Identidade</h1>
-          <p className="text-muted-foreground mt-1">
-            Verificação 100% automática e instantânea
-          </p>
-        </div>
-        <StatusBadge />
-      </div>
+  if (loading) return <div className="flex min-h-[400px] items-center justify-center"><Loader2 className="size-8 animate-spin text-primary" /></div>;
+  const approved = data.kyc_status === "approved";
+  const rejected = data.kyc_status === "rejected";
+  const complete = fields.every((field) => data.documents.some((doc) => doc.document_type === field.type));
 
-      {/* Estado: Aprovado */}
-      {isApproved && (
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-          <Card className="border-green-500/20 bg-green-500/5">
-            <CardContent className="p-8">
-              <div className="flex flex-col items-center text-center gap-4">
-                <div className="p-4 rounded-full bg-green-500/20">
-                  <CheckCircle2 className="w-12 h-12 text-green-500" />
-                </div>
-                <div>
-                  <h3 className="text-xl font-bold text-foreground mb-2">Verificação Concluída!</h3>
-                  <p className="text-muted-foreground max-w-md">
-                    Sua identidade foi verificada com sucesso. Você tem acesso completo a todas as
-                    funcionalidades da Hyperion Pay, incluindo saques e transferências.
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-      )}
-
-      {/* Estado: Em análise (aguardando webhook) */}
-      {!isApproved && isPending && (
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-          <Card className="border-yellow-500/20 bg-yellow-500/5">
-            <CardContent className="p-8">
-              <div className="flex flex-col items-center text-center gap-4">
-                <div className="p-4 rounded-full bg-yellow-500/20">
-                  <Loader2 className="w-12 h-12 text-yellow-500 animate-spin" />
-                </div>
-                <div>
-                  <h3 className="text-xl font-bold text-foreground mb-2">Confirmando sua verificação</h3>
-                  <p className="text-muted-foreground max-w-md">
-                    Estamos processando sua verificação de identidade. Isso costuma levar apenas alguns
-                    segundos. Esta página atualiza automaticamente.
-                  </p>
-                </div>
-                <Button variant="outline" onClick={loadStatus}>
-                  Atualizar status
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-      )}
-
-      {/* Estado: Não iniciado ou rejeitado -> iniciar verificacao */}
-      {!isApproved && !isPending && (
-        <>
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-            <Card className={isRejected ? "border-red-500/20 bg-red-500/5" : "border-primary/20 bg-primary/5"}>
-              <CardContent className="p-8">
-                <div className="flex flex-col items-center text-center gap-6">
-                  <div className={`p-4 rounded-full ${isRejected ? "bg-red-500/20" : "bg-primary/20"}`}>
-                    <ScanFace className={`w-12 h-12 ${isRejected ? "text-red-500" : "text-primary"}`} />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-bold text-foreground mb-2">
-                      {isRejected ? "Vamos tentar novamente" : "Verifique sua identidade"}
-                    </h3>
-                    <p className="text-muted-foreground max-w-lg text-pretty">
-                      {isRejected
-                        ? "Não conseguimos concluir sua verificação anterior. Refaça o processo com seu documento em mãos e boa iluminação."
-                        : "A verificação é feita de forma segura e automática. Você vai precisar do seu documento de identidade (RG, CNH ou Passaporte) e da câmera do seu dispositivo. Leva menos de 1 minuto."}
-                    </p>
-                  </div>
-
-                  {error && (
-                    <div className="w-full max-w-md p-3 rounded-lg bg-red-500/10 border border-red-500/20">
-                      <p className="text-red-500 text-sm">{error}</p>
-                    </div>
-                  )}
-
-                  <Button
-                    size="lg"
-                    onClick={startVerification}
-                    disabled={starting}
-                    className="bg-primary hover:bg-primary/90 text-primary-foreground min-w-[220px]"
-                  >
-                    {starting ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Iniciando...
-                      </>
-                    ) : (
-                      <>
-                        <ScanFace className="w-4 h-4 mr-2" />
-                        {isRejected ? "Refazer verificação" : "Iniciar verificação"}
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-
-          {/* Como funciona */}
-          <div className="grid gap-4 sm:grid-cols-3">
-            {[
-              {
-                icon: Camera,
-                title: "Documento + Selfie",
-                desc: "Você fotografa seu documento e faz uma selfie para comprovar que é você.",
-              },
-              {
-                icon: Zap,
-                title: "Aprovação instantânea",
-                desc: "A análise é automática e o resultado sai em segundos, sem espera manual.",
-              },
-              {
-                icon: Lock,
-                title: "Seguro e criptografado",
-                desc: "Seus dados são processados com segurança pelo nosso parceiro de verificação.",
-              },
-            ].map((item) => (
-              <Card key={item.title}>
-                <CardContent className="p-6">
-                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center mb-3">
-                    <item.icon className="w-5 h-5 text-primary" />
-                  </div>
-                  <h4 className="font-semibold text-foreground mb-1">{item.title}</h4>
-                  <p className="text-sm text-muted-foreground">{item.desc}</p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </>
-      )}
-    </div>
-  );
-}
-
-export default function KYCPage() {
-  return (
-    <Suspense
-      fallback={
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-        </div>
-      }
-    >
-      <KYCPageInner />
-    </Suspense>
-  );
+  return <div className="mx-auto flex max-w-5xl flex-col gap-6">
+    <header className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+      <div><p className="font-mono text-sm text-primary">SEGURANÇA DA CONTA</p><h1 className="text-balance font-sans text-3xl font-bold">Verificação manual de identidade</h1><p className="mt-2 max-w-2xl text-pretty leading-relaxed text-muted-foreground">Envie as três imagens. Somente CEO e Manager podem visualizá-las; os arquivos permanecem criptografados.</p></div>
+      <div className="flex items-center gap-2 rounded-lg border bg-card px-4 py-2 text-sm">{approved ? <CheckCircle2 className="size-5 text-emerald-500" /> : rejected ? <XCircle className="size-5 text-destructive" /> : <Clock className="size-5 text-primary" />}<span>{approved ? "Aprovado" : rejected ? "Reprovado" : complete ? "Em análise" : "Documentos pendentes"}</span></div>
+    </header>
+    {data.rejection_reason && <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive"><strong>Motivo da reprovação:</strong> {data.rejection_reason}</div>}
+    {error && <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">{error}</div>}
+    {approved ? <Card><CardContent className="flex flex-col items-center gap-4 p-10 text-center"><ShieldCheck className="size-14 text-emerald-500" /><h2 className="text-xl font-bold">Identidade aprovada</h2><p className="text-muted-foreground">Sua conta foi verificada manualmente pela equipe de segurança.</p></CardContent></Card> : <div className="grid gap-4 md:grid-cols-3">{fields.map((field) => {
+      const doc = data.documents.find((item) => item.document_type === field.type);
+      return <Card key={field.type} className="overflow-hidden"><CardContent className="flex h-full flex-col gap-4 p-5"><div className="flex size-11 items-center justify-center rounded-lg bg-primary/10 text-primary"><FileImage className="size-5" /></div><div className="flex-1"><h2 className="font-semibold">{field.title}</h2><p className="mt-2 text-sm leading-relaxed text-muted-foreground">{field.description}</p>{doc && <p className="mt-3 truncate text-sm font-medium text-primary">Enviado: {doc.file_name}</p>}</div><label className="block"><input className="sr-only" type="file" accept="image/jpeg,image/png,image/webp" disabled={uploading !== null} onChange={(event) => void upload(field.type, event.target.files?.[0])} /><Button className="w-full" type="button" variant={doc ? "outline" : "default"} disabled={uploading !== null} asChild><span>{uploading === field.type ? <Loader2 className="size-4 animate-spin" /> : <Upload className="size-4" />}{doc ? "Substituir imagem" : "Enviar imagem"}</span></Button></label></CardContent></Card>;
+    })}</div>}
+    {!approved && complete && <div className="rounded-lg border bg-card p-4 text-center text-sm text-muted-foreground">Os três documentos foram enviados e estão aguardando análise manual.</div>}
+  </div>;
 }
