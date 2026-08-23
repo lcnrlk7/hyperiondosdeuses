@@ -45,25 +45,52 @@ export async function GET(request: NextRequest) {
     const profile = result[0];
     let status = profile.liveness_status || "not_started";
     let verifiedAt = profile.liveness_verified_at;
+    const callbackSessionId = request.nextUrl.searchParams.get("sessionId");
+    const sessionId = callbackSessionId || profile.liveness_session_id;
 
-    // O webhook continua sendo o caminho principal. Se ele falhar ou atrasar,
-    // reconciliamos a sessão salva diretamente com a decisão oficial da Didit.
-    if (status !== "approved" && profile.liveness_session_id) {
+    // O callback da Didit informa a sessão que acabou de ser analisada. Consultar
+    // exatamente essa sessão evita depender de um webhook atrasado ou de um ID
+    // antigo salvo no perfil.
+    if (status !== "approved" && sessionId) {
       try {
-        const decision = await getDiditSessionDecision(profile.liveness_session_id);
-        const diditStatus = decision?.status?.trim().toLowerCase();
+        const decision = await getDiditSessionDecision(sessionId);
+        const diditStatus = decision?.status?.trim().toLowerCase().replaceAll(" ", "_");
+        const belongsToUser =
+          sessionId === profile.liveness_session_id || decision?.vendor_data === profile.id;
 
-        if (diditStatus === "approved") {
+        if (decision && belongsToUser && diditStatus) {
+          const allowedStatuses = new Set([
+            "not_started",
+            "in_progress",
+            "in_review",
+            "approved",
+            "declined",
+            "resubmitted",
+            "abandoned",
+            "expired",
+            "kyc_expired",
+          ]);
+          const normalizedStatus = allowedStatuses.has(diditStatus)
+            ? diditStatus
+            : status;
           const updated = await sql`
             UPDATE profiles
-            SET liveness_status = 'approved',
-                liveness_verified_at = COALESCE(liveness_verified_at, NOW()),
+            SET liveness_session_id = ${sessionId},
+                liveness_status = ${normalizedStatus},
+                liveness_verified_at = CASE
+                  WHEN ${normalizedStatus} = 'approved'
+                  THEN COALESCE(liveness_verified_at, NOW())
+                  ELSE liveness_verified_at
+                END,
                 liveness_updated_at = NOW(),
-                kyc_status = 'approved'
+                kyc_status = CASE
+                  WHEN ${normalizedStatus} = 'approved' THEN 'approved'
+                  ELSE kyc_status
+                END
             WHERE id = ${profile.id}
-            RETURNING liveness_verified_at
+            RETURNING liveness_status, liveness_verified_at
           `;
-          status = "approved";
+          status = updated[0]?.liveness_status || normalizedStatus;
           verifiedAt = updated[0]?.liveness_verified_at || verifiedAt;
         }
       } catch (error) {
