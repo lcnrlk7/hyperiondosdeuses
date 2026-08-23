@@ -556,7 +556,7 @@ export default function AdminReportsPage() {
       </div>
 
       {/* Period Filter */}
-      <div className="p-4 rounded-2xl bg-[#111111] border border-border">
+      <div className="p-4 rounded-2xl bg-card border border-border">
         <div className="flex items-center gap-2 mb-3">
           <Calendar className="w-4 h-4 text-primary" />
           <span className="text-sm font-medium text-foreground">Período</span>
@@ -577,8 +577,8 @@ export default function AdminReportsPage() {
               onClick={() => setPeriodFilter(option.value as PeriodFilter)}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                 periodFilter === option.value
-                  ? "bg-primary text-white"
-                  : "bg-[#1a1a1a] text-muted-foreground hover:text-foreground hover:bg-[#222]"
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-background text-muted-foreground hover:text-foreground hover:bg-muted"
               }`}
             >
               {option.label}
@@ -595,7 +595,7 @@ export default function AdminReportsPage() {
                 type="date"
                 value={customDateStart}
                 onChange={(e) => setCustomDateStart(e.target.value)}
-                className="bg-[#1a1a1a] border-border"
+                className="bg-background border-border"
               />
             </div>
             <div className="flex-1">
@@ -604,7 +604,7 @@ export default function AdminReportsPage() {
                 type="date"
                 value={customDateEnd}
                 onChange={(e) => setCustomDateEnd(e.target.value)}
-                className="bg-[#1a1a1a] border-border"
+                className="bg-background border-border"
               />
             </div>
           </div>
@@ -616,7 +616,7 @@ export default function AdminReportsPage() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="p-4 rounded-2xl bg-[#111111] border border-border"
+          className="p-4 rounded-2xl bg-card border border-border"
         >
           <div className="flex items-center gap-2 text-muted-foreground mb-2">
             <FileText className="w-4 h-4" />
@@ -629,7 +629,7 @@ export default function AdminReportsPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.05 }}
-          className="p-4 rounded-2xl bg-[#111111] border border-border"
+          className="p-4 rounded-2xl bg-card border border-border"
         >
           <div className="flex items-center gap-2 text-blue-400 mb-2">
             <TrendingUp className="w-4 h-4" />
@@ -655,7 +655,7 @@ export default function AdminReportsPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.15 }}
-          className="p-4 rounded-2xl bg-[#111111] border border-border"
+          className="p-4 rounded-2xl bg-card border border-border"
         >
           <div className="flex items-center gap-2 text-green-400 mb-2">
             <CheckCircle className="w-4 h-4" />
@@ -668,7 +668,7 @@ export default function AdminReportsPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="p-4 rounded-2xl bg-[#111111] border border-border"
+          className="p-4 rounded-2xl bg-card border border-border"
         >
           <div className="flex items-center gap-2 text-yellow-400 mb-2">
             <Clock className="w-4 h-4" />
@@ -681,7 +681,7 @@ export default function AdminReportsPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.25 }}
-          className="p-4 rounded-2xl bg-[#111111] border border-border"
+          className="p-4 rounded-2xl bg-card border border-border"
         >
           <div className="flex items-center gap-2 text-red-400 mb-2">
             <XCircle className="w-4 h-4" />
@@ -692,21 +692,21 @@ export default function AdminReportsPage() {
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col lg:flex-row gap-4 p-4 rounded-2xl bg-[#111111] border border-border">
+      <div className="flex flex-col lg:flex-row gap-4 p-4 rounded-2xl bg-card border border-border">
         <div className="flex-1 relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
             placeholder="Buscar por ID, usuário, email..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10 bg-[#1a1a1a] border-border"
+            className="pl-10 bg-background border-border"
           />
         </div>
         <div className="flex gap-2 flex-wrap">
           <select
             value={filter}
             onChange={(e) => setFilter(e.target.value as typeof filter)}
-            className="px-4 py-2 rounded-xl bg-[#1a1a1a] border border-border text-sm text-foreground focus:outline-none focus:border-primary"
+            className="px-4 py-2 rounded-xl bg-background border border-border text-sm text-foreground focus:outline-none focus:border-primary"
           >
             <option value="all">Todos os tipos</option>
             <option value="pix_in">PIX Entrada</option>
@@ -716,7 +716,7 @@ export default function AdminReportsPage() {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)}
-            className="px-4 py-2 rounded-xl bg-[#1a1a1a] border border-border text-sm text-foreground focus:outline-none focus:border-primary"
+            className="px-4 py-2 rounded-xl bg-background border border-border text-sm text-foreground focus:outline-none focus:border-primary"
           >
             <option value="all">Todos os status</option>
             <option value="pending">Pendentes</option>
@@ -727,7 +727,7 @@ export default function AdminReportsPage() {
       </div>
 
       {/* Transactions Table */}
-      <div className="rounded-2xl bg-[#111111] border border-border overflow-hidden">
+      <div className="rounded-2xl bg-card border border-border overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
@@ -757,7 +757,7 @@ export default function AdminReportsPage() {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.01 }}
-                    className="border-b border-border/50 hover:bg-white/[0.02] transition-colors"
+                    className="border-b border-border/50 hover:bg-muted/50 transition-colors"
                   >
                     <td className="p-4">
                       <span className="text-xs text-muted-foreground font-mono truncate max-w-[100px] block">
@@ -788,7 +788,7 @@ export default function AdminReportsPage() {
                     <td className="p-4 text-center">
                       <button
                         onClick={() => openDetailModal(tx)}
-                        className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                        className="p-2 hover:bg-muted rounded-lg transition-colors"
                         title="Ver detalhes"
                       >
                         <Eye className="w-4 h-4 text-muted-foreground hover:text-foreground" />
@@ -823,7 +823,7 @@ export default function AdminReportsPage() {
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="bg-[#0d1117] border border-border rounded-2xl w-full max-w-md overflow-hidden"
+            className="bg-card border border-border rounded-2xl w-full max-w-md overflow-hidden"
           >
             {/* Modal Header */}
             <div className="flex items-center justify-between p-4 border-b border-border">
@@ -835,7 +835,7 @@ export default function AdminReportsPage() {
               </div>
               <button
                 onClick={() => setShowDetailModal(false)}
-                className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                className="p-2 hover:bg-muted rounded-lg transition-colors"
               >
                 <X className="w-5 h-5 text-muted-foreground" />
               </button>
@@ -844,7 +844,7 @@ export default function AdminReportsPage() {
             {/* Modal Body */}
             <div className="p-4 space-y-4">
               {/* Amount Card */}
-              <div className="bg-[#161b22] rounded-xl p-4 text-center">
+              <div className="bg-muted rounded-xl p-4 text-center">
                 <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Valor da Operação</p>
                 <p className={`text-3xl font-bold ${selectedTransaction.type === "pix_in" || selectedTransaction.type === "deposit" ? "text-green-400" : "text-red-400"}`}>
                   {formatCurrency(selectedTransaction.amount)}
@@ -889,7 +889,7 @@ export default function AdminReportsPage() {
               </div>
 
               {/* ID Section */}
-              <div className="bg-[#161b22] rounded-xl p-3">
+              <div className="bg-muted rounded-xl p-3">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-xs text-muted-foreground uppercase tracking-wide">ID da Transação</span>
                   <button
