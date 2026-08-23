@@ -17,12 +17,18 @@ import { NextResponse } from "next/server";
  */
 export async function assertUserVerified(userId: string): Promise<NextResponse | null> {
   const rows = await sql`
-    SELECT COALESCE(parent.kyc_status, child.kyc_status) as kyc_status,
-           child.is_active,
-           COALESCE(parent.is_blocked, child.is_blocked) as is_blocked
+    SELECT
+      CASE WHEN child.parent_profile_id IS NULL THEN child.kyc_status ELSE parent.kyc_status END AS kyc_status,
+      child.is_active,
+      child.is_blocked,
+      child.parent_profile_id,
+      parent.id AS parent_id,
+      parent.is_active AS parent_is_active,
+      parent.is_blocked AS parent_is_blocked
     FROM profiles child
     LEFT JOIN profiles parent ON parent.id::text = child.parent_profile_id
     WHERE child.id = ${userId}
+    LIMIT 1
   `;
   const p = rows[0];
 
@@ -33,14 +39,21 @@ export async function assertUserVerified(userId: string): Promise<NextResponse |
     );
   }
 
-  if (p.is_blocked) {
+  if (p.parent_profile_id && !p.parent_id) {
+    return NextResponse.json(
+      { success: false, error: "Contexto de conta inválido", code: "INVALID_ACCOUNT_CONTEXT" },
+      { status: 403 }
+    );
+  }
+
+  if (p.is_blocked || (p.parent_profile_id && p.parent_is_blocked)) {
     return NextResponse.json(
       { success: false, error: "Conta bloqueada", code: "ACCOUNT_BLOCKED" },
       { status: 403 }
     );
   }
 
-  if (p.is_active === false) {
+  if (p.is_active !== true || (p.parent_profile_id && p.parent_is_active !== true)) {
     return NextResponse.json(
       { success: false, error: "Conta desativada", code: "ACCOUNT_DISABLED" },
       { status: 403 }

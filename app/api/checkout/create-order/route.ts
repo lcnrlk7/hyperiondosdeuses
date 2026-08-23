@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { MedusaPayments } from "@/lib/acquirers/medusa";
 import { notifyPixGenerated } from "@/lib/push-notifications";
 import { getSystemFeesForUser } from "@/lib/acquirers";
+import { assertUserVerified } from "@/lib/kyc-guard";
 
 export async function POST(request: NextRequest) {
   try {
@@ -40,9 +41,8 @@ export async function POST(request: NextRequest) {
 
     const seller = sellerResult[0];
 
-    if (!seller.is_active) {
-      return NextResponse.json({ error: "Vendedor inativo" }, { status: 403 });
-    }
+    const denied = await assertUserVerified(String(seller.id));
+    if (denied) return denied;
 
     // Create the order first
     const order = await sql`

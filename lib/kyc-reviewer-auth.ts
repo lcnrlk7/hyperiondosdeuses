@@ -1,4 +1,5 @@
 import { cookies } from "next/headers";
+import { NextResponse } from "next/server";
 import { jwtVerify } from "jose";
 import { sql } from "@/lib/db";
 import { getJwtSecret } from "@/lib/jwt-secret";
@@ -30,4 +31,10 @@ export async function verifyKycReviewer(): Promise<KycReviewer | null> {
   } catch {
     return null;
   }
+}
+
+export async function requireKycReviewer(): Promise<KycReviewer | NextResponse> {
+  const reviewer = await verifyKycReviewer();
+  if (reviewer) return reviewer;
+  return NextResponse.json({ error: "Acesso restrito a CEO e Manager." }, { status: 403 });
 }

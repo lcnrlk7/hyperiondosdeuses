@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sql } from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth";
+import { assertUserVerified } from "@/lib/kyc-guard";
 
 // GET - Listar transferencias do usuario
 export async function GET(request: NextRequest) {
@@ -76,6 +77,9 @@ export async function POST(request: NextRequest) {
     if (!user) {
       return NextResponse.json({ error: "Nao autorizado" }, { status: 401 });
     }
+
+    const denied = await assertUserVerified(user.id);
+    if (denied) return denied;
 
     const body = await request.json();
     const { receiver_identifier, amount, description } = body;

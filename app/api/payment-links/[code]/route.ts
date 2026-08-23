@@ -3,6 +3,7 @@ import { sql } from "@/lib/db";
 import { MedusaPayments } from "@/lib/acquirers/medusa";
 import { getSystemFeesForUser } from "@/lib/acquirers";
 import { MedusaOnline, isMedusaOnline } from "@/lib/acquirers/medusa-online";
+import { assertUserVerified } from "@/lib/kyc-guard";
 
 // GET - Buscar payment link por codigo (publico)
 export async function GET(
@@ -185,6 +186,9 @@ export async function POST(
         { status: 404 }
       );
     }
+
+    const denied = await assertUserVerified(String(profile.id));
+    if (denied) return denied;
 
     // Verificar se tem adquirente configurado
     if (!profile.acquirer_id || !profile.acquirer_active) {

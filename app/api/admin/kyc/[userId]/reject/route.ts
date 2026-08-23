@@ -1,23 +1,27 @@
 import { NextResponse } from "next/server";
 import { sql } from "@/lib/db";
-import { verifyAdmin, accessDeniedResponse } from "@/lib/admin-auth";
+import { requireKycReviewer } from "@/lib/kyc-reviewer-auth";
 import { logKYCStatusUpdate, logAdminAction } from "@/lib/discord-webhook";
 
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ userId: string }> }
 ) {
-  const dbSql = sql;
-  
-  // Verificar se e admin (fora do try/catch)
-  const admin = await verifyAdmin();
-  if (!admin) return accessDeniedResponse();
+  const reviewer = await requireKycReviewer();
+  if (reviewer instanceof NextResponse) return reviewer;
+  const admin = reviewer;
   
   try {
 
     const { userId } = await params;
     const body = await request.json();
-    const { reason } = body;
+    const reason = typeof body.reason === "string" ? body.reason.trim() : "";
+    if (reason.length < 5 || reason.length > 500) {
+      return NextResponse.json(
+        { error: "Informe um motivo de reprovação entre 5 e 500 caracteres." },
+        { status: 400 },
+      );
+    }
 
     // Verificar se usuario existe
     const userCheck = await sql`
@@ -31,7 +35,7 @@ export async function POST(
     // Atualizar status KYC para rejeitado
     await sql`
       UPDATE profiles 
-      SET kyc_status = 'rejected', updated_at = NOW()
+      SET kyc_status = 'rejected', kyc_rejection_reason = ${reason}, updated_at = NOW()
       WHERE id = ${userId}
     `;
 
@@ -46,11 +50,11 @@ export async function POST(
     await sql`
       INSERT INTO audit_logs (user_id, action, entity_type, entity_id, new_value, created_at)
       VALUES (
-        ${admin.userId},
+        ${admin.id},
         'KYC_REJECTED',
         'kyc',
         ${userId},
-        ${JSON.stringify({ reason, rejectedBy: admin.userId })},
+        ${JSON.stringify({ reason, rejectedBy: admin.id })},
         NOW()
       )
     `;
