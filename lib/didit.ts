@@ -66,6 +66,7 @@ export async function createDiditSession(params: {
     workflow_id: DIDIT_WORKFLOW_ID,
     vendor_data: params.vendorData,
     callback: params.callback,
+    callback_method: "both",
   };
 
   const user = params.user;

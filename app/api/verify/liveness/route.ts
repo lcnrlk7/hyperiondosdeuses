@@ -182,9 +182,18 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error("Erro ao criar sessão de liveness:", error);
+    const message = error instanceof Error ? error.message : "";
+    const permissionDenied =
+      message.includes("(403)") || message.includes("permission to perform this action");
+
     return NextResponse.json(
-      { error: "Não foi possível iniciar a verificação" },
-      { status: 502 },
+      {
+        error: permissionDenied
+          ? "A chave da Didit não tem permissão para criar verificações. Atualize DIDIT_API_KEY com uma chave de API ativa."
+          : "Não foi possível iniciar a verificação. Tente novamente.",
+        code: permissionDenied ? "DIDIT_API_KEY_FORBIDDEN" : "DIDIT_SESSION_ERROR",
+      },
+      { status: permissionDenied ? 503 : 502 },
     );
   }
 }
