@@ -15,7 +15,10 @@ export async function POST(request: NextRequest) {
   if (accountId !== principal.id) {
     const owned = await sql`
       SELECT id FROM profiles
-      WHERE id = ${accountId} AND parent_profile_id = ${principal.id} AND is_active = true
+      WHERE id = ${accountId}
+        AND parent_profile_id = ${principal.id}::text
+        AND is_active = true
+        AND login_disabled = true
       LIMIT 1
     `
     if (!owned[0]) return NextResponse.json({ error: "Conta nao encontrada" }, { status: 404 })

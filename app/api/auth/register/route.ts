@@ -268,6 +268,13 @@ export async function POST(request: NextRequest) {
       maxAge: COOKIE_MAX_AGE,
       path: "/",
     });
+    response.cookies.set("active-account-id", "", {
+      httpOnly: true,
+      secure: true,
+      sameSite: "none",
+      maxAge: 0,
+      path: "/",
+    });
 
     return response;
   } catch (error) {

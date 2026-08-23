@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
              COALESCE(parent.liveness_status, child.liveness_status) as liveness_status,
              COALESCE(parent.liveness_verified_at, child.liveness_verified_at) as liveness_verified_at
       FROM profiles child
-      LEFT JOIN profiles parent ON parent.id = child.parent_profile_id
+      LEFT JOIN profiles parent ON parent.id::text = child.parent_profile_id
       WHERE child.id = ${user.id}
     `;
 

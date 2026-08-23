@@ -31,7 +31,7 @@ export async function resolveActiveAccountId(principalId: string) {
   const owned = await sql`
     SELECT id FROM profiles
     WHERE id = ${requestedId}
-      AND parent_profile_id = ${principalId}
+      AND parent_profile_id = ${principalId}::text
       AND is_active = true
       AND login_disabled = true
     LIMIT 1

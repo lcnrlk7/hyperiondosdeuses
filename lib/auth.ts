@@ -116,7 +116,7 @@ export async function getCurrentUser(): Promise<SessionUser | null> {
            CASE WHEN parent.is_admin THEN 'admin' ELSE 'user' END as role,
            parent.kyc_status
     FROM profiles child
-    JOIN profiles parent ON parent.id = child.parent_profile_id
+    JOIN profiles parent ON parent.id::text = child.parent_profile_id
     WHERE child.id = ${activeId} AND parent.id = ${principal.id}
     LIMIT 1
   `

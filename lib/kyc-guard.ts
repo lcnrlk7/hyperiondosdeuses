@@ -2,13 +2,12 @@ import { sql } from "@/lib/db";
 import { NextResponse } from "next/server";
 
 /**
- * SEGURANCA: exige que o usuario tenha concluido o KYC E a prova de vida (Didit)
- * antes de qualquer acao que gere cobranca ou movimente dinheiro (PIX in/out,
- * transferencias) — inclusive pela API publica.
+ * SEGURANCA: exige que o usuario tenha KYC manual aprovado antes de qualquer
+ * acao que gere cobranca ou movimente dinheiro (PIX in/out, transferencias),
+ * inclusive pela API publica.
  *
- * Consulta o banco diretamente (fonte unica da verdade), independentemente das
- * colunas que o endpoint chamador tenha selecionado. Assim, mesmo contas com
- * "KYC legado" aprovado sem prova de vida ficam bloqueadas ate concluir a Didit.
+ * Consulta o banco diretamente como fonte unica da verdade. Subcontas herdam
+ * o estado de KYC da conta principal proprietaria.
  *
  * Retorna `null` quando o usuario esta liberado, ou uma `NextResponse` com o
  * erro HTTP apropriado para o chamador retornar imediatamente:
@@ -22,7 +21,7 @@ export async function assertUserVerified(userId: string): Promise<NextResponse |
            child.is_active,
            COALESCE(parent.is_blocked, child.is_blocked) as is_blocked
     FROM profiles child
-    LEFT JOIN profiles parent ON parent.id = child.parent_profile_id
+    LEFT JOIN profiles parent ON parent.id::text = child.parent_profile_id
     WHERE child.id = ${userId}
   `;
   const p = rows[0];

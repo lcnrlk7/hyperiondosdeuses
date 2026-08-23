@@ -22,7 +22,7 @@ export async function GET() {
            p.created_at,
            COALESCE((SELECT SUM(t.amount) FROM transactions t WHERE t.user_id = p.id AND t.status IN ('paid', 'approved', 'completed')), 0) as total_sales
     FROM profiles p
-    WHERE p.id = ${principal.id} OR p.parent_profile_id = ${principal.id}
+    WHERE p.id = ${principal.id} OR p.parent_profile_id = ${principal.id}::text
     ORDER BY CASE WHEN p.id = ${principal.id} THEN 0 ELSE 1 END, p.created_at ASC
   `
 
@@ -91,7 +91,7 @@ export async function PATCH(request: NextRequest) {
 
   const updated = await sql`
     UPDATE profiles SET account_name = ${accountName}, name = ${accountName}, updated_at = NOW()
-    WHERE id = ${id} AND parent_profile_id = ${principal.id}
+    WHERE id = ${id} AND parent_profile_id = ${principal.id}::text
     RETURNING id, account_name
   `
   if (!updated[0]) return NextResponse.json({ error: "Subconta nao encontrada" }, { status: 404 })
