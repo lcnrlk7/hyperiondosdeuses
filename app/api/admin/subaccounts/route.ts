@@ -7,10 +7,11 @@ export async function GET(request: NextRequest) {
   const admin = await verifyAdmin()
   if (!admin) return accessDeniedResponse()
 
-  await ensureMultiAccountSchema()
-  const search = request.nextUrl.searchParams.get("search")?.trim() || ""
-  const pattern = `%${search}%`
-  const accounts = await sql`
+  try {
+    await ensureMultiAccountSchema()
+    const search = request.nextUrl.searchParams.get("search")?.trim() || ""
+    const pattern = `%${search}%`
+    const accounts = await sql`
     SELECT child.id,
            child.account_name,
            child.balance,
@@ -26,11 +27,18 @@ export async function GET(request: NextRequest) {
            COALESCE((SELECT COUNT(*) FROM transactions t WHERE t.user_id = child.id), 0) as transaction_count,
            COALESCE((SELECT COUNT(*) FROM withdrawals w WHERE w.user_id = child.id), 0) as withdrawal_count
     FROM profiles child
-    JOIN profiles parent ON parent.id = child.parent_profile_id
+    JOIN profiles parent ON parent.id::text = child.parent_profile_id
     WHERE child.parent_profile_id IS NOT NULL
       AND (${search} = '' OR child.account_name ILIKE ${pattern} OR parent.name ILIKE ${pattern} OR parent.email ILIKE ${pattern})
     ORDER BY parent.name ASC, child.created_at ASC
-  `
+    `
 
-  return NextResponse.json({ subaccounts: accounts })
+    return NextResponse.json({ subaccounts: accounts })
+  } catch (error) {
+    console.error("[admin/subaccounts] Falha ao listar subcontas:", error)
+    return NextResponse.json(
+      { error: "Não foi possível carregar as subcontas." },
+      { status: 500 },
+    )
+  }
 }
